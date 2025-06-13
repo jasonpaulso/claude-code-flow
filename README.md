@@ -169,13 +169,20 @@ npm install -g claude-flow
 claude-flow --version
 ```
 
-### 🦕 **Option 2: Deno (For Developers)**
+### 🦕 **Option 2: Local Installation (For Development)**
 ```bash
-# Clone and run from source
+# Clone the repository
 git clone https://github.com/ruvnet/claude-code-flow.git
 cd claude-code-flow
-./bin/claude-flow --version
+
+# Install globally
+npm link
+
+# Use from any directory
+claude-flow --version
 ```
+
+See [Installation Guide](./docs/installation.md) for detailed instructions.
 
 ### 🔧 **Option 3: From Source (For Contributors)**
 ```bash

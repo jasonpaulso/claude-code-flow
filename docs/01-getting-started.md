@@ -20,18 +20,20 @@ npx -y claude-flow@latest init --sparc
 # - Memory and configuration files
 ```
 
-### Option 2: From Source (For Development)
+### Option 2: Local Installation (For Development)
 ```bash
 # Clone the repository
 git clone https://github.com/ruvnet/claude-code-flow.git
 cd claude-code-flow
 
-# Use the launcher script (recommended)
-./bin/claude-flow-launcher --version
+# Install globally
+npm link
 
-# Or run with npm
-npm install
-npm run typecheck  # Currently 195 errors but non-blocking
+# Now use from anywhere
+claude-flow --version
+
+# Verify installation
+which claude-flow  # Should show the global install path
 ```
 
 ## Working Commands ✅
@@ -39,28 +41,28 @@ npm run typecheck  # Currently 195 errors but non-blocking
 ### 1. Test Swarm Functionality
 ```bash
 # Test swarm creation (dry-run)
-./bin/claude-flow-launcher swarm new "Test task" --dry-run
+claude-flow swarm new "Test task" --dry-run
 
 # Run actual swarm (WORKING!)
-./bin/claude-flow-launcher swarm new "Build a REST API" --max-agents 1
+claude-flow swarm new "Build a REST API" --max-agents 1
 
 # Get help
-./bin/claude-flow-launcher swarm --help
+claude-flow swarm --help
 ```
 
 ### 2. Memory Operations (WORKING)
 ```bash
 # Store data
-./bin/claude-flow-launcher memory store "key" "value"
+claude-flow memory store "key" "value"
 
 # Query memory
-./bin/claude-flow-launcher memory query "search term"
+claude-flow memory query "search term"
 ```
 
 ### 3. Check Version
 ```bash
 # Verify installation
-./bin/claude-flow-launcher --version
+claude-flow --version
 # Output: claude-flow v1.0.43
 ```
 
@@ -77,7 +79,7 @@ npx -y claude-flow@latest init --sparc
 ### Step 2: Test Swarm Creation
 ```bash
 # Test configuration without execution
-./bin/claude-flow-launcher swarm new "Research AI trends" --dry-run
+claude-flow swarm new "Research AI trends" --dry-run
 
 # You'll see the swarm configuration output
 ```
@@ -85,7 +87,7 @@ npx -y claude-flow@latest init --sparc
 ### Step 3: Run a Real Swarm
 ```bash
 # Create and run a simple swarm
-./bin/claude-flow-launcher swarm new "Build a simple REST API" --max-agents 1
+claude-flow swarm new "Build a simple REST API" --max-agents 1
 
 # The swarm will:
 # - Initialize coordinator
