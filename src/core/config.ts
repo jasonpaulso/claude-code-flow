@@ -47,6 +47,18 @@ const DEFAULT_CONFIG: Config = {
     format: 'json',
     destination: 'console',
   },
+  swarm: {
+    maxAgents: 10,
+    defaultStrategy: 'auto',
+    defaultMode: 'centralized',
+    timeoutMinutes: 60,
+    qualityThreshold: 0.8,
+    enableMonitoring: true,
+    enableEncryption: false,
+    backgroundExecution: true,
+    autoRetry: true,
+    maxRetries: 3,
+  },
 };
 
 /**
@@ -350,6 +362,18 @@ export class ConfigManager {
         format: { type: 'string', values: ['json', 'text'] },
         destination: { type: 'string', values: ['console', 'file'] },
       },
+      swarm: {
+        maxAgents: { type: 'number', min: 1, max: 100 },
+        defaultStrategy: { type: 'string', values: ['auto', 'research', 'development', 'analysis', 'testing', 'optimization', 'maintenance'] },
+        defaultMode: { type: 'string', values: ['centralized', 'distributed', 'hierarchical', 'mesh', 'hybrid'] },
+        timeoutMinutes: { type: 'number', min: 1, max: 1440 },
+        qualityThreshold: { type: 'number', min: 0, max: 1 },
+        enableMonitoring: { type: 'boolean' },
+        enableEncryption: { type: 'boolean' },
+        backgroundExecution: { type: 'boolean' },
+        autoRetry: { type: 'boolean' },
+        maxRetries: { type: 'number', min: 0, max: 10 },
+      },
     };
   }
 
@@ -538,6 +562,40 @@ export class ConfigManager {
       };
     }
 
+    // Swarm settings
+    const swarmMaxAgents = Deno.env.get('CLAUDE_FLOW_SWARM_MAX_AGENTS');
+    const swarmStrategy = Deno.env.get('CLAUDE_FLOW_SWARM_STRATEGY');
+    const swarmMode = Deno.env.get('CLAUDE_FLOW_SWARM_MODE');
+    const swarmTimeout = Deno.env.get('CLAUDE_FLOW_SWARM_TIMEOUT');
+    const swarmMonitoring = Deno.env.get('CLAUDE_FLOW_SWARM_MONITORING');
+    const swarmEncryption = Deno.env.get('CLAUDE_FLOW_SWARM_ENCRYPTION');
+    
+    if (swarmMaxAgents || swarmStrategy || swarmMode || swarmTimeout || swarmMonitoring || swarmEncryption) {
+      config.swarm = {
+        ...DEFAULT_CONFIG.swarm,
+        ...config.swarm,
+      };
+      
+      if (swarmMaxAgents) {
+        config.swarm.maxAgents = parseInt(swarmMaxAgents, 10);
+      }
+      if (swarmStrategy && ['auto', 'research', 'development', 'analysis', 'testing', 'optimization', 'maintenance'].includes(swarmStrategy)) {
+        config.swarm.defaultStrategy = swarmStrategy as any;
+      }
+      if (swarmMode && ['centralized', 'distributed', 'hierarchical', 'mesh', 'hybrid'].includes(swarmMode)) {
+        config.swarm.defaultMode = swarmMode as any;
+      }
+      if (swarmTimeout) {
+        config.swarm.timeoutMinutes = parseInt(swarmTimeout, 10);
+      }
+      if (swarmMonitoring === 'true' || swarmMonitoring === 'false') {
+        config.swarm.enableMonitoring = swarmMonitoring === 'true';
+      }
+      if (swarmEncryption === 'true' || swarmEncryption === 'false') {
+        config.swarm.enableEncryption = swarmEncryption === 'true';
+      }
+    }
+
     return config;
   }
 
@@ -578,6 +636,22 @@ export class ConfigManager {
     if (config.mcp.transport === 'http' || config.mcp.transport === 'websocket') {
       if (!config.mcp.port || config.mcp.port < 1 || config.mcp.port > 65535) {
         throw new ValidationError('Invalid MCP port number');
+      }
+    }
+
+    // Swarm validation
+    if (config.swarm) {
+      if (config.swarm.maxAgents < 1 || config.swarm.maxAgents > 100) {
+        throw new ValidationError('swarm maxAgents must be between 1 and 100');
+      }
+      if (config.swarm.timeoutMinutes < 1 || config.swarm.timeoutMinutes > 1440) {
+        throw new ValidationError('swarm timeoutMinutes must be between 1 and 1440');
+      }
+      if (config.swarm.qualityThreshold < 0 || config.swarm.qualityThreshold > 1) {
+        throw new ValidationError('swarm qualityThreshold must be between 0 and 1');
+      }
+      if (config.swarm.maxRetries < 0 || config.swarm.maxRetries > 10) {
+        throw new ValidationError('swarm maxRetries must be between 0 and 10');
       }
     }
   }

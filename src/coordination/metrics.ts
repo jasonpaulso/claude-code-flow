@@ -5,6 +5,7 @@
 import { ILogger } from '../core/logger.ts';
 import { IEventBus } from '../core/event-bus.ts';
 import { SystemEvents } from '../utils/types.ts';
+import process from "node:process";
 
 export interface CoordinationMetrics {
   timestamp: Date;

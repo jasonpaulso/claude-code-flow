@@ -9,6 +9,7 @@ import { generateId } from '../../utils/helpers.ts';
 import { success, error, warning, info } from "../cli-core.ts";
 import type { CommandContext } from "../cli-core.ts";
 import { SwarmStrategy, SwarmMode, AgentType } from '../../swarm/types.ts';
+import process from "node:process";
 
 export async function swarmAction(ctx: CommandContext) {
   // First check if help is requested

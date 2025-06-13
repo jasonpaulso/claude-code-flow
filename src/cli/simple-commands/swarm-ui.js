@@ -5,6 +5,7 @@
  * Uses blessed for terminal UI
  */
 
+import process from "node:process";
 const blessed = require('blessed');
 const fs = require('fs').promises;
 const path = require('path');

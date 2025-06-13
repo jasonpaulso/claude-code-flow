@@ -12,6 +12,7 @@ import {
   CommunicationStrategy 
 } from '../swarm/types.ts';
 import { generateId } from '../utils/helpers.ts';
+import { Buffer } from "node:buffer";
 
 export interface MessageBusConfig {
   strategy: CommunicationStrategy;
@@ -1333,7 +1334,7 @@ class RetryManager extends EventEmitter {
     this.logger.debug('Retry scheduled', {
       messageId: message.id,
       target: target.id,
-      error: error.message
+      error: error instanceof Error ? error.message : String(error)
     });
   }
 
@@ -1372,7 +1373,7 @@ class RetryManager extends EventEmitter {
           this.logger.warn('Retry attempt failed', {
             messageId: entry.message.id,
             attempt: entry.attempts,
-            error: error.message
+            error: error instanceof Error ? error.message : String(error)
           });
         }
       }

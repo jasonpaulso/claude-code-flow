@@ -25,7 +25,9 @@ export class ClaudeFlowError extends Error {
     this.userMessage = context.userMessage || message;
     this.recoverable = context.recoverable ?? true;
     this.retryable = context.retryable ?? false;
-    this.originalError = context.originalError;
+    if (context.originalError !== undefined) {
+      this.originalError = context.originalError;
+    }
     this.metadata = context.metadata || {};
 
     // Maintain proper stack trace
@@ -99,7 +101,7 @@ export class ErrorRecovery {
     operation: () => Promise<T>,
     options: RetryOptions
   ): Promise<T> {
-    let lastError: Error;
+    let lastError: Error | undefined;
 
     for (let attempt = 1; attempt <= options.maxAttempts; attempt++) {
       try {
@@ -127,7 +129,7 @@ export class ErrorRecovery {
       `Operation '${options.operation}' failed after ${options.maxAttempts} attempts`,
       'RETRY_EXHAUSTED',
       {
-        originalError: lastError,
+        ...(lastError && { originalError: lastError }),
         userMessage: `Unable to complete ${options.operation} after multiple attempts. Please check system resources and try again.`,
         retryable: true,
         metadata: { attempts: options.maxAttempts, operation: options.operation }

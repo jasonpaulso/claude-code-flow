@@ -44,8 +44,8 @@ export class BackgroundExecutor extends EventEmitter {
   private processes: Map<string, ChildProcess>;
   private queue: string[];
   private isRunning: boolean = false;
-  private checkTimer?: NodeJS.Timeout;
-  private cleanupTimer?: NodeJS.Timeout;
+  private checkTimer?: number;
+  private cleanupTimer?: number;
 
   constructor(config: Partial<BackgroundExecutorConfig> = {}) {
     super();

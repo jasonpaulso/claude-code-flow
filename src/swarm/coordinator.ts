@@ -35,9 +35,9 @@ export class SwarmCoordinator extends EventEmitter implements SwarmEventEmitter 
   private lastHeartbeat: Date = new Date();
   
   // Background processes
-  private heartbeatTimer?: NodeJS.Timeout;
-  private monitoringTimer?: NodeJS.Timeout;
-  private cleanupTimer?: NodeJS.Timeout;
+  private heartbeatTimer?: number;
+  private monitoringTimer?: number;
+  private cleanupTimer?: number;
   
   constructor(config: Partial<SwarmConfig> = {}) {
     super();
@@ -489,8 +489,8 @@ export class SwarmCoordinator extends EventEmitter implements SwarmEventEmitter 
       agent.errorHistory.push({
         timestamp: new Date(),
         type: 'startup_error',
-        message: error.message,
-        stack: error.stack,
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
         context: { agentId },
         severity: 'high',
         resolved: false
@@ -831,13 +831,13 @@ export class SwarmCoordinator extends EventEmitter implements SwarmEventEmitter 
       throw new Error('Task not assigned to any agent');
     }
 
-    this.logger.warn('Task failed', { taskId, agentId: agent.id.id, error: error.message });
+    this.logger.warn('Task failed', { taskId, agentId: agent.id.id, error: error instanceof Error ? error.message : String(error) });
 
     task.error = {
-      type: error.constructor.name,
-      message: error.message,
-      code: error.code,
-      stack: error.stack,
+      type: error instanceof Error ? error.constructor.name : 'Error',
+      message: error instanceof Error ? error.message : String(error),
+      code: error instanceof Error && 'code' in error ? (error as any).code : undefined,
+      stack: error instanceof Error ? error.stack : undefined,
       context: { taskId, agentId: agent.id.id },
       recoverable: this.isRecoverableError(error),
       retryable: this.isRetryableError(error)
@@ -861,8 +861,8 @@ export class SwarmCoordinator extends EventEmitter implements SwarmEventEmitter 
     agent.errorHistory.push({
       timestamp: new Date(),
       type: 'task_failure',
-      message: error.message,
-      stack: error.stack,
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
       context: { taskId },
       severity: 'medium',
       resolved: false
@@ -881,7 +881,7 @@ export class SwarmCoordinator extends EventEmitter implements SwarmEventEmitter 
         timestamp: new Date(),
         from: 'running',
         to: 'retrying',
-        reason: `Task failed, will retry: ${error.message}`,
+        reason: `Task failed, will retry: ${error instanceof Error ? error.message : String(error)}`,
         triggeredBy: agent.id
       });
 
@@ -912,7 +912,7 @@ export class SwarmCoordinator extends EventEmitter implements SwarmEventEmitter 
         timestamp: new Date(),
         from: 'running',
         to: 'failed',
-        reason: `Task failed permanently: ${error.message}`,
+        reason: `Task failed permanently: ${error instanceof Error ? error.message : String(error)}`,
         triggeredBy: agent.id
       });
 
@@ -946,7 +946,7 @@ export class SwarmCoordinator extends EventEmitter implements SwarmEventEmitter 
 
     if (agent) {
       agent.status = 'idle';
-      agent.currentTask = undefined;
+      delete agent.currentTask;
     }
 
     // Update status history
@@ -1331,7 +1331,7 @@ export class SwarmCoordinator extends EventEmitter implements SwarmEventEmitter 
     return [...this.events];
   }
 
-  isRunning(): boolean {
+  getIsRunning(): boolean {
     return this.isRunning;
   }
 
@@ -1341,7 +1341,7 @@ export class SwarmCoordinator extends EventEmitter implements SwarmEventEmitter 
     return endTime.getTime() - this.startTime.getTime();
   }
 
-  getSwarmStatus(): SwarmStatus & { tasks: { completed: number; failed: number; total: number }; agents: { total: number } } {
+  getSwarmStatus(): { status: SwarmStatus; objectives: number; tasks: { completed: number; failed: number; total: number }; agents: { total: number } } {
     const tasks = Array.from(this.tasks.values());
     const completedTasks = tasks.filter(t => t.status === 'completed').length;
     const failedTasks = tasks.filter(t => t.status === 'failed').length;
@@ -1391,15 +1391,15 @@ export class SwarmCoordinator extends EventEmitter implements SwarmEventEmitter 
   private stopBackgroundProcesses(): void {
     if (this.heartbeatTimer) {
       clearInterval(this.heartbeatTimer);
-      this.heartbeatTimer = undefined;
+      delete this.heartbeatTimer;
     }
     if (this.monitoringTimer) {
       clearInterval(this.monitoringTimer);
-      this.monitoringTimer = undefined;
+      delete this.monitoringTimer;
     }
     if (this.cleanupTimer) {
       clearInterval(this.cleanupTimer);
-      this.cleanupTimer = undefined;
+      delete this.cleanupTimer;
     }
   }
 

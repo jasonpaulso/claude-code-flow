@@ -186,6 +186,20 @@ export interface Config {
   coordination: CoordinationConfig;
   mcp: MCPConfig;
   logging: LoggingConfig;
+  swarm?: SwarmSettings;
+}
+
+export interface SwarmSettings {
+  maxAgents: number;
+  defaultStrategy: 'auto' | 'research' | 'development' | 'analysis' | 'testing' | 'optimization' | 'maintenance';
+  defaultMode: 'centralized' | 'distributed' | 'hierarchical' | 'mesh' | 'hybrid';
+  timeoutMinutes: number;
+  qualityThreshold: number;
+  enableMonitoring: boolean;
+  enableEncryption: boolean;
+  backgroundExecution: boolean;
+  autoRetry: boolean;
+  maxRetries: number;
 }
 
 export interface OrchestratorConfig {

@@ -95,9 +95,9 @@ export class SwarmMemoryManager extends EventEmitter {
   private isInitialized = false;
   
   // Background processes
-  private syncTimer?: NodeJS.Timeout;
-  private backupTimer?: NodeJS.Timeout;
-  private cleanupTimer?: NodeJS.Timeout;
+  private syncTimer?: number;
+  private backupTimer?: number;
+  private cleanupTimer?: number;
 
   constructor(config: Partial<MemoryConfig> = {}) {
     super();
@@ -248,7 +248,7 @@ export class SwarmMemoryManager extends EventEmitter {
       accessLevel: options.accessLevel || 'team',
       createdAt: now,
       updatedAt: now,
-      expiresAt: options.ttl ? new Date(now.getTime() + options.ttl) : undefined,
+      ...(options.ttl && { expiresAt: new Date(now.getTime() + options.ttl) }),
       version: 1,
       references: [],
       dependencies: []
@@ -563,7 +563,7 @@ export class SwarmMemoryManager extends EventEmitter {
       accessLevel: options.accessLevel || entry.accessLevel,
       createdAt: new Date(),
       updatedAt: new Date(),
-      expiresAt: options.expiresAt,
+      ...(options.expiresAt && { expiresAt: options.expiresAt }),
       references: [...entry.references, entry.id]
     };
 
@@ -610,14 +610,14 @@ export class SwarmMemoryManager extends EventEmitter {
       try {
         const sharedId = await this.shareMemory(key, targetAgent, {
           ...options,
-          sharer: options.broadcaster
+          ...(options.broadcaster && { sharer: options.broadcaster })
         });
         sharedIds.push(sharedId);
       } catch (error) {
         this.logger.warn('Failed to share memory with agent', {
           key,
           targetAgent: targetAgent.id,
-          error: error.message
+          error: error instanceof Error ? error.message : String(error)
         });
       }
     }
@@ -684,7 +684,7 @@ export class SwarmMemoryManager extends EventEmitter {
       type: options.type || 'knowledge',
       entries: [],
       maxSize: options.maxSize || this.config.maxMemorySize,
-      ttl: options.ttl,
+      ...(options.ttl !== undefined && { ttl: options.ttl }),
       readOnly: options.readOnly || false,
       shared: options.shared || true,
       indexed: options.indexed !== false,
@@ -854,7 +854,7 @@ export class SwarmMemoryManager extends EventEmitter {
     let expiringEntries = 0;
 
     for (const entry of validEntries) {
-      entriesByType[entry.type]++;
+      entriesByType[entry.type as MemoryType]++;
       entriesByAccess[entry.accessLevel]++;
       
       const entrySize = this.calculateEntrySize(entry);
@@ -1221,17 +1221,17 @@ export class SwarmMemoryManager extends EventEmitter {
   private stopBackgroundProcesses(): void {
     if (this.syncTimer) {
       clearInterval(this.syncTimer);
-      this.syncTimer = undefined;
+      delete this.syncTimer;
     }
     
     if (this.backupTimer) {
       clearInterval(this.backupTimer);
-      this.backupTimer = undefined;
+      delete this.backupTimer;
     }
     
     if (this.cleanupTimer) {
       clearInterval(this.cleanupTimer);
-      this.cleanupTimer = undefined;
+      delete this.cleanupTimer;
     }
   }
 
@@ -1323,7 +1323,9 @@ class MemoryCache {
     // Evict if at capacity
     if (this.cache.size >= this.maxSize) {
       const oldestKey = this.cache.keys().next().value;
-      this.cache.delete(oldestKey);
+      if (oldestKey !== undefined) {
+        this.cache.delete(oldestKey);
+      }
     }
     
     this.cache.set(key, {

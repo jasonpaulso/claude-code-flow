@@ -9,6 +9,7 @@ import { ILogger } from '../core/logger.ts';
 import { IEventBus } from '../core/event-bus.ts';
 import { CircuitBreaker, CircuitBreakerManager } from './circuit-breaker.ts';
 import { generateId } from '../utils/helpers.ts';
+import process from "node:process";
 
 export interface TaskExecutorConfig {
   maxConcurrentTasks: number;

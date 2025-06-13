@@ -12,6 +12,7 @@ import {
   listCommands 
 } from './command-registry.js';
 import { parseFlags } from './utils.js';
+import process from "node:process";
 
 const VERSION = '1.0.43';
 

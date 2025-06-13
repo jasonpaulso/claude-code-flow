@@ -9,6 +9,8 @@ import { EventBus } from '../core/event-bus.ts';
 import type { IEventBus } from '../core/event-bus.ts';
 import type { ILogger } from '../core/logger.ts';
 import { SwarmError, TaskExecutionError, CoordinationError, ErrorRecovery } from '../utils/error-types.ts';
+import { Message } from '../utils/types.ts';
+import process from "node:process";
 
 export interface SwarmAgent {
   id: string;
@@ -85,7 +87,7 @@ export class SwarmCoordinator extends EventEmitter {
   private monitor?: SwarmMonitor;
   private scheduler?: AdvancedTaskScheduler;
   private memoryManager: MemoryManager;
-  private backgroundWorkers: Map<string, NodeJS.Timeout>;
+  private backgroundWorkers: Map<string, number>;
   private isRunning: boolean = false;
   private eventBus: IEventBus;
 
@@ -95,7 +97,7 @@ export class SwarmCoordinator extends EventEmitter {
       { level: 'info', format: 'json', destination: 'console' },
       { component: 'SwarmCoordinator' }
     );
-    this.eventBus = new EventBus();
+    this.eventBus = EventBus.getInstance();
     this.config = {
       maxAgents: 10,
       maxConcurrentTasks: 5,

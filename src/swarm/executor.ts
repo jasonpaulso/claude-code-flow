@@ -13,6 +13,7 @@ import {
   TaskDefinition, AgentState, TaskResult, SwarmEvent, EventType,
   SWARM_CONSTANTS
 } from './types.ts';
+import process from "node:process";
 
 export interface ExecutionContext {
   task: TaskDefinition;
@@ -157,8 +158,8 @@ export class TaskExecutor extends EventEmitter {
     } catch (error) {
       this.logger.error('Task execution failed', {
         sessionId,
-        error: error.message,
-        stack: error.stack
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
       });
 
       await this.cleanupExecution(session);
@@ -210,7 +211,7 @@ export class TaskExecutor extends EventEmitter {
     } catch (error) {
       this.logger.error('Claude task execution failed', {
         sessionId,
-        error: error.message
+        error: error instanceof Error ? error.message : String(error)
       });
       throw error;
     }
@@ -337,7 +338,7 @@ export class TaskExecutor extends EventEmitter {
 
         // Handle process output
         if (process.stdout) {
-          process.stdout.on('data', (data: Buffer) => {
+          process.stdout.on('data', (data: Uint8Array) => {
             const chunk = data.toString();
             outputBuffer += chunk;
             
@@ -352,7 +353,7 @@ export class TaskExecutor extends EventEmitter {
         }
 
         if (process.stderr) {
-          process.stderr.on('data', (data: Buffer) => {
+          process.stderr.on('data', (data: Uint8Array) => {
             const chunk = data.toString();
             errorBuffer += chunk;
             
@@ -423,7 +424,7 @@ export class TaskExecutor extends EventEmitter {
           clearTimeout(timeoutHandle);
           this.logger.error('Claude process error', {
             sessionId,
-            error: error.message
+            error: error instanceof Error ? error.message : String(error)
           });
           reject(error);
         });
@@ -652,7 +653,7 @@ export class TaskExecutor extends EventEmitter {
     } catch (error) {
       this.logger.warn('Error during execution cleanup', {
         sessionId: session.id,
-        error: error.message
+        error: error instanceof Error ? error.message : String(error)
       });
     }
   }
@@ -676,7 +677,7 @@ export class TaskExecutor extends EventEmitter {
     } catch (error) {
       this.logger.warn('Error collecting artifacts', {
         workingDir: context.workingDirectory,
-        error: error.message
+        error: error instanceof Error ? error.message : String(error)
       });
     }
 
@@ -889,7 +890,7 @@ class ExecutionSession {
 }
 
 class ResourceMonitor extends EventEmitter {
-  private activeMonitors: Map<string, NodeJS.Timeout> = new Map();
+  private activeMonitors: Map<string, number> = new Map();
   private usage: Map<string, ResourceUsage> = new Map();
 
   async initialize(): Promise<void> {

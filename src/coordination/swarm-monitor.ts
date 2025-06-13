@@ -68,7 +68,7 @@ export class SwarmMonitor extends EventEmitter {
   private agentMetrics: Map<string, AgentMetrics> = new Map();
   private systemMetrics: SystemMetrics[] = [];
   private alerts: Alert[] = [];
-  private monitoringInterval?: NodeJS.Timeout;
+  private monitoringInterval?: number;
   private startTime: number;
   private taskStartTimes: Map<string, number> = new Map();
   private taskCompletionTimes: number[] = [];

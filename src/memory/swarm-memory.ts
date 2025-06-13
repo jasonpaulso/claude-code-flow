@@ -72,7 +72,7 @@ export class SwarmMemoryManager extends EventEmitter {
   private entries: Map<string, SwarmMemoryEntry>;
   private knowledgeBases: Map<string, SwarmKnowledgeBase>;
   private agentMemories: Map<string, Set<string>>; // agentId -> set of entry IDs
-  private syncTimer?: NodeJS.Timeout;
+  private syncTimer?: number;
   private isInitialized: boolean = false;
   private eventBus: IEventBus;
 
@@ -82,7 +82,7 @@ export class SwarmMemoryManager extends EventEmitter {
       { level: 'info', format: 'json', destination: 'console' },
       { component: 'SwarmMemoryManager' }
     );
-    this.eventBus = new EventBus();
+    this.eventBus = EventBus.getInstance();
     this.config = {
       namespace: 'swarm',
       enableDistribution: true,

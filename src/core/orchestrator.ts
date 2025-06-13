@@ -23,6 +23,7 @@ import { SystemError, InitializationError, ShutdownError } from '../utils/errors
 import { delay, retry, circuitBreaker, CircuitBreaker } from '../utils/helpers.ts';
 import { ensureDir, exists } from 'https://deno.land/std@0.208.0/fs/mod.ts';
 import { join, dirname } from 'https://deno.land/std@0.208.0/path/mod.ts';
+import process from "node:process";
 
 export interface ISessionManager {
   createSession(profile: AgentProfile): Promise<AgentSession>;
@@ -674,8 +675,8 @@ export class Orchestrator implements IOrchestrator {
       await this.sessionManager.persistSessions();
 
       // Force garbage collection if available
-      if (global.gc) {
-        global.gc();
+      if (globalThis.gc) {
+        globalThis.gc();
       }
 
       this.logger.debug('Maintenance tasks completed');
