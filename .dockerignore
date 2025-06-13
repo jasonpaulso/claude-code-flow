@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+.npm/
+
+# Build outputs
+bin/claude-flow
+bin/claude-flow.tmp*
+dist/
+build/
+
+# Test and coverage
+test-results/
+coverage/
+*.test.ts
+*.spec.ts
+
+# Development files
+.git/
+.github/
+.vscode/
+.idea/
+*.log
+*.tmp
+
+# Documentation builds
+docs/_build/
+docs/.doctrees/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+.env.*
+
+# Memory and data (will be mounted as volumes)
+memory/claude-flow-data.json
+memory/memory-store.json
+swarms/
+
+# Keep these
+!bin/claude-flow-launcher
+!scripts/
+!package.json
+!package-lock.json
+!deno.json

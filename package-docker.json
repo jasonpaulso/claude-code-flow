@@ -1,0 +1,35 @@
+{
+  "name": "claude-flow",
+  "version": "1.0.49",
+  "description": "Advanced AI agent orchestration system for Claude Code",
+  "main": "src/cli/main.ts",
+  "bin": {
+    "claude-flow": "./bin/claude-flow-launcher"
+  },
+  "scripts": {
+    "postinstall": "echo 'Skipping postinstall in Docker'",
+    "typecheck": "deno check src/**/*.ts"
+  },
+  "keywords": [
+    "claude",
+    "ai",
+    "agent",
+    "orchestration",
+    "mcp",
+    "workflow",
+    "automation"
+  ],
+  "author": "rUv",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ruvnet/claude-code-flow.git"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "optionalDependencies": {
+    "blessed": "^0.1.81",
+    "node-pty": "^1.0.0"
+  }
+}

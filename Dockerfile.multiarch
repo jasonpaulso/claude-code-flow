@@ -1,0 +1,46 @@
+# Claude-Flow Multi-Architecture Docker Image
+FROM --platform=$BUILDPLATFORM node:18-alpine AS builder
+
+# Install build dependencies
+RUN apk add --no-cache python3 make g++ git bash
+
+WORKDIR /build
+
+# Copy and install dependencies
+COPY package*.json ./
+RUN npm install --omit=optional || true
+
+# Runtime stage
+FROM --platform=$TARGETPLATFORM denoland/deno:alpine
+
+# Install runtime dependencies
+RUN apk add --no-cache nodejs npm git bash
+
+WORKDIR /opt/claude-flow
+
+# Copy files
+COPY --from=builder /build/node_modules ./node_modules
+COPY . .
+
+# Remove problematic package.json and create minimal one
+RUN rm -f package.json package-lock.json && \
+    echo '{"name":"claude-flow","version":"1.0.49","bin":{"claude-flow":"./bin/claude-flow-launcher"}}' > package.json
+
+# Fix permissions
+RUN chmod +x bin/claude-flow-launcher && \
+    chmod +x scripts/*.js 2>/dev/null || true && \
+    chmod +x scripts/*.sh 2>/dev/null || true
+
+# Create global link
+RUN ln -s /opt/claude-flow/bin/claude-flow-launcher /usr/local/bin/claude-flow
+
+# Setup workspace
+RUN mkdir -p /workspace
+WORKDIR /workspace
+
+# Environment
+ENV CLAUDE_FLOW_DOCKER=true
+ENV PATH="/opt/claude-flow/bin:${PATH}"
+
+ENTRYPOINT ["claude-flow"]
+CMD ["--help"]

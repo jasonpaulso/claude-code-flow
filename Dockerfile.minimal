@@ -1,0 +1,52 @@
+# Claude-Flow Minimal Docker Image (without node-pty)
+FROM denoland/deno:alpine-1.40.0
+
+# Install only essential dependencies
+RUN apk add --no-cache nodejs npm git bash
+
+# Set working directory
+WORKDIR /opt/claude-flow
+
+# Copy only essential files first
+COPY package*.json ./
+COPY deno.docker.json ./deno.json
+
+# Create a minimal package.json without problematic dependencies
+RUN echo '{\
+  "name": "claude-flow",\
+  "version": "1.0.49",\
+  "bin": {\
+    "claude-flow": "./bin/claude-flow-launcher"\
+  }\
+}' > package-minimal.json && \
+mv package-minimal.json package.json
+
+# Copy source code
+COPY . .
+
+# Make scripts executable
+RUN chmod +x bin/claude-flow-launcher
+RUN chmod +x scripts/*.js 2>/dev/null || true
+
+# Create symlink for global usage
+RUN ln -s /opt/claude-flow/bin/claude-flow-launcher /usr/local/bin/claude-flow
+
+# Create workspace directory for user projects
+RUN mkdir -p /workspace
+
+# Set environment variables
+ENV CLAUDE_FLOW_DOCKER=true
+ENV PATH="/opt/claude-flow/bin:${PATH}"
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+  CMD claude-flow --version || exit 1
+
+# Default working directory for user projects
+WORKDIR /workspace
+
+# Entry point - can be overridden
+ENTRYPOINT ["claude-flow"]
+
+# Default command - show help
+CMD ["--help"]

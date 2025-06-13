@@ -1,0 +1,36 @@
+# Claude-Flow Working Docker Image
+FROM denoland/deno:alpine
+
+# Install only essential runtime dependencies
+RUN apk add --no-cache nodejs npm git bash
+
+# Set working directory
+WORKDIR /opt/claude-flow
+
+# Copy source code
+COPY . .
+
+# Use the docker-specific launcher that bypasses config issues
+RUN mv bin/claude-flow-launcher-docker bin/claude-flow-launcher
+
+# Make scripts executable
+RUN chmod +x bin/claude-flow-launcher
+
+# Create symlink for global usage
+RUN ln -s /opt/claude-flow/bin/claude-flow-launcher /usr/local/bin/claude-flow
+
+# Create workspace directory for user projects
+RUN mkdir -p /workspace
+
+# Set environment variables
+ENV CLAUDE_FLOW_DOCKER=true
+ENV PATH="/opt/claude-flow/bin:${PATH}"
+
+# Default working directory for user projects
+WORKDIR /workspace
+
+# Entry point
+ENTRYPOINT ["claude-flow"]
+
+# Default command
+CMD ["--help"]
