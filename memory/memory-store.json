@@ -44,9 +44,9 @@
     },
     {
       "key": "test-key",
-      "value": "Testing memory storage",
+      "value": "Test value from CLI test",
       "namespace": "default",
-      "timestamp": 1749772000742
+      "timestamp": 1749836389246
     }
   ],
   "sparc": [

@@ -19,7 +19,7 @@
 > 🔥 **One command to rule them all**: `npx claude-flow` - Deploy a full AI agent coordination system in seconds!
 
 
-## 🎉 **What's New in v1.0.43**
+## 🎉 **What's New in v1.0.49**
 
 ### ✅ **PRODUCTION READY: Swarm System Operational!**
 - **🐝 Core Swarm Functionality**: ✅ **FULLY WORKING** - Multi-agent coordination with real Claude process spawning
@@ -68,7 +68,8 @@
 ### 🚀 Get started in 30 seconds
 ```bash
 # Initialize with SPARC development environment
-npx -y claude-flow@latest init --sparc
+Step 1. Install Claude Code: ``` npm install -g @anthropic-ai/claude ```
+Step 2. ``` npx -y claude-flow@latest init --sparc ```
 
 # ✅ WORKING: Test swarm functionality
 ./bin/claude-flow-launcher swarm new "Test task" --dry-run
@@ -83,9 +84,9 @@ npx -y claude-flow@latest init --sparc
 
 ```bash
 # ⚡ SPARC Development Workflow (NEW: Simplified!)
-npx claude-flow sparc "build a todo app" # Orchestrator mode (default)
-npx claude-flow sparc modes              # List 17+ development modes
-npx claude-flow sparc tdd "user auth"    # Run TDD workflow
+./claude-flow claude-flow sparc "build a todo app" # Orchestrator mode (default)
+./claude-flow claude-flow sparc modes              # List 17+ development modes
+./claude-flow claude-flow sparc tdd "user auth"    # Run TDD workflow
 
 # 🐝 Advanced Swarm System (NEW!)
 ./claude-flow swarm "Build a REST API" --strategy development --parallel --monitor

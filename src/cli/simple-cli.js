@@ -14,7 +14,7 @@ import {
 import { parseFlags } from './utils.js';
 import process from "node:process";
 
-const VERSION = '1.0.43';
+const VERSION = '1.0.49';
 
 function printHelp() {
   console.log(`
