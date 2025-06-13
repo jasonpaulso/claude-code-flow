@@ -106,6 +106,10 @@ docker exec claude-flow sh /tmp/batch.sh
 
 The container is designed to run as a service. Use `docker logs claude-flow` to check for errors.
 
+### Import Errors
+
+If you see import errors when running commands, the container is still functional but may need the local `node_modules` directory. The container will continue running and you can still interact with it.
+
 ### Permission Issues
 
 Ensure your workspace directory has appropriate permissions:
