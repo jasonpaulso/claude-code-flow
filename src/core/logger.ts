@@ -141,7 +141,9 @@ export class Logger implements ILogger {
   }
 
   private shouldLog(level: LogLevel): boolean {
-    const configLevel = LogLevel[this.config.level.toUpperCase() as keyof typeof LogLevel];
+    // Default to 'info' if level is not set
+    const levelStr = this.config.level || 'info';
+    const configLevel = LogLevel[levelStr.toUpperCase() as keyof typeof LogLevel];
     return level >= configLevel;
   }
 
