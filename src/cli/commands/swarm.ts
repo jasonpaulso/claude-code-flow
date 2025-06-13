@@ -35,6 +35,7 @@ export async function swarmAction(ctx: CommandContext) {
     console.log('  --monitor              Enable real-time monitoring');
     console.log('  --ui                   Use blessed terminal UI (requires node.js)');
     console.log('  --background           Run swarm in background mode');
+    console.log('  --no-wait              Start swarm and exit immediately');
     console.log('  --distributed          Enable distributed coordination');
     console.log('  --memory-namespace     Memory namespace for swarm (default: swarm)');
     console.log('  --persistence          Enable task persistence (default: true)');
@@ -57,6 +58,7 @@ export async function swarmAction(ctx: CommandContext) {
     monitor: ctx.flags.monitor as boolean || false,
     ui: ctx.flags.ui as boolean || false,
     background: ctx.flags.background as boolean || false,
+    noWait: ctx.flags.noWait as boolean || ctx.flags['no-wait'] as boolean || false,
     persistence: ctx.flags.persistence as boolean || true,
     distributed: ctx.flags.distributed as boolean || false,
   };
@@ -193,47 +195,74 @@ export async function swarmAction(ctx: CommandContext) {
     await coordinator.executeObjective(objectiveId);
     console.log(`\n🚀 Swarm execution started...`);
 
-    if (options.background) {
+    if (options.noWait) {
+      console.log(`\n📌 Swarm ${swarmId} started successfully`);
+      console.log(`Check status with: claude-flow swarm status ${swarmId}`);
+      console.log(`Results will be saved to: ${swarmDir}`);
+      
+      // Save coordinator state
+      await Deno.writeTextFile(`${swarmDir}/coordinator.json`, JSON.stringify({
+        coordinatorRunning: true,
+        pid: Deno.pid,
+        startTime: new Date().toISOString(),
+        mode: 'no-wait'
+      }, null, 2));
+      
+      // Exit immediately
+      Deno.exit(0);
+      
+    } else if (options.background) {
       console.log(`Running in background mode. Check status with: claude-flow swarm status ${swarmId}`);
       
       // Save coordinator state and exit
       await Deno.writeTextFile(`${swarmDir}/coordinator.json`, JSON.stringify({
         coordinatorRunning: true,
         pid: Deno.pid,
-        startTime: new Date().toISOString()
+        startTime: new Date().toISOString(),
+        mode: 'background'
       }, null, 2));
+      
+      // Exit to run in background
+      Deno.exit(0);
       
     } else {
       // Wait for completion in foreground
-      await waitForObjectiveCompletion(coordinator, objectiveId, options);
-      
-      // Write completion status
-      await Deno.writeTextFile(`${swarmDir}/status.json`, JSON.stringify({
-        status: 'completed',
-        endTime: new Date().toISOString()
-      }, null, 2));
+      try {
+        await waitForObjectiveCompletion(coordinator, objectiveId, options);
+        
+        // Write completion status
+        await Deno.writeTextFile(`${swarmDir}/status.json`, JSON.stringify({
+          status: 'completed',
+          endTime: new Date().toISOString()
+        }, null, 2));
 
-      // Show summary
-      const swarmStatus = coordinator.getSwarmStatus();
-      console.log(`\n📊 Swarm Summary:`);
-      console.log(`  - Objectives: ${swarmStatus.objectives}`);
-      console.log(`  - Tasks Completed: ${swarmStatus.tasks.completed}`);
-      console.log(`  - Tasks Failed: ${swarmStatus.tasks.failed}`);
-      console.log(`  - Agents Used: ${swarmStatus.agents.total}`);
-      console.log(`  - Results saved to: ${swarmDir}`);
+        // Show summary
+        const swarmStatus = coordinator.getSwarmStatus();
+        console.log(`\n📊 Swarm Summary:`);
+        console.log(`  - Objectives: ${swarmStatus.objectives}`);
+        console.log(`  - Tasks Completed: ${swarmStatus.tasks.completed}`);
+        console.log(`  - Tasks Failed: ${swarmStatus.tasks.failed}`);
+        console.log(`  - Agents Used: ${swarmStatus.agents.total}`);
+        console.log(`  - Results saved to: ${swarmDir}`);
 
-      success(`\n✅ Swarm ${swarmId} completed successfully`);
-    }
-
-    // Cleanup
-    if (!options.background) {
-      await coordinator.stop();
-      await executor.stop();
-      await memory.shutdown();
+        success(`\n✅ Swarm ${swarmId} completed successfully`);
+      } catch (error) {
+        console.error('\n❌ Swarm execution failed:', error);
+        await Deno.writeTextFile(`${swarmDir}/status.json`, JSON.stringify({
+          status: 'failed',
+          error: error.message,
+          endTime: new Date().toISOString()
+        }, null, 2));
+      } finally {
+        // Ensure proper cleanup and exit
+        coordinator.shutdown();
+        Deno.exit(0);
+      }
     }
     
   } catch (err) {
     error(`Failed to execute swarm: ${(err as Error).message}`);
+    Deno.exit(1);
   }
 }
 
@@ -530,32 +559,69 @@ function getCapabilitiesForType(type: string): string[] {
 }
 
 async function waitForObjectiveCompletion(coordinator: any, objectiveId: string, options: any): Promise<void> {
-  return new Promise((resolve) => {
-    const checkInterval = setInterval(() => {
-      const objective = coordinator.getObjectiveStatus(objectiveId);
+  return new Promise((resolve, reject) => {
+    let checkInterval: number | undefined;
+    let timeoutHandle: number | undefined;
+    let isCleanedUp = false;
+
+    // Cleanup function to ensure all timers are cleared
+    const cleanup = () => {
+      if (isCleanedUp) return;
+      isCleanedUp = true;
       
-      if (!objective) {
+      if (checkInterval) {
         clearInterval(checkInterval);
-        resolve();
-        return;
+        checkInterval = undefined;
       }
-
-      if (objective.status === 'completed' || objective.status === 'failed') {
-        clearInterval(checkInterval);
-        resolve();
-        return;
+      if (timeoutHandle) {
+        clearTimeout(timeoutHandle);
+        timeoutHandle = undefined;
       }
+    };
 
-      // Show progress if verbose
-      if (options.verbose) {
-        const swarmStatus = coordinator.getSwarmStatus();
-        console.log(`Progress: ${swarmStatus.tasks.completed}/${swarmStatus.tasks.total} tasks completed`);
+    // Signal handlers for graceful shutdown
+    const signalHandler = (signal: string) => {
+      console.log(`\n⚠️  Received ${signal}, shutting down gracefully...`);
+      cleanup();
+      coordinator.shutdown();
+      resolve();
+    };
+
+    // Register signal handlers
+    Deno.addSignalListener('SIGINT', () => signalHandler('SIGINT'));
+    Deno.addSignalListener('SIGTERM', () => signalHandler('SIGTERM'));
+
+    checkInterval = setInterval(() => {
+      try {
+        const objective = coordinator.getObjectiveStatus(objectiveId);
+        
+        if (!objective) {
+          cleanup();
+          resolve();
+          return;
+        }
+
+        if (objective.status === 'completed' || objective.status === 'failed') {
+          cleanup();
+          resolve();
+          return;
+        }
+
+        // Show progress if verbose
+        if (options.verbose) {
+          const swarmStatus = coordinator.getSwarmStatus();
+          console.log(`Progress: ${swarmStatus.tasks.completed}/${swarmStatus.tasks.total} tasks completed`);
+        }
+      } catch (error) {
+        console.error('Error checking objective status:', error);
+        cleanup();
+        reject(error);
       }
     }, 5000); // Check every 5 seconds
 
     // Timeout after the specified time
-    setTimeout(() => {
-      clearInterval(checkInterval);
+    timeoutHandle = setTimeout(() => {
+      cleanup();
       console.log('⚠️  Swarm execution timed out');
       resolve();
     }, options.timeout * 60 * 1000);

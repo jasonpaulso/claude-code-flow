@@ -1,0 +1,53 @@
+{
+  "compilerOptions": {
+    "lib": ["dom", "deno.ns", "deno.unstable"],
+    "strict": true,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
+  },
+  "lint": {
+    "rules": {
+      "tags": ["recommended"],
+      "include": ["ban-untagged-todo"],
+      "exclude": ["no-unused-vars"]
+    },
+    "include": ["src/", "tests/"],
+    "exclude": ["node_modules/", "build/", "dist/"]
+  },
+  "fmt": {
+    "useTabs": false,
+    "lineWidth": 100,
+    "indentWidth": 2,
+    "semiColons": true,
+    "singleQuote": true,
+    "proseWrap": "preserve",
+    "include": ["src/", "tests/"],
+    "exclude": ["node_modules/", "build/", "dist/"]
+  },
+  "test": {
+    "include": ["tests/**/*.test.ts"],
+    "exclude": ["tests/fixtures/", "tests/temp/"]
+  },
+  "tasks": {
+    "test": "deno run --allow-all tests/run-tests.ts",
+    "test:unit": "deno test --allow-all tests/unit/",
+    "test:integration": "deno test --allow-all tests/integration/",
+    "test:e2e": "deno test --allow-all tests/e2e/",
+    "test:coverage": "deno test --allow-all --coverage=test-results/coverage tests/unit/",
+    "lint": "deno lint",
+    "fmt": "deno fmt",
+    "typecheck": "deno check src/**/*.ts tests/**/*.test.ts"
+  },
+  "imports": {
+    "@std/assert": "https://deno.land/std@0.208.0/assert/mod.ts",
+    "@std/testing": "https://deno.land/std@0.208.0/testing/mod.ts",
+    "@std/cli": "https://deno.land/std@0.208.0/cli/mod.ts"
+  }
+}

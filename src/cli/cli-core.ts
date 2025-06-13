@@ -259,15 +259,3 @@ function info(message: string): void {
 // Export for use in other modules
 export { CLI, success, error, warning, info };
 export type { Command, CommandContext, Option };
-
-// Main CLI setup if running directly
-if (import.meta.main) {
-  const cli = new CLI("claude-flow", "Advanced AI Agent Orchestration System");
-
-  // Import and register all commands
-  const { setupCommands } = await import("./commands/index.ts");
-  setupCommands(cli);
-
-  // Run the CLI
-  await cli.run();
-}

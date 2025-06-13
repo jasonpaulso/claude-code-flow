@@ -1,6 +1,7 @@
 import { spawn, ChildProcess } from 'node:child_process';
 import { EventEmitter } from 'node:events';
 import { Logger } from '../core/logger.ts';
+import type { ILogger } from '../core/logger.ts';
 import { generateId } from '../utils/helpers.ts';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
@@ -37,7 +38,7 @@ export interface BackgroundExecutorConfig {
 }
 
 export class BackgroundExecutor extends EventEmitter {
-  private logger: Logger;
+  private logger: ILogger;
   private config: BackgroundExecutorConfig;
   private tasks: Map<string, BackgroundTask>;
   private processes: Map<string, ChildProcess>;
@@ -48,7 +49,10 @@ export class BackgroundExecutor extends EventEmitter {
 
   constructor(config: Partial<BackgroundExecutorConfig> = {}) {
     super();
-    this.logger = new Logger('BackgroundExecutor');
+    this.logger = new Logger(
+      { level: 'info', format: 'json', destination: 'console' },
+      { component: 'BackgroundExecutor' }
+    );
     this.config = {
       maxConcurrentTasks: 5,
       defaultTimeout: 300000, // 5 minutes

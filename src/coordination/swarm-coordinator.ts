@@ -1,9 +1,14 @@
 import { EventEmitter } from 'node:events';
+import { spawn } from 'node:child_process';
 import { Logger } from '../core/logger.ts';
 import { generateId } from '../utils/helpers.ts';
 import { SwarmMonitor } from './swarm-monitor.ts';
 import { AdvancedTaskScheduler } from './advanced-scheduler.ts';
 import { MemoryManager } from '../memory/manager.ts';
+import { EventBus } from '../core/event-bus.ts';
+import type { IEventBus } from '../core/event-bus.ts';
+import type { ILogger } from '../core/logger.ts';
+import { SwarmError, TaskExecutionError, CoordinationError, ErrorRecovery } from '../utils/error-types.ts';
 
 export interface SwarmAgent {
   id: string;
@@ -13,7 +18,9 @@ export interface SwarmAgent {
   capabilities: string[];
   currentTask?: SwarmTask;
   processId?: number;
+  process?: any; // Node.js ChildProcess
   terminalId?: string;
+  instanceId?: string;
   metrics: {
     tasksCompleted: number;
     tasksFailed: number;
@@ -38,6 +45,10 @@ export interface SwarmTask {
   retryCount: number;
   maxRetries: number;
   timeout?: number;
+  tools?: string[];
+  skipPermissions?: boolean;
+  mcpConfig?: string;
+  claudeArgs?: string[];
 }
 
 export interface SwarmObjective {
@@ -66,7 +77,7 @@ export interface SwarmConfig {
 }
 
 export class SwarmCoordinator extends EventEmitter {
-  private logger: Logger;
+  private logger: ILogger;
   private config: SwarmConfig;
   private agents: Map<string, SwarmAgent>;
   private objectives: Map<string, SwarmObjective>;
@@ -76,10 +87,15 @@ export class SwarmCoordinator extends EventEmitter {
   private memoryManager: MemoryManager;
   private backgroundWorkers: Map<string, NodeJS.Timeout>;
   private isRunning: boolean = false;
+  private eventBus: IEventBus;
 
   constructor(config: Partial<SwarmConfig> = {}) {
     super();
-    this.logger = new Logger('SwarmCoordinator');
+    this.logger = new Logger(
+      { level: 'info', format: 'json', destination: 'console' },
+      { component: 'SwarmCoordinator' }
+    );
+    this.eventBus = new EventBus();
     this.config = {
       maxAgents: 10,
       maxConcurrentTasks: 5,
@@ -102,7 +118,14 @@ export class SwarmCoordinator extends EventEmitter {
     this.backgroundWorkers = new Map();
 
     // Initialize memory manager
-    this.memoryManager = new MemoryManager({ namespace: this.config.memoryNamespace });
+    this.memoryManager = new MemoryManager({
+      backend: 'markdown',
+      cacheSizeMB: 100,
+      syncInterval: 30000,
+      conflictResolution: 'last-write',
+      retentionDays: 30,
+      markdownDir: `./swarm-runs/memory/${this.config.memoryNamespace}`
+    }, this.eventBus, this.logger);
 
     if (this.config.enableMonitoring) {
       this.monitor = new SwarmMonitor({
@@ -166,14 +189,67 @@ export class SwarmCoordinator extends EventEmitter {
     // Stop background workers
     this.stopBackgroundWorkers();
 
+    // Terminate all running Claude processes
+    await this.terminateAllAgentProcesses();
+
     // Stop subsystems
-    await this.scheduler.stop();
+    if (this.scheduler) {
+      await this.scheduler.stop();
+    }
     
     if (this.monitor) {
       this.monitor.stop();
     }
 
     this.emit('coordinator:stopped');
+  }
+
+  async shutdown(): Promise<void> {
+    this.logger.info('Shutting down swarm coordinator...');
+    await this.stop();
+  }
+
+  private async terminateAllAgentProcesses(): Promise<void> {
+    const terminationPromises: Promise<void>[] = [];
+
+    for (const [agentId, agent] of this.agents) {
+      if (agent.process && !agent.process.killed) {
+        terminationPromises.push(this.terminateAgentProcess(agent));
+      }
+    }
+
+    if (terminationPromises.length > 0) {
+      this.logger.info(`Terminating ${terminationPromises.length} running Claude processes...`);
+      await Promise.all(terminationPromises);
+    }
+  }
+
+  private async terminateAgentProcess(agent: SwarmAgent): Promise<void> {
+    return new Promise<void>((resolve) => {
+      if (!agent.process || agent.process.killed) {
+        resolve();
+        return;
+      }
+
+      const timeout = setTimeout(() => {
+        if (!agent.process?.killed) {
+          this.logger.warn(`Force killing unresponsive Claude process for agent ${agent.id}`);
+          agent.process?.kill('SIGKILL');
+        }
+        resolve();
+      }, 5000);
+
+      agent.process.on('exit', () => {
+        clearTimeout(timeout);
+        agent.process = undefined;
+        agent.processId = undefined;
+        agent.instanceId = undefined;
+        resolve();
+      });
+
+      this.logger.info(`Terminating Claude process for agent ${agent.id} (PID: ${agent.processId})`);
+      agent.process.kill('SIGTERM');
+    });
   }
 
   private startBackgroundWorkers(): void {
@@ -231,15 +307,20 @@ export class SwarmCoordinator extends EventEmitter {
     objective.tasks = tasks;
 
     // Store in memory
-    await this.memoryManager.remember({
-      namespace: this.config.memoryNamespace,
-      key: `objective:${objectiveId}`,
+    await this.memoryManager.store({
+      id: objectiveId,
+      agentId: 'coordinator',
+      sessionId: this.config.memoryNamespace,
+      type: 'observation',
       content: JSON.stringify(objective),
-      metadata: {
-        type: 'objective',
+      context: {
+        objectiveType: 'objective',
         strategy,
         taskCount: tasks.length
-      }
+      },
+      timestamp: new Date(),
+      tags: ['objective', strategy],
+      version: 1
     });
 
     this.emit('objective:created', objective);
@@ -390,9 +471,8 @@ export class SwarmCoordinator extends EventEmitter {
 
   private async executeTask(task: SwarmTask, agent: SwarmAgent): Promise<void> {
     try {
-      // Simulate task execution
-      // In real implementation, this would spawn actual Claude instances
-      const result = await this.simulateTaskExecution(task, agent);
+      // Execute task with actual Claude process
+      const result = await this.executeClaudeTask(task, agent);
       
       await this.handleTaskCompleted(task.id, result);
     } catch (error) {
@@ -400,25 +480,190 @@ export class SwarmCoordinator extends EventEmitter {
     }
   }
 
-  private async simulateTaskExecution(task: SwarmTask, agent: SwarmAgent): Promise<any> {
-    // This is where we would actually spawn Claude processes
-    // For now, simulate with timeout
+  private async executeClaudeTask(task: SwarmTask, agent: SwarmAgent): Promise<any> {
     return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject(new Error('Task timeout'));
-      }, task.timeout || this.config.taskTimeout);
+      try {
+        // Generate instance ID for this task execution
+        const instanceId = generateId('claude');
+        agent.instanceId = instanceId;
 
-      // Simulate work
-      setTimeout(() => {
-        clearTimeout(timeout);
-        resolve({
-          taskId: task.id,
+        // Build Claude command arguments
+        const claudeArgs = this.buildClaudeArgs(task, agent);
+        
+        this.logger.info(`Spawning Claude process for task ${task.id}`, {
           agentId: agent.id,
-          result: `Completed ${task.type} task`,
-          timestamp: new Date()
+          instanceId,
+          claudeArgs
         });
-      }, Math.random() * 5000 + 2000);
+
+        // Spawn Claude process
+        const claudeProcess = spawn('claude', claudeArgs, {
+          env: {
+            ...process.env,
+            CLAUDE_INSTANCE_ID: instanceId,
+            CLAUDE_AGENT_ID: agent.id,
+            CLAUDE_TASK_ID: task.id,
+            CLAUDE_TASK_TYPE: task.type,
+            CLAUDE_FLOW_MODE: 'swarm',
+          }
+        });
+
+        // Store process reference
+        agent.process = claudeProcess;
+        agent.processId = claudeProcess.pid;
+
+        let output = '';
+        let errorOutput = '';
+
+        // Capture stdout
+        claudeProcess.stdout?.on('data', (data) => {
+          output += data.toString();
+          this.emit('task:progress', {
+            taskId: task.id,
+            agentId: agent.id,
+            output: data.toString()
+          });
+        });
+
+        // Capture stderr
+        claudeProcess.stderr?.on('data', (data) => {
+          errorOutput += data.toString();
+          this.logger.warn(`Claude stderr for task ${task.id}:`, data.toString());
+        });
+
+        // Handle process exit
+        claudeProcess.on('exit', (code, signal) => {
+          agent.process = undefined;
+          agent.processId = undefined;
+          agent.instanceId = undefined;
+
+          if (code === 0) {
+            this.logger.info(`Claude process completed successfully for task ${task.id}`);
+            resolve({
+              taskId: task.id,
+              agentId: agent.id,
+              instanceId,
+              result: output,
+              exitCode: code,
+              timestamp: new Date()
+            });
+          } else {
+            const error = new Error(`Claude process exited with code ${code}${signal ? ` (signal: ${signal})` : ''}`);
+            this.logger.error(`Claude process failed for task ${task.id}:`, {
+              exitCode: code,
+              signal,
+              stderr: errorOutput
+            });
+            reject(error);
+          }
+        });
+
+        // Handle process errors
+        claudeProcess.on('error', (error) => {
+          agent.process = undefined;
+          agent.processId = undefined;
+          agent.instanceId = undefined;
+          
+          this.logger.error(`Failed to spawn Claude process for task ${task.id}:`, error);
+          reject(new TaskExecutionError(`Failed to spawn Claude process: ${error.message}`, task.id));
+        });
+
+        // Set up timeout
+        const timeoutHandle = setTimeout(() => {
+          if (claudeProcess && !claudeProcess.killed) {
+            this.logger.warn(`Task ${task.id} timed out, killing Claude process`);
+            claudeProcess.kill('SIGTERM');
+            
+            // Force kill if it doesn't respond to SIGTERM
+            setTimeout(() => {
+              if (!claudeProcess.killed) {
+                claudeProcess.kill('SIGKILL');
+              }
+            }, 5000);
+            
+            reject(new TaskExecutionError(`Task execution timed out after ${task.timeout || this.config.taskTimeout}ms`, task.id));
+          }
+        }, task.timeout || this.config.taskTimeout);
+
+        // Clear timeout when process exits
+        claudeProcess.on('exit', () => {
+          clearTimeout(timeoutHandle);
+        });
+
+      } catch (error) {
+        reject(new TaskExecutionError(`Failed to execute Claude task: ${error.message}`, task.id));
+      }
     });
+  }
+
+  private buildClaudeArgs(task: SwarmTask, agent: SwarmAgent): string[] {
+    const args = [task.description];
+
+    // Add tools based on agent type and task requirements
+    const tools = this.selectToolsForTask(task, agent);
+    if (tools.length > 0) {
+      args.push('--allowedTools', tools.join(','));
+    }
+
+    // Add permissions flag
+    if (task.skipPermissions) {
+      args.push('--dangerously-skip-permissions');
+    }
+
+    // Add MCP config if specified
+    if (task.mcpConfig) {
+      args.push('--mcp-config', task.mcpConfig);
+    }
+
+    // Add custom arguments if specified
+    if (task.claudeArgs) {
+      args.push(...task.claudeArgs);
+    }
+
+    return args;
+  }
+
+  private selectToolsForTask(task: SwarmTask, agent: SwarmAgent): string[] {
+    // If task specifies tools, use those
+    if (task.tools) {
+      return task.tools;
+    }
+
+    // Otherwise, select tools based on agent type and task type
+    const baseTool = ['View', 'Edit', 'Replace', 'GlobTool', 'GrepTool', 'LS', 'Bash'];
+    const additionalTools: string[] = [];
+
+    // Agent-specific tools
+    switch (agent.type) {
+      case 'researcher':
+        additionalTools.push('WebFetchTool', 'WebSearch');
+        break;
+      case 'developer':
+        additionalTools.push('BatchTool', 'GitTool');
+        break;
+      case 'analyzer':
+        additionalTools.push('DataTool', 'ChartTool');
+        break;
+      case 'reviewer':
+        additionalTools.push('DiffTool', 'LintTool');
+        break;
+      case 'coordinator':
+        additionalTools.push('BatchTool', 'dispatch_agent');
+        break;
+    }
+
+    // Task-specific tools
+    if (task.type.includes('research') || task.type.includes('exploration')) {
+      additionalTools.push('WebFetchTool', 'WebSearch');
+    }
+    if (task.type.includes('implement') || task.type.includes('development')) {
+      additionalTools.push('BatchTool', 'GitTool');
+    }
+    if (task.type.includes('test') || task.type.includes('validation')) {
+      additionalTools.push('TestTool', 'LintTool');
+    }
+
+    return [...baseTool, ...additionalTools];
   }
 
   private async handleTaskCompleted(taskId: string, result: any): Promise<void> {
@@ -448,15 +693,20 @@ export class SwarmCoordinator extends EventEmitter {
     }
 
     // Store result in memory
-    await this.memoryManager.remember({
-      namespace: this.config.memoryNamespace,
-      key: `task:${taskId}:result`,
+    await this.memoryManager.store({
+      id: generateId(),
+      agentId: agent?.id || 'coordinator',
+      sessionId: this.config.memoryNamespace,
+      type: 'artifact',
       content: JSON.stringify(result),
-      metadata: {
-        type: 'task-result',
-        taskType: task.type,
-        agentId: agent?.id
-      }
+      context: {
+        itemType: 'task-result',
+        taskId: taskId,
+        taskType: task.type
+      },
+      timestamp: new Date(),
+      tags: ['task-result', task.type],
+      version: 1
     });
 
     this.logger.info(`Task ${taskId} completed successfully`);
@@ -560,6 +810,48 @@ export class SwarmCoordinator extends EventEmitter {
     });
   }
 
+  private async scheduleTaskRetry(task: SwarmTask, error: TaskExecutionError): Promise<void> {
+    try {
+      // Increment retry count
+      task.retryCount = (task.retryCount || 0) + 1;
+      
+      // Check if we've exceeded max retries
+      const maxRetries = 3;
+      if (task.retryCount > maxRetries) {
+        task.status = 'failed';
+        task.result = {
+          success: false,
+          output: `Task failed after ${maxRetries} attempts`,
+          error: error.message
+        };
+        
+        this.emit('task:failed', {
+          taskId: task.id,
+          error,
+          userMessage: `Task "${task.description}" could not be completed after multiple attempts.`
+        });
+        
+        return;
+      }
+      
+      // Schedule retry with exponential backoff
+      const retryDelay = Math.min(1000 * Math.pow(2, task.retryCount - 1), 30000); // Max 30s
+      
+      setTimeout(() => {
+        if (this.tasks.has(task.id) && task.status === 'pending') {
+          this.logger.info(`Retrying task ${task.id} (attempt ${task.retryCount + 1})`);
+        }
+      }, retryDelay);
+      
+    } catch (retryError) {
+      this.logger.error('Failed to schedule task retry', {
+        taskId: task.id,
+        originalError: error,
+        retryError
+      });
+    }
+  }
+
   private selectBestAgent(task: SwarmTask, availableAgents: SwarmAgent[]): SwarmAgent | null {
     // Simple selection based on task type and agent capabilities
     const compatibleAgents = availableAgents.filter(agent => {
@@ -650,16 +942,21 @@ export class SwarmCoordinator extends EventEmitter {
         timestamp: new Date()
       };
 
-      await this.memoryManager.remember({
-        namespace: this.config.memoryNamespace,
-        key: 'swarm:state',
+      await this.memoryManager.store({
+        id: generateId(),
+        agentId: 'coordinator',
+        sessionId: this.config.memoryNamespace,
+        type: 'observation',
         content: JSON.stringify(state),
-        metadata: {
-          type: 'swarm-state',
+        context: {
+          itemType: 'swarm-state',
           objectiveCount: state.objectives.length,
           taskCount: state.tasks.length,
           agentCount: state.agents.length
-        }
+        },
+        timestamp: new Date(),
+        tags: ['swarm-state', 'system'],
+        version: 1
       });
     } catch (error) {
       this.logger.error('Error syncing memory state:', error);
@@ -688,6 +985,105 @@ export class SwarmCoordinator extends EventEmitter {
     this.emit('objective:started', objective);
 
     // Tasks will be processed by background workers
+  }
+
+  async sendMessageToAgent(agentId: string, message: any): Promise<void> {
+    const agent = this.agents.get(agentId);
+    if (!agent || !agent.process) {
+      throw new Error(`Agent ${agentId} not found or not running`);
+    }
+
+    try {
+      // Send message to Claude process via stdin
+      if (agent.process.stdin) {
+        agent.process.stdin.write(JSON.stringify(message) + '\n');
+        this.logger.debug(`Sent message to agent ${agentId}:`, message);
+      }
+    } catch (error) {
+      this.logger.error(`Failed to send message to agent ${agentId}:`, error);
+      throw new CoordinationError(`Failed to send message to agent: ${error.message}`, agentId);
+    }
+  }
+
+  async broadcastMessage(message: any, excludeAgents: string[] = []): Promise<void> {
+    const promises: Promise<void>[] = [];
+
+    for (const [agentId, agent] of this.agents) {
+      if (!excludeAgents.includes(agentId) && agent.process) {
+        promises.push(this.sendMessageToAgent(agentId, message).catch(error => {
+          this.logger.error(`Failed to broadcast message to agent ${agentId}:`, error);
+        }));
+      }
+    }
+
+    await Promise.all(promises);
+    this.logger.debug(`Broadcasted message to ${promises.length} agents`);
+  }
+
+  async getTaskProgress(taskId: string): Promise<any> {
+    const task = this.tasks.get(taskId);
+    if (!task) {
+      throw new Error('Task not found');
+    }
+
+    const agent = task.assignedTo ? this.agents.get(task.assignedTo) : null;
+    const progress = {
+      task: {
+        id: task.id,
+        type: task.type,
+        description: task.description,
+        status: task.status,
+        progress: this.calculateTaskProgress(task),
+        startedAt: task.startedAt,
+        estimatedCompletion: this.estimateTaskCompletion(task)
+      },
+      agent: agent ? {
+        id: agent.id,
+        name: agent.name,
+        type: agent.type,
+        status: agent.status,
+        processId: agent.processId,
+        instanceId: agent.instanceId
+      } : null
+    };
+
+    return progress;
+  }
+
+  private calculateTaskProgress(task: SwarmTask): number {
+    // Simple progress calculation based on status and time
+    switch (task.status) {
+      case 'pending': return 0;
+      case 'running': 
+        if (task.startedAt) {
+          const elapsed = Date.now() - task.startedAt.getTime();
+          const timeout = task.timeout || this.config.taskTimeout;
+          return Math.min(50, (elapsed / timeout) * 100); // Max 50% for running tasks
+        }
+        return 10;
+      case 'completed': return 100;
+      case 'failed': return 0;
+      default: return 0;
+    }
+  }
+
+  private estimateTaskCompletion(task: SwarmTask): Date | null {
+    if (task.status !== 'running' || !task.startedAt) {
+      return null;
+    }
+
+    const elapsed = Date.now() - task.startedAt.getTime();
+    const timeout = task.timeout || this.config.taskTimeout;
+    
+    // Simple estimation: if we're at 25% progress, estimate remaining time
+    const progress = this.calculateTaskProgress(task);
+    if (progress > 0) {
+      const estimatedTotal = (elapsed / progress) * 100;
+      return new Date(task.startedAt.getTime() + estimatedTotal);
+    }
+
+    // Fallback: use timeout as estimate
+    return new Date(task.startedAt.getTime() + timeout);
   }
 
   getObjectiveStatus(objectiveId: string): SwarmObjective | undefined {

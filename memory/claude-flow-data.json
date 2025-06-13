@@ -1,5 +1,32 @@
 {
-  "agents": [],
+  "agents": [
+    {
+      "id": "agent-1749833226446-fsux1k56n",
+      "type": "developer",
+      "name": "developer-1749833226445",
+      "status": "active",
+      "capabilities": [
+        "user-defined"
+      ],
+      "systemPrompt": "You are a custom agent. Follow the user's instructions.",
+      "maxConcurrentTasks": 5,
+      "priority": 1,
+      "createdAt": 1749833226446
+    },
+    {
+      "id": "agent-1749833311074-h384v4089",
+      "type": "developer",
+      "name": "developer-1749833311073",
+      "status": "active",
+      "capabilities": [
+        "user-defined"
+      ],
+      "systemPrompt": "You are a custom agent. Follow the user's instructions.",
+      "maxConcurrentTasks": 5,
+      "priority": 1,
+      "createdAt": 1749833311074
+    }
+  ],
   "tasks": [],
-  "lastUpdated": 1749822174077
+  "lastUpdated": 1749833311074
 }

@@ -1,9 +1,14 @@
 import { EventEmitter } from 'node:events';
+import { createHash } from 'node:crypto';
 import { Logger } from '../core/logger.ts';
 import { MemoryManager } from './manager.ts';
 import { generateId } from '../utils/helpers.ts';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+import { EventBus } from '../core/event-bus.ts';
+import type { IEventBus } from '../core/event-bus.ts';
+import type { ILogger } from '../core/logger.ts';
+import { MemoryError, ErrorRecovery } from '../utils/error-types.ts';
 
 export interface SwarmMemoryEntry {
   id: string;
@@ -17,6 +22,9 @@ export interface SwarmMemoryEntry {
     tags?: string[];
     priority?: number;
     shareLevel?: 'private' | 'team' | 'public';
+    checksum?: string;
+    version?: number;
+    sourceAgent?: string;
   };
 }
 
@@ -58,7 +66,7 @@ export interface SwarmMemoryConfig {
 }
 
 export class SwarmMemoryManager extends EventEmitter {
-  private logger: Logger;
+  private logger: ILogger;
   private config: SwarmMemoryConfig;
   private baseMemory: MemoryManager;
   private entries: Map<string, SwarmMemoryEntry>;
@@ -66,10 +74,15 @@ export class SwarmMemoryManager extends EventEmitter {
   private agentMemories: Map<string, Set<string>>; // agentId -> set of entry IDs
   private syncTimer?: NodeJS.Timeout;
   private isInitialized: boolean = false;
+  private eventBus: IEventBus;
 
   constructor(config: Partial<SwarmMemoryConfig> = {}) {
     super();
-    this.logger = new Logger('SwarmMemoryManager');
+    this.logger = new Logger(
+      { level: 'info', format: 'json', destination: 'console' },
+      { component: 'SwarmMemoryManager' }
+    );
+    this.eventBus = new EventBus();
     this.config = {
       namespace: 'swarm',
       enableDistribution: true,
@@ -88,10 +101,13 @@ export class SwarmMemoryManager extends EventEmitter {
     this.agentMemories = new Map();
 
     this.baseMemory = new MemoryManager({
-      namespace: this.config.namespace,
-      enableBackup: true,
-      backupInterval: 300000 // 5 minutes
-    });
+      backend: 'markdown',
+      cacheSizeMB: 100,
+      syncInterval: 30000,
+      conflictResolution: 'last-write',
+      retentionDays: 30,
+      markdownDir: path.join(this.config.persistencePath, 'entries')
+    }, this.eventBus, this.logger);
   }
 
   async initialize(): Promise<void> {
@@ -143,6 +159,9 @@ export class SwarmMemoryManager extends EventEmitter {
     content: any,
     metadata: Partial<SwarmMemoryEntry['metadata']> = {}
   ): Promise<string> {
+    // Validate input data
+    this.validateMemoryEntry(agentId, type, content, metadata);
+
     const entryId = generateId('mem');
     const entry: SwarmMemoryEntry = {
       id: entryId,
@@ -153,6 +172,8 @@ export class SwarmMemoryManager extends EventEmitter {
       metadata: {
         shareLevel: 'team',
         priority: 1,
+        version: 1,
+        checksum: this.generateChecksum(content),
         ...metadata
       }
     };
@@ -166,16 +187,19 @@ export class SwarmMemoryManager extends EventEmitter {
     this.agentMemories.get(agentId)!.add(entryId);
 
     // Store in base memory for persistence
-    await this.baseMemory.remember({
-      namespace: this.config.namespace,
-      key: `entry:${entryId}`,
+    await this.baseMemory.store({
+      id: entryId,
+      agentId: agentId,
+      sessionId: this.config.namespace,
+      type: type === 'observation' || type === 'action' || type === 'result' || type === 'knowledge' ? 'observation' : 'observation',
       content: JSON.stringify(entry),
-      metadata: {
-        type: 'swarm-memory',
-        agentId,
+      context: {
         entryType: type,
         shareLevel: entry.metadata.shareLevel
-      }
+      },
+      timestamp: entry.timestamp,
+      tags: entry.tags,
+      version: 1
     });
 
     this.logger.debug(`Agent ${agentId} remembered: ${type} - ${entryId}`);
@@ -480,19 +504,57 @@ export class SwarmMemoryManager extends EventEmitter {
 
   private async saveMemoryState(): Promise<void> {
     try {
-      // Save entries
-      const entriesArray = Array.from(this.entries.values());
-      const entriesFile = path.join(this.config.persistencePath, 'entries.json');
-      await fs.writeFile(entriesFile, JSON.stringify(entriesArray, null, 2));
+      // Ensure persistence directory exists
+      await fs.mkdir(this.config.persistencePath, { recursive: true });
+      
+      // Save entries with retry logic
+      await ErrorRecovery.retryOperation(async () => {
+        const entriesArray = Array.from(this.entries.values());
+        const entriesFile = path.join(this.config.persistencePath, 'entries.json');
+        await fs.writeFile(entriesFile, JSON.stringify(entriesArray, null, 2));
+      }, {
+        maxAttempts: 3,
+        backoffMs: 1000,
+        operation: 'save memory entries'
+      });
 
-      // Save knowledge bases
-      const kbArray = Array.from(this.knowledgeBases.values());
-      const kbFile = path.join(this.config.persistencePath, 'knowledge-bases.json');
-      await fs.writeFile(kbFile, JSON.stringify(kbArray, null, 2));
+      // Save knowledge bases with retry logic
+      await ErrorRecovery.retryOperation(async () => {
+        const kbArray = Array.from(this.knowledgeBases.values());
+        const kbFile = path.join(this.config.persistencePath, 'knowledge-bases.json');
+        await fs.writeFile(kbFile, JSON.stringify(kbArray, null, 2));
+      }, {
+        maxAttempts: 3,
+        backoffMs: 1000,
+        operation: 'save knowledge bases'
+      });
 
       this.logger.debug('Saved memory state to disk');
     } catch (error) {
-      this.logger.error('Error saving memory state:', error);
+      const memoryError = new MemoryError(
+        'Failed to save memory state to disk',
+        {
+          originalError: error as Error,
+          userMessage: 'Unable to save swarm memory. Some information may be lost if the system restarts.',
+          recoverable: true,
+          retryable: true,
+          metadata: { 
+            persistencePath: this.config.persistencePath,
+            entriesCount: this.entries.size,
+            knowledgeBasesCount: this.knowledgeBases.size
+          }
+        }
+      );
+      
+      this.logger.error('Memory state save failed', {
+        error: memoryError.toJSON()
+      });
+      
+      // Emit warning but don't fail the operation
+      this.emit('memory:save-warning', {
+        error: memoryError,
+        userMessage: memoryError.userMessage
+      });
     }
   }
 
@@ -596,5 +658,319 @@ export class SwarmMemoryManager extends EventEmitter {
     }
 
     this.emit('memory:cleared', { agentId });
+  }
+
+  async importMemory(data: any): Promise<{
+    imported: number;
+    failed: number;
+    errors: string[];
+  }> {
+    let imported = 0;
+    let failed = 0;
+    const errors: string[] = [];
+
+    try {
+      // Validate import data structure
+      if (!data.entries || !Array.isArray(data.entries)) {
+        throw new Error('Invalid import data: missing or invalid entries array');
+      }
+
+      this.logger.info(`Starting memory import of ${data.entries.length} entries...`);
+
+      for (const entryData of data.entries) {
+        try {
+          // Validate and sanitize entry
+          const entry = this.validateAndSanitizeImportEntry(entryData);
+          
+          // Check for conflicts
+          if (this.entries.has(entry.id)) {
+            // Handle conflict - create new ID or merge
+            entry.id = generateId('mem');
+            entry.metadata.version = (entry.metadata.version || 1) + 1;
+          }
+
+          // Verify checksum if present
+          if (entry.metadata.checksum) {
+            const calculatedChecksum = this.generateChecksum(entry.content);
+            if (calculatedChecksum !== entry.metadata.checksum) {
+              errors.push(`Checksum mismatch for entry ${entry.id}`);
+              entry.metadata.checksum = calculatedChecksum;
+            }
+          }
+
+          // Store entry
+          this.entries.set(entry.id, entry);
+
+          // Update agent memory associations
+          if (!this.agentMemories.has(entry.agentId)) {
+            this.agentMemories.set(entry.agentId, new Set());
+          }
+          this.agentMemories.get(entry.agentId)!.add(entry.id);
+
+          imported++;
+        } catch (error) {
+          failed++;
+          errors.push(`Failed to import entry: ${error.message}`);
+          this.logger.warn('Failed to import memory entry:', error);
+        }
+      }
+
+      // Import knowledge bases if present
+      if (data.knowledgeBases && Array.isArray(data.knowledgeBases)) {
+        for (const kbData of data.knowledgeBases) {
+          try {
+            this.knowledgeBases.set(kbData.id, {
+              ...kbData,
+              metadata: {
+                ...kbData.metadata,
+                lastUpdated: new Date(kbData.metadata.lastUpdated)
+              },
+              entries: kbData.entries.map((e: any) => ({
+                ...e,
+                timestamp: new Date(e.timestamp)
+              }))
+            });
+          } catch (error) {
+            errors.push(`Failed to import knowledge base ${kbData.id}: ${error.message}`);
+          }
+        }
+      }
+
+      // Save imported data
+      await this.saveMemoryState();
+
+      this.logger.info(`Memory import completed: ${imported} imported, ${failed} failed`);
+      this.emit('memory:imported', { imported, failed, errors });
+
+      return { imported, failed, errors };
+
+    } catch (error) {
+      this.logger.error('Memory import failed:', error);
+      throw new MemoryError(
+        'Failed to import memory data',
+        {
+          originalError: error as Error,
+          userMessage: 'Memory import failed. Please check the data format and try again.',
+          recoverable: false,
+          retryable: true
+        }
+      );
+    }
+  }
+
+  async compactMemory(): Promise<{
+    removedEntries: number;
+    recoveredSpace: number;
+  }> {
+    const before = this.entries.size;
+    const beforeSize = JSON.stringify(Array.from(this.entries.values())).length;
+
+    // Remove duplicate entries (same content but different IDs)
+    const contentHashes = new Map<string, string>();
+    const toRemove = new Set<string>();
+
+    for (const [entryId, entry] of this.entries) {
+      const contentHash = this.generateChecksum(entry.content);
+      
+      if (contentHashes.has(contentHash)) {
+        // Found duplicate - keep the newer one
+        const existingId = contentHashes.get(contentHash)!;
+        const existingEntry = this.entries.get(existingId);
+        
+        if (existingEntry && entry.timestamp > existingEntry.timestamp) {
+          // Remove the older entry
+          toRemove.add(existingId);
+          contentHashes.set(contentHash, entryId);
+        } else {
+          // Remove the current entry
+          toRemove.add(entryId);
+        }
+      } else {
+        contentHashes.set(contentHash, entryId);
+      }
+    }
+
+    // Remove identified duplicates
+    for (const entryId of toRemove) {
+      const entry = this.entries.get(entryId);
+      if (entry) {
+        this.entries.delete(entryId);
+        
+        // Remove from agent memory
+        const agentEntries = this.agentMemories.get(entry.agentId);
+        if (agentEntries) {
+          agentEntries.delete(entryId);
+        }
+      }
+    }
+
+    // Remove orphaned agent memory references
+    for (const [agentId, entryIds] of this.agentMemories) {
+      const validIds = new Set<string>();
+      for (const entryId of entryIds) {
+        if (this.entries.has(entryId)) {
+          validIds.add(entryId);
+        }
+      }
+      this.agentMemories.set(agentId, validIds);
+    }
+
+    const after = this.entries.size;
+    const afterSize = JSON.stringify(Array.from(this.entries.values())).length;
+    const removedEntries = before - after;
+    const recoveredSpace = beforeSize - afterSize;
+
+    await this.saveMemoryState();
+
+    this.logger.info(`Memory compaction completed: removed ${removedEntries} entries, recovered ${recoveredSpace} bytes`);
+    this.emit('memory:compacted', { removedEntries, recoveredSpace });
+
+    return { removedEntries, recoveredSpace };
+  }
+
+  async validateMemoryIntegrity(): Promise<{
+    totalEntries: number;
+    validEntries: number;
+    corruptedEntries: string[];
+    missingChecksums: string[];
+    inconsistencies: string[];
+  }> {
+    const totalEntries = this.entries.size;
+    let validEntries = 0;
+    const corruptedEntries: string[] = [];
+    const missingChecksums: string[] = [];
+    const inconsistencies: string[] = [];
+
+    for (const [entryId, entry] of this.entries) {
+      try {
+        // Validate entry structure
+        this.validateMemoryEntry(entry.agentId, entry.type, entry.content, entry.metadata);
+
+        // Check checksum if present
+        if (entry.metadata.checksum) {
+          const calculatedChecksum = this.generateChecksum(entry.content);
+          if (calculatedChecksum !== entry.metadata.checksum) {
+            corruptedEntries.push(entryId);
+            continue;
+          }
+        } else {
+          missingChecksums.push(entryId);
+        }
+
+        // Check agent memory association
+        const agentEntries = this.agentMemories.get(entry.agentId);
+        if (!agentEntries || !agentEntries.has(entryId)) {
+          inconsistencies.push(`Entry ${entryId} not associated with agent ${entry.agentId}`);
+        }
+
+        validEntries++;
+      } catch (error) {
+        corruptedEntries.push(entryId);
+        this.logger.warn(`Invalid memory entry ${entryId}:`, error);
+      }
+    }
+
+    const report = {
+      totalEntries,
+      validEntries,
+      corruptedEntries,
+      missingChecksums,
+      inconsistencies
+    };
+
+    this.logger.info('Memory integrity check completed:', report);
+    return report;
+  }
+
+  private validateMemoryEntry(
+    agentId: string,
+    type: SwarmMemoryEntry['type'],
+    content: any,
+    metadata: Partial<SwarmMemoryEntry['metadata']> = {}
+  ): void {
+    // Basic validation
+    if (!agentId || typeof agentId !== 'string') {
+      throw new MemoryError('Invalid agent ID', {
+        userMessage: 'Agent ID must be a non-empty string',
+        recoverable: false
+      });
+    }
+
+    if (!type || !['knowledge', 'result', 'state', 'communication', 'error'].includes(type)) {
+      throw new MemoryError('Invalid memory entry type', {
+        userMessage: 'Memory entry type must be one of: knowledge, result, state, communication, error',
+        recoverable: false
+      });
+    }
+
+    if (content === undefined || content === null) {
+      throw new MemoryError('Memory content cannot be null or undefined', {
+        userMessage: 'Memory entry must have valid content',
+        recoverable: false
+      });
+    }
+
+    // Validate metadata
+    if (metadata.priority && (typeof metadata.priority !== 'number' || metadata.priority < 1 || metadata.priority > 10)) {
+      throw new MemoryError('Invalid priority value', {
+        userMessage: 'Priority must be a number between 1 and 10',
+        recoverable: false
+      });
+    }
+
+    if (metadata.shareLevel && !['private', 'team', 'public'].includes(metadata.shareLevel)) {
+      throw new MemoryError('Invalid share level', {
+        userMessage: 'Share level must be one of: private, team, public',
+        recoverable: false
+      });
+    }
+
+    if (metadata.tags && !Array.isArray(metadata.tags)) {
+      throw new MemoryError('Tags must be an array', {
+        userMessage: 'Tags must be provided as an array of strings',
+        recoverable: false
+      });
+    }
+
+    // Content size validation (limit to 1MB)
+    const contentSize = JSON.stringify(content).length;
+    if (contentSize > 1024 * 1024) {
+      throw new MemoryError('Memory entry content too large', {
+        userMessage: 'Memory entry content must be less than 1MB',
+        recoverable: false
+      });
+    }
+  }
+
+  private generateChecksum(content: any): string {
+    const contentStr = JSON.stringify(content);
+    return createHash('sha256').update(contentStr).digest('hex');
+  }
+
+  private validateAndSanitizeImportEntry(entryData: any): SwarmMemoryEntry {
+    // Ensure required fields exist
+    if (!entryData.id || !entryData.agentId || !entryData.type) {
+      throw new Error('Missing required fields: id, agentId, type');
+    }
+
+    // Validate and sanitize the entry
+    const entry: SwarmMemoryEntry = {
+      id: entryData.id,
+      agentId: entryData.agentId,
+      type: entryData.type,
+      content: entryData.content,
+      timestamp: new Date(entryData.timestamp || Date.now()),
+      metadata: {
+        shareLevel: 'team',
+        priority: 1,
+        version: 1,
+        ...entryData.metadata
+      }
+    };
+
+    // Validate the sanitized entry
+    this.validateMemoryEntry(entry.agentId, entry.type, entry.content, entry.metadata);
+
+    return entry;
   }
 }

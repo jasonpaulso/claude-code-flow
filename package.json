@@ -4,13 +4,21 @@
   "description": "Advanced AI agent orchestration system for Claude Code",
   "main": "src/cli/main.ts",
   "bin": {
-    "claude-flow": "./bin/claude-flow"
+    "claude-flow": "./bin/claude-flow-launcher"
   },
   "scripts": {
     "postinstall": "node scripts/install.js",
     "build": "PATH=\"/home/codespace/.deno/bin:$PATH\" deno compile --allow-all --no-check --output=bin/claude-flow src/cli/main.ts",
     "build:simple": "PATH=\"/home/codespace/.deno/bin:$PATH\" deno compile --allow-all --no-check --output=bin/claude-flow-simple src/cli/simple-cli.ts",
-    "test": "deno task test"
+    "test": "deno run --allow-all tests/run-tests.ts",
+    "test:unit": "deno run --allow-all tests/run-tests.ts --suite unit",
+    "test:integration": "deno run --allow-all tests/run-tests.ts --suite integration",
+    "test:e2e": "deno run --allow-all tests/run-tests.ts --suite e2e",
+    "test:coverage": "deno run --allow-all tests/run-tests.ts --suite unit --coverage",
+    "test:watch": "deno run --allow-all tests/run-tests.ts --watch",
+    "lint": "deno lint src/ tests/",
+    "fmt": "deno fmt src/ tests/",
+    "typecheck": "deno check src/**/*.ts"
   },
   "keywords": [
     "claude",
