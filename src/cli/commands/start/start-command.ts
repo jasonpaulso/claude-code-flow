@@ -22,7 +22,7 @@ export const startCommand = new Command()
   .option('-v, --verbose', 'Enable verbose logging')
   .option('--auto-start', 'Automatically start all processes')
   .option('--config <path:string>', 'Configuration file path')
-  .action(async (options: StartOptions) => {
+  .action(async (options: any) => {
     console.log(colors.cyan('🧠 Claude-Flow Orchestration System'));
     console.log(colors.gray('─'.repeat(60)));
 
@@ -86,6 +86,23 @@ export const startCommand = new Command()
       } 
       // Interactive mode (default)
       else {
+        // Check if we can use interactive mode
+        const isInteractive = Deno.stdin.isTerminal();
+        
+        if (!isInteractive) {
+          console.log(colors.yellow('Non-interactive environment detected.'));
+          console.log(colors.cyan('Starting all processes automatically...'));
+          
+          // Start all processes in non-interactive mode
+          await processManager.startAll();
+          console.log(colors.green.bold('✓'), 'All processes started');
+          console.log(colors.gray('Press Ctrl+C to stop'));
+          
+          // Keep process running
+          await new Promise<void>(() => {});
+          return;
+        }
+        
         console.log(colors.cyan('Starting in interactive mode...'));
         console.log();
 

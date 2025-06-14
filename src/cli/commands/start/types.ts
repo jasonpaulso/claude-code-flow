@@ -19,7 +19,8 @@ export enum ProcessType {
   MEMORY_MANAGER = 'memory-manager',
   TERMINAL_POOL = 'terminal-pool',
   COORDINATOR = 'coordinator',
-  EVENT_BUS = 'event-bus'
+  EVENT_BUS = 'event-bus',
+  HEALTH_SERVER = 'health-server'
 }
 
 export enum ProcessStatus {

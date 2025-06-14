@@ -19,6 +19,8 @@ import { MCPServer } from '../../../mcp/server.ts';
 import { eventBus } from '../../../core/event-bus.ts';
 import { logger } from '../../../core/logger.ts';
 import { configManager } from '../../../core/config.ts';
+import { HealthServer } from '../../../monitoring/health-server.ts';
+import { HealthCheckEndpoint } from '../../../monitoring/health-endpoint.ts';
 
 export class ProcessManager extends EventEmitter {
   private processes: Map<string, ProcessInfo> = new Map();
@@ -27,6 +29,8 @@ export class ProcessManager extends EventEmitter {
   private memoryManager: MemoryManager | undefined;
   private coordinationManager: CoordinationManager | undefined;
   private mcpServer: MCPServer | undefined;
+  private healthServer: HealthServer | undefined;
+  private healthEndpoint: HealthCheckEndpoint | undefined;
   private config: any;
 
   constructor() {
@@ -71,6 +75,12 @@ export class ProcessManager extends EventEmitter {
         id: 'coordinator',
         name: 'Coordination Manager',
         type: ProcessType.COORDINATOR,
+        status: ProcessStatus.STOPPED
+      },
+      {
+        id: 'health-server',
+        name: 'Health Server',
+        type: ProcessType.HEALTH_SERVER,
         status: ProcessStatus.STOPPED
       }
     ];
@@ -162,6 +172,22 @@ export class ProcessManager extends EventEmitter {
           );
           await this.orchestrator.initialize();
           break;
+          
+        case ProcessType.HEALTH_SERVER:
+          // Create health endpoint with references to running services
+          this.healthEndpoint = new HealthCheckEndpoint(
+            undefined, // SwarmCoordinator - not used in regular orchestrator mode
+            this.memoryManager,
+            this.terminalManager
+          );
+          
+          // Start health server
+          this.healthServer = new HealthServer(this.healthEndpoint, {
+            port: 3001,
+            host: 'localhost'
+          });
+          await this.healthServer.start();
+          break;
       }
 
       process.startTime = Date.now();
@@ -223,6 +249,14 @@ export class ProcessManager extends EventEmitter {
             this.coordinationManager = undefined;
           }
           break;
+          
+        case ProcessType.HEALTH_SERVER:
+          if (this.healthServer) {
+            await this.healthServer.stop();
+            this.healthServer = undefined;
+            this.healthEndpoint = undefined;
+          }
+          break;
       }
 
       this.updateProcessStatus(processId, ProcessStatus.STOPPED);
@@ -249,7 +283,8 @@ export class ProcessManager extends EventEmitter {
       'terminal-pool',
       'coordinator',
       'mcp-server',
-      'orchestrator'
+      'orchestrator',
+      'health-server'  // Start after orchestrator so all services are available
     ];
 
     for (const processId of startOrder) {
@@ -265,6 +300,7 @@ export class ProcessManager extends EventEmitter {
   async stopAll(): Promise<void> {
     // Stop in reverse dependency order
     const stopOrder = [
+      'health-server',  // Stop health server first
       'orchestrator',
       'mcp-server',
       'coordinator',

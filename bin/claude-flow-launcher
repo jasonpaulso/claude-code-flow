@@ -7,7 +7,7 @@ const fs = require('fs');
 // Get the installation directory
 const scriptPath = __dirname;
 const projectRoot = path.dirname(scriptPath);
-const mainFile = path.join(projectRoot, 'src', 'cli', 'main.ts');
+const mainFile = path.join(projectRoot, 'src', 'cli', 'index.ts');
 
 // Check if main file exists
 if (!fs.existsSync(mainFile)) {

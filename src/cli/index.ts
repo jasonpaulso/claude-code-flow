@@ -1,11 +1,8 @@
 #!/usr/bin/env -S deno run --allow-all
 /**
  * Claude-Flow CLI entry point
- * This redirects to simple-cli.ts for remote execution compatibility
+ * Full implementation with modular commands and health server
  */
-
-// Import and run the simple CLI which doesn't have external dependencies
-import "./simple-cli.ts";
 // Import Command from cliffy
 import { Command } from '@cliffy/command';
 import { colors } from '@cliffy/ansi/colors';
@@ -23,6 +20,7 @@ import { sessionCommand } from './commands/session.ts';
 import { workflowCommand } from './commands/workflow.ts';
 import { helpCommand } from './commands/help.ts';
 import { mcpCommand } from './commands/mcp.ts';
+import { swarmCommand } from './commands/swarm-command.ts';
 import { formatError, displayBanner, displayVersion } from './formatter.ts';
 import { startREPL } from './repl.ts';
 import { CompletionGenerator } from './completion.ts';
@@ -73,6 +71,7 @@ cli
   .command('session', sessionCommand)
   .command('workflow', workflowCommand)
   .command('mcp', mcpCommand)
+  .command('swarm', swarmCommand)
   .command('help', helpCommand)
   .command('repl', new Command()
     .description('Start interactive REPL mode with command completion')

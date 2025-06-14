@@ -25,8 +25,35 @@
       "maxConcurrentTasks": 5,
       "priority": 1,
       "createdAt": 1749833311074
+    },
+    {
+      "id": "agent-1749853260550-fjdokkete",
+      "type": "researcher",
+      "name": "Research Assistant",
+      "status": "active",
+      "capabilities": [
+        "web-search",
+        "information-gathering",
+        "analysis"
+      ],
+      "systemPrompt": "You are a research agent specialized in gathering and analyzing information.",
+      "maxConcurrentTasks": 5,
+      "priority": 1,
+      "createdAt": 1749853260551
     }
   ],
-  "tasks": [],
-  "lastUpdated": 1749833311074
+  "tasks": [
+    {
+      "id": "task-1749853313760-3phd7cth3",
+      "type": "research",
+      "description": "Research the latest developments in large language models in 2024",
+      "status": "pending",
+      "priority": 1,
+      "dependencies": [],
+      "metadata": {},
+      "progress": 0,
+      "createdAt": 1749853313760
+    }
+  ],
+  "lastUpdated": 1749853313760
 }

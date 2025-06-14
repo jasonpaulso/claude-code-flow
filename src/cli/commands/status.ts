@@ -236,84 +236,104 @@ function showComponentStatus(status: any, componentName: string): void {
 }
 
 async function getSystemStatus(): Promise<any> {
-  // Mock status for now - in production, this would call the orchestrator API
+  // First try to read the status file
+  try {
+    const statusFile = '.claude-flow.status.json';
+    const statusInfo = JSON.parse(await Deno.readTextFile(statusFile));
+    
+    // Fetch actual status from health server
+    const response = await fetch(statusInfo.statusUrl);
+    if (!response.ok) {
+      throw new Error(`Health server returned ${response.status}`);
+    }
+    
+    const healthData = await response.json();
+    
+    // Transform health data to status format
+    return {
+      overall: healthData.status,
+      version: healthData.version,
+      uptime: healthData.uptime,
+      startTime: new Date(Date.now() - healthData.uptime),
+      components: transformComponents(healthData.components),
+      resources: extractResourceMetrics(healthData.metrics),
+      agents: await fetchAgentDetails(statusInfo),
+      pid: healthData.pid,
+      healthUrl: statusInfo.healthUrl
+    };
+  } catch (error) {
+    // If no status file or can't connect, return mock data with a warning
+    console.warn(colors.yellow('⚠ Could not connect to running orchestrator, showing mock data'));
+    return getMockStatus();
+  }
+}
+
+function transformComponents(components: any[]): any {
+  const result: any = {};
+  for (const comp of components) {
+    result[comp.name] = {
+      status: comp.status,
+      uptime: Date.now() - new Date(comp.lastCheck).getTime(),
+      details: comp.message || 'Running normally'
+    };
+  }
+  return result;
+}
+
+function extractResourceMetrics(metrics: any): any {
   return {
-    overall: 'healthy',
-    version: '1.0.49',
-    uptime: Date.now() - (Date.now() - 3600000), // 1 hour ago
-    startTime: new Date(Date.now() - 3600000),
+    'Memory (MB)': { used: Math.round(metrics.memoryUsage / 1024 / 1024), total: 1024 },
+    'CPU (%)': { used: Math.round(metrics.cpuUsage), total: 100 },
+    'Agents': { used: metrics.activeAgents, total: 10 },
+    'Tasks': { used: metrics.totalTasks, total: 100 }
+  };
+}
+
+async function fetchAgentDetails(statusInfo: any): Promise<any[]> {
+  // For now, return empty array - could be extended to fetch from health server
+  return [];
+}
+
+function getMockStatus(): any {
+  return {
+    overall: 'unknown',
+    version: '1.0.43',
+    uptime: 0,
+    startTime: new Date(),
     components: {
       orchestrator: {
-        status: 'healthy',
-        uptime: 3600000,
-        details: 'Managing 3 agents'
+        status: 'unknown',
+        uptime: 0,
+        details: 'Not connected'
       },
       terminal: {
-        status: 'healthy',
-        uptime: 3600000,
-        details: 'Pool: 2/5 active sessions'
+        status: 'unknown',
+        uptime: 0,
+        details: 'Not connected'
       },
       memory: {
-        status: 'healthy',
-        uptime: 3600000,
-        details: 'SQLite + 95MB cache'
+        status: 'unknown',
+        uptime: 0,
+        details: 'Not connected'
       },
       coordination: {
-        status: 'healthy',
-        uptime: 3600000,
-        details: '12 active tasks'
+        status: 'unknown',
+        uptime: 0,
+        details: 'Not connected'
       },
       mcp: {
-        status: 'healthy',
-        uptime: 3600000,
-        details: 'Listening on stdio'
+        status: 'unknown',
+        uptime: 0,
+        details: 'Not connected'
       }
     },
     resources: {
-      'Memory (MB)': { used: 256, total: 1024 },
-      'CPU (%)': { used: 15, total: 100 },
-      'Agents': { used: 3, total: 10 },
-      'Tasks': { used: 12, total: 100 }
+      'Memory (MB)': { used: 0, total: 0 },
+      'CPU (%)': { used: 0, total: 0 },
+      'Agents': { used: 0, total: 0 },
+      'Tasks': { used: 0, total: 0 }
     },
-    agents: [
-      {
-        id: 'agent-001',
-        name: 'Coordinator Agent',
-        type: 'coordinator',
-        status: 'active',
-        activeTasks: 2
-      },
-      {
-        id: 'agent-002',
-        name: 'Research Agent',
-        type: 'researcher',
-        status: 'active',
-        activeTasks: 5
-      },
-      {
-        id: 'agent-003',
-        name: 'Implementation Agent',
-        type: 'implementer',
-        status: 'idle',
-        activeTasks: 0
-      }
-    ],
-    recentTasks: [
-      {
-        id: 'task-001',
-        type: 'research',
-        status: 'completed',
-        agent: 'agent-002',
-        duration: 45000
-      },
-      {
-        id: 'task-002',
-        type: 'coordination',
-        status: 'running',
-        agent: 'agent-001',
-        duration: null
-      }
-    ]
+    agents: []
   };
 }
 
