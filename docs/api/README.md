@@ -21,22 +21,22 @@ import { ClaudeFlow } from 'https://deno.land/x/claude_flow@latest/mod.ts';
 ### Basic Initialization
 
 ```typescript
-import { ClaudeFlow, ClaudeFlowConfig } from 'claude-flow';
+import { ClaudeFlow, ClaudeFlowConfig } from "claude-flow";
 
 // Basic configuration
 const config: ClaudeFlowConfig = {
   orchestrator: {
     maxConcurrentAgents: 10,
-    taskQueueSize: 100
+    taskQueueSize: 100,
   },
   memory: {
-    backend: 'sqlite',
-    cacheSizeMB: 100
+    backend: "sqlite",
+    cacheSizeMB: 100,
   },
   terminal: {
-    type: 'auto',
-    poolSize: 5
-  }
+    type: "auto",
+    poolSize: 5,
+  },
 };
 
 // Create and start Claude-Flow instance
@@ -52,42 +52,50 @@ The primary class for orchestrating the multi-agent system.
 
 ```typescript
 class ClaudeFlow {
-  constructor(config?: ClaudeFlowConfig)
-  
+  constructor(config?: ClaudeFlowConfig);
+
   // Lifecycle management
-  async initialize(): Promise<void>
-  async start(): Promise<void>
-  async stop(graceful?: boolean): Promise<void>
-  async restart(): Promise<void>
-  
+  async initialize(): Promise<void>;
+  async start(): Promise<void>;
+  async stop(graceful?: boolean): Promise<void>;
+  async restart(): Promise<void>;
+
   // Agent management
-  async spawnAgent(config: AgentConfig): Promise<Agent>
-  async getAgent(id: string): Promise<Agent | null>
-  async listAgents(filter?: AgentFilter): Promise<Agent[]>
-  async terminateAgent(id: string, force?: boolean): Promise<boolean>
-  
+  async spawnAgent(config: AgentConfig): Promise<Agent>;
+  async getAgent(id: string): Promise<Agent | null>;
+  async listAgents(filter?: AgentFilter): Promise<Agent[]>;
+  async terminateAgent(id: string, force?: boolean): Promise<boolean>;
+
   // Task management
-  async createTask(config: TaskConfig): Promise<Task>
-  async getTask(id: string): Promise<Task | null>
-  async listTasks(filter?: TaskFilter): Promise<Task[]>
-  async cancelTask(id: string): Promise<boolean>
-  async waitForCompletion(taskId: string, timeout?: number): Promise<TaskResult>
-  
+  async createTask(config: TaskConfig): Promise<Task>;
+  async getTask(id: string): Promise<Task | null>;
+  async listTasks(filter?: TaskFilter): Promise<Task[]>;
+  async cancelTask(id: string): Promise<boolean>;
+  async waitForCompletion(
+    taskId: string,
+    timeout?: number,
+  ): Promise<TaskResult>;
+
   // Workflow management
-  async executeWorkflow(workflow: WorkflowDefinition): Promise<WorkflowExecution>
-  async getWorkflow(id: string): Promise<WorkflowExecution | null>
-  async listWorkflows(filter?: WorkflowFilter): Promise<WorkflowExecution[]>
-  
+  async executeWorkflow(
+    workflow: WorkflowDefinition,
+  ): Promise<WorkflowExecution>;
+  async getWorkflow(id: string): Promise<WorkflowExecution | null>;
+  async listWorkflows(filter?: WorkflowFilter): Promise<WorkflowExecution[]>;
+
   // Memory operations
-  async storeMemory(item: MemoryItem): Promise<string>
-  async retrieveMemory(id: string): Promise<MemoryItem | null>
-  async queryMemory(query: MemoryQuery): Promise<MemoryItem[]>
-  async searchMemory(text: string, options?: SearchOptions): Promise<SearchResult[]>
-  
+  async storeMemory(item: MemoryItem): Promise<string>;
+  async retrieveMemory(id: string): Promise<MemoryItem | null>;
+  async queryMemory(query: MemoryQuery): Promise<MemoryItem[]>;
+  async searchMemory(
+    text: string,
+    options?: SearchOptions,
+  ): Promise<SearchResult[]>;
+
   // System operations
-  async getStatus(): Promise<SystemStatus>
-  async getMetrics(): Promise<SystemMetrics>
-  async exportDiagnostics(): Promise<DiagnosticReport>
+  async getStatus(): Promise<SystemStatus>;
+  async getMetrics(): Promise<SystemMetrics>;
+  async exportDiagnostics(): Promise<DiagnosticReport>;
 }
 ```
 
@@ -114,7 +122,7 @@ interface Agent {
   readonly currentTasks: Task[];
   readonly createdAt: Date;
   readonly lastActiveAt: Date;
-  
+
   // Agent operations
   async assignTask(task: Task): Promise<void>
   async executeTask(task: Task): Promise<TaskResult>
@@ -168,7 +176,7 @@ interface Task {
   readonly startedAt?: Date;
   readonly completedAt?: Date;
   readonly result?: TaskResult;
-  
+
   // Task operations
   async cancel(): Promise<boolean>
   async retry(): Promise<void>
@@ -202,17 +210,17 @@ interface MemoryManager {
   async retrieve(id: string): Promise<MemoryItem | null>
   async update(id: string, updates: Partial<MemoryItem>): Promise<MemoryItem>
   async delete(id: string): Promise<boolean>
-  
+
   // Query operations
   async query(query: MemoryQuery): Promise<MemoryItem[]>
   async fullTextSearch(text: string, options?: SearchOptions): Promise<MemoryItem[]>
   async vectorSearch(options: VectorSearchOptions): Promise<SimilarityResult[]>
-  
+
   // Batch operations
   async storeBatch(items: Partial<MemoryItem>[]): Promise<MemoryItem[]>
   async retrieveBatch(ids: string[]): Promise<(MemoryItem | null)[]>
   async deleteBatch(ids: string[]): Promise<boolean[]>
-  
+
   // Management operations
   async getStatistics(): Promise<MemoryStatistics>
   async optimize(): Promise<void>
@@ -264,12 +272,12 @@ interface TerminalManager {
   async getTerminal(id: string): Promise<Terminal | null>
   async listTerminals(): Promise<Terminal[]>
   async destroyTerminal(id: string): Promise<boolean>
-  
+
   // Pool management
   async getPoolStatus(): Promise<PoolStatus>
   async resizePool(size: number): Promise<void>
   async optimizePool(): Promise<void>
-  
+
   // Session management
   async createSession(name: string, config?: SessionConfig): Promise<Session>
   async getSession(name: string): Promise<Session | null>
@@ -285,18 +293,18 @@ interface Terminal {
   readonly shell: string;
   readonly workingDirectory: string;
   readonly environment: Record<string, string>;
-  
+
   // Command execution
   async execute(command: string, options?: ExecutionOptions): Promise<ExecutionResult>
   async executeBatch(commands: string[], options?: BatchOptions): Promise<ExecutionResult[]>
   async executeStream(command: string, options?: StreamOptions): Promise<ExecutionStream>
-  
+
   // State management
   async getWorkingDirectory(): Promise<string>
   async changeDirectory(path: string): Promise<void>
   async setEnvironment(env: Record<string, string>): Promise<void>
   async getHistory(): Promise<string[]>
-  
+
   // Lifecycle
   async reset(): Promise<void>
   async dispose(): Promise<void>
@@ -315,19 +323,19 @@ interface MCPServer {
   async stop(): Promise<void>
   async restart(): Promise<void>
   async getStatus(): Promise<MCPStatus>
-  
+
   // Tool management
   async registerTool(tool: Tool): Promise<void>
   async unregisterTool(name: string): Promise<boolean>
   async listTools(): Promise<ToolInfo[]>
   async getTool(name: string): Promise<Tool | null>
-  
+
   // Tool execution
   async executeTool(name: string, input: any, options?: ToolOptions): Promise<ToolResult>
   async executeToolAsync(name: string, input: any): Promise<string>
   async getExecutionResult(executionId: string): Promise<ToolResult>
   async getExecutionStatus(executionId: string): Promise<ExecutionStatus>
-  
+
   // Client management
   async listClients(): Promise<MCPClient[]>
   async authenticateClient(credentials: any): Promise<string>
@@ -339,7 +347,7 @@ interface Tool {
   description: string;
   inputSchema: JSONSchema;
   outputSchema?: JSONSchema;
-  
+
   execute(input: any, context?: ToolContext): Promise<ToolResult>;
 }
 
@@ -358,42 +366,46 @@ interface ToolResult {
 ```typescript
 interface EventEmitter {
   // Event subscription
-  on<T = any>(event: string, listener: (data: T) => void): void
-  once<T = any>(event: string, listener: (data: T) => void): void
-  off(event: string, listener?: Function): void
-  
+  on<T = any>(event: string, listener: (data: T) => void): void;
+  once<T = any>(event: string, listener: (data: T) => void): void;
+  off(event: string, listener?: Function): void;
+
   // Event emission
-  emit<T = any>(event: string, data?: T): void
-  
+  emit<T = any>(event: string, data?: T): void;
+
   // Event utilities
-  listenerCount(event: string): number
-  eventNames(): string[]
+  listenerCount(event: string): number;
+  eventNames(): string[];
 }
 
 // System events
 interface SystemEvents {
-  'system.started': { timestamp: Date };
-  'system.stopped': { timestamp: Date, reason?: string };
-  'system.error': { error: Error, component: string };
-  
-  'agent.spawned': { agent: Agent };
-  'agent.terminated': { agentId: string, reason?: string };
-  'agent.error': { agentId: string, error: Error };
-  
-  'task.created': { task: Task };
-  'task.assigned': { taskId: string, agentId: string };
-  'task.started': { taskId: string, agentId: string };
-  'task.completed': { taskId: string, result: TaskResult };
-  'task.failed': { taskId: string, error: Error };
-  'task.cancelled': { taskId: string, reason?: string };
-  
-  'memory.stored': { item: MemoryItem };
-  'memory.updated': { itemId: string, changes: Partial<MemoryItem> };
-  'memory.deleted': { itemId: string };
-  
-  'terminal.created': { terminal: Terminal };
-  'terminal.command.executed': { terminalId: string, command: string, result: ExecutionResult };
-  'terminal.error': { terminalId: string, error: Error };
+  "system.started": { timestamp: Date };
+  "system.stopped": { timestamp: Date; reason?: string };
+  "system.error": { error: Error; component: string };
+
+  "agent.spawned": { agent: Agent };
+  "agent.terminated": { agentId: string; reason?: string };
+  "agent.error": { agentId: string; error: Error };
+
+  "task.created": { task: Task };
+  "task.assigned": { taskId: string; agentId: string };
+  "task.started": { taskId: string; agentId: string };
+  "task.completed": { taskId: string; result: TaskResult };
+  "task.failed": { taskId: string; error: Error };
+  "task.cancelled": { taskId: string; reason?: string };
+
+  "memory.stored": { item: MemoryItem };
+  "memory.updated": { itemId: string; changes: Partial<MemoryItem> };
+  "memory.deleted": { itemId: string };
+
+  "terminal.created": { terminal: Terminal };
+  "terminal.command.executed": {
+    terminalId: string;
+    command: string;
+    result: ExecutionResult;
+  };
+  "terminal.error": { terminalId: string; error: Error };
 }
 ```
 
@@ -401,23 +413,23 @@ interface SystemEvents {
 
 ```typescript
 // Subscribe to system events
-claudeFlow.on('agent.spawned', (event) => {
+claudeFlow.on("agent.spawned", (event) => {
   console.log(`New agent spawned: ${event.agent.name}`);
 });
 
-claudeFlow.on('task.completed', (event) => {
+claudeFlow.on("task.completed", (event) => {
   console.log(`Task ${event.taskId} completed successfully`);
   // Process task results
 });
 
-claudeFlow.on('system.error', (event) => {
+claudeFlow.on("system.error", (event) => {
   console.error(`System error in ${event.component}:`, event.error);
   // Handle system errors
 });
 
 // One-time event subscription
-claudeFlow.once('system.started', () => {
-  console.log('Claude-Flow system is ready');
+claudeFlow.once("system.started", () => {
+  console.log("Claude-Flow system is ready");
 });
 ```
 
@@ -460,7 +472,7 @@ interface WorkflowExecution {
   readonly results: TaskResult[];
   readonly startedAt: Date;
   readonly completedAt?: Date;
-  
+
   // Workflow control
   async pause(): Promise<void>
   async resume(): Promise<void>
@@ -482,20 +494,20 @@ interface ConfigManager {
   async load(path?: string): Promise<ClaudeFlowConfig>
   async loadFromString(config: string): Promise<ClaudeFlowConfig>
   async loadDefault(): Promise<ClaudeFlowConfig>
-  
+
   // Configuration manipulation
   get<T = any>(path: string): T
   set<T = any>(path: string, value: T): void
   merge(config: Partial<ClaudeFlowConfig>): void
-  
+
   // Configuration persistence
   async save(path?: string): Promise<void>
   async export(format?: 'json' | 'yaml'): Promise<string>
-  
+
   // Configuration validation
   async validate(): Promise<ValidationResult>
   async validateSection(section: string): Promise<ValidationResult>
-  
+
   // Profile management
   async loadProfile(name: string): Promise<void>
   async saveProfile(name: string): Promise<void>
@@ -527,11 +539,11 @@ interface MetricsCollector {
   async getTaskMetrics(timeframe?: TimeFrame): Promise<TaskMetrics>
   async getMemoryMetrics(): Promise<MemoryMetrics>
   async getTerminalMetrics(): Promise<TerminalMetrics>
-  
+
   // Historical data
   async getHistoricalMetrics(timeframe: TimeFrame): Promise<HistoricalMetrics>
   async exportMetrics(format: 'json' | 'csv' | 'prometheus'): Promise<string>
-  
+
   // Alerting
   async setAlert(name: string, condition: AlertCondition): Promise<void>
   async removeAlert(name: string): Promise<boolean>
@@ -624,16 +636,16 @@ interface TestingUtils {
   createMockAgent(config?: Partial<AgentConfig>): MockAgent
   createMockTask(config?: Partial<TaskConfig>): MockTask
   createMockTerminal(config?: Partial<TerminalConfig>): MockTerminal
-  
+
   // Test data generation
   generateTestData(type: 'agents' | 'tasks' | 'memory', count: number): any[]
   createTestWorkflow(complexity?: 'simple' | 'medium' | 'complex'): WorkflowDefinition
-  
+
   // Assertions
   assertAgentState(agent: Agent, expectedState: AgentStatus): void
   assertTaskCompletion(task: Task, timeout?: number): Promise<void>
   assertMemoryConsistency(items: MemoryItem[]): void
-  
+
   // Environment setup
   async setupTestEnvironment(config?: Partial<ClaudeFlowConfig>): Promise<ClaudeFlow>
   async cleanupTestEnvironment(instance: ClaudeFlow): Promise<void>
@@ -645,8 +657,8 @@ interface TestingUtils {
 ### Express.js Integration
 
 ```typescript
-import express from 'express';
-import { ClaudeFlow } from 'claude-flow';
+import express from "express";
+import { ClaudeFlow } from "claude-flow";
 
 const app = express();
 const claudeFlow = new ClaudeFlow();
@@ -658,7 +670,7 @@ app.use((req, res, next) => {
 });
 
 // API endpoints
-app.post('/api/tasks', async (req, res) => {
+app.post("/api/tasks", async (req, res) => {
   try {
     const task = await req.claudeFlow.createTask(req.body);
     res.json({ success: true, taskId: task.id });
@@ -667,10 +679,10 @@ app.post('/api/tasks', async (req, res) => {
   }
 });
 
-app.get('/api/tasks/:id', async (req, res) => {
+app.get("/api/tasks/:id", async (req, res) => {
   const task = await req.claudeFlow.getTask(req.params.id);
   if (!task) {
-    return res.status(404).json({ error: 'Task not found' });
+    return res.status(404).json({ error: "Task not found" });
   }
   res.json(task);
 });
@@ -694,7 +706,7 @@ export const ClaudeFlowProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       const instance = new ClaudeFlow({
         // Configuration
       });
-      
+
       await instance.start();
       setClaudeFlow(instance);
       setIsReady(true);

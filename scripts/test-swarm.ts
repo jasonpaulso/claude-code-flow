@@ -3,23 +3,27 @@
  * Test script for Claude Swarm Mode functionality
  */
 
-import { colors } from 'https://deno.land/x/cliffy@v1.0.0-rc.3/ansi/colors.ts';
+import { colors } from "https://deno.land/x/cliffy@v1.0.0-rc.3/ansi/colors.ts";
 
-async function runTest(name: string, command: string[], expectedPatterns: string[]): Promise<boolean> {
+async function runTest(
+  name: string,
+  command: string[],
+  expectedPatterns: string[],
+): Promise<boolean> {
   console.log(colors.blue(`\nTesting: ${name}`));
-  console.log(colors.gray(`Command: ${command.join(' ')}`));
-  
+  console.log(colors.gray(`Command: ${command.join(" ")}`));
+
   try {
     const cmd = new Deno.Command(command[0], {
       args: command.slice(1),
-      stdout: 'piped',
-      stderr: 'piped',
+      stdout: "piped",
+      stderr: "piped",
     });
-    
+
     const { code, stdout, stderr } = await cmd.output();
     const output = new TextDecoder().decode(stdout);
     const errorOutput = new TextDecoder().decode(stderr);
-    
+
     if (code !== 0 && !name.includes("dry-run")) {
       console.log(colors.red(`❌ Command failed with code ${code}`));
       if (errorOutput) {
@@ -27,7 +31,7 @@ async function runTest(name: string, command: string[], expectedPatterns: string
       }
       return false;
     }
-    
+
     // Check for expected patterns in output
     let allPatternsFound = true;
     for (const pattern of expectedPatterns) {
@@ -36,7 +40,7 @@ async function runTest(name: string, command: string[], expectedPatterns: string
         allPatternsFound = false;
       }
     }
-    
+
     if (allPatternsFound) {
       console.log(colors.green(`✅ Test passed`));
       return true;
@@ -45,17 +49,18 @@ async function runTest(name: string, command: string[], expectedPatterns: string
       console.log(colors.gray(`Output: ${output.substring(0, 200)}...`));
       return false;
     }
-    
   } catch (error) {
-    console.log(colors.red(`❌ Error running test: ${(error as Error).message}`));
+    console.log(
+      colors.red(`❌ Error running test: ${(error as Error).message}`),
+    );
     return false;
   }
 }
 
 async function main() {
-  console.log(colors.bold('Claude-Flow Swarm Mode Test Suite'));
-  console.log('='.repeat(50));
-  
+  console.log(colors.bold("Claude-Flow Swarm Mode Test Suite"));
+  console.log("=".repeat(50));
+
   const tests = [
     {
       name: "Swarm demo dry-run",
@@ -64,31 +69,54 @@ async function main() {
     },
     {
       name: "CLI swarm command dry-run",
-      command: ["deno", "run", "--allow-all", "./src/cli/main.ts", "swarm", "Test objective", "--dry-run"],
+      command: [
+        "deno",
+        "run",
+        "--allow-all",
+        "./src/cli/main.ts",
+        "swarm",
+        "Test objective",
+        "--dry-run",
+      ],
       patterns: ["DRY RUN", "Swarm ID:", "Objective: Test objective"],
     },
     {
       name: "CLI swarm help",
-      command: ["deno", "run", "--allow-all", "./src/cli/main.ts", "help", "swarm"],
+      command: [
+        "deno",
+        "run",
+        "--allow-all",
+        "./src/cli/main.ts",
+        "help",
+        "swarm",
+      ],
       patterns: ["Claude Swarm Mode", "self-orchestrating Claude agent swarms"],
     },
     {
       name: "Swarm with research strategy",
-      command: ["./swarm-demo.ts", "Research test", "--strategy", "research", "--dry-run"],
+      command: [
+        "./swarm-demo.ts",
+        "Research test",
+        "--strategy",
+        "research",
+        "--dry-run",
+      ],
       patterns: ["Strategy: research", "DRY RUN"],
     },
     {
       name: "Swarm with all options",
       command: [
-        "./swarm-demo.ts", 
-        "Complex task", 
-        "--max-agents", "10",
-        "--max-depth", "4",
+        "./swarm-demo.ts",
+        "Complex task",
+        "--max-agents",
+        "10",
+        "--max-depth",
+        "4",
         "--research",
         "--parallel",
         "--review",
         "--coordinator",
-        "--dry-run"
+        "--dry-run",
       ],
       patterns: [
         "Max Agents: 10",
@@ -96,14 +124,14 @@ async function main() {
         "Research: true",
         "Parallel: true",
         "Review Mode: true",
-        "Coordinator: true"
+        "Coordinator: true",
       ],
     },
   ];
-  
+
   let passedTests = 0;
   let failedTests = 0;
-  
+
   for (const test of tests) {
     const passed = await runTest(test.name, test.command, test.patterns);
     if (passed) {
@@ -112,29 +140,33 @@ async function main() {
       failedTests++;
     }
   }
-  
-  console.log('\n' + '='.repeat(50));
-  console.log(colors.bold('Test Summary:'));
+
+  console.log("\n" + "=".repeat(50));
+  console.log(colors.bold("Test Summary:"));
   console.log(colors.green(`✅ Passed: ${passedTests}`));
   console.log(colors.red(`❌ Failed: ${failedTests}`));
   console.log(colors.blue(`📊 Total: ${tests.length}`));
-  
+
   if (failedTests === 0) {
-    console.log(colors.green('\n🎉 All tests passed!'));
+    console.log(colors.green("\n🎉 All tests passed!"));
   } else {
-    console.log(colors.red('\n⚠️  Some tests failed'));
+    console.log(colors.red("\n⚠️  Some tests failed"));
   }
-  
+
   // Additional manual test instructions
-  console.log('\n' + colors.bold('Manual Testing Instructions:'));
-  console.log('1. Test with actual Claude CLI (if available):');
+  console.log("\n" + colors.bold("Manual Testing Instructions:"));
+  console.log("1. Test with actual Claude CLI (if available):");
   console.log('   ./swarm-demo.ts "Build a simple calculator"');
   console.log('   ./bin/claude-flow swarm "Create a REST API"');
-  console.log('\n2. Test various strategies:');
-  console.log('   ./swarm-demo.ts "Research best practices" --strategy research');
+  console.log("\n2. Test various strategies:");
+  console.log(
+    '   ./swarm-demo.ts "Research best practices" --strategy research',
+  );
   console.log('   ./swarm-demo.ts "Implement feature" --strategy development');
-  console.log('\n3. Test complex scenarios:');
-  console.log('   ./swarm-demo.ts "Migrate to microservices" --coordinator --review --parallel');
+  console.log("\n3. Test complex scenarios:");
+  console.log(
+    '   ./swarm-demo.ts "Migrate to microservices" --coordinator --review --parallel',
+  );
 }
 
 if (import.meta.main) {

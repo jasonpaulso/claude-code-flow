@@ -2,9 +2,9 @@
  * Configuration management for Claude-Flow
  */
 
-import { Config } from '../utils/types.ts';
-import { deepMerge, safeParseJSON } from '../utils/helpers.ts';
-import { ConfigError, ValidationError } from '../utils/errors.ts';
+import { Config } from "../utils/types.ts";
+import { deepMerge, safeParseJSON } from "../utils/helpers.ts";
+import { ConfigError, ValidationError } from "../utils/errors.ts";
 
 /**
  * Default configuration values
@@ -17,17 +17,17 @@ const DEFAULT_CONFIG: Config = {
     shutdownTimeout: 30000, // 30 seconds
   },
   terminal: {
-    type: 'auto',
+    type: "auto",
     poolSize: 5,
     recycleAfter: 10, // recycle after 10 uses
     healthCheckInterval: 60000, // 1 minute
     commandTimeout: 300000, // 5 minutes
   },
   memory: {
-    backend: 'hybrid',
+    backend: "hybrid",
     cacheSizeMB: 100,
     syncInterval: 5000, // 5 seconds
-    conflictResolution: 'crdt',
+    conflictResolution: "crdt",
     retentionDays: 30,
   },
   coordination: {
@@ -38,19 +38,19 @@ const DEFAULT_CONFIG: Config = {
     messageTimeout: 30000, // 30 seconds
   },
   mcp: {
-    transport: 'stdio',
+    transport: "stdio",
     port: 3000,
     tlsEnabled: false,
   },
   logging: {
-    level: 'info',
-    format: 'json',
-    destination: 'console',
+    level: "info",
+    format: "json",
+    destination: "console",
   },
   swarm: {
     maxAgents: 10,
-    defaultStrategy: 'auto',
-    defaultMode: 'centralized',
+    defaultStrategy: "auto",
+    defaultMode: "centralized",
     timeoutMinutes: 60,
     qualityThreshold: 0.8,
     enableMonitoring: true,
@@ -144,7 +144,7 @@ export class ConfigManager {
   async save(path?: string): Promise<void> {
     const savePath = path || this.configPath;
     if (!savePath) {
-      throw new ConfigError('No configuration file path specified');
+      throw new ConfigError("No configuration file path specified");
     }
 
     const content = JSON.stringify(this.config, null, 2);
@@ -155,7 +155,7 @@ export class ConfigManager {
    * Gets user configuration directory
    */
   private getUserConfigDir(): string {
-    const home = Deno.env.get('HOME') || Deno.env.get('USERPROFILE') || '/tmp';
+    const home = Deno.env.get("HOME") || Deno.env.get("USERPROFILE") || "/tmp";
     return `${home}/.claude-flow`;
   }
 
@@ -167,7 +167,9 @@ export class ConfigManager {
       await Deno.mkdir(this.userConfigDir, { recursive: true });
     } catch (error) {
       if (!(error instanceof Deno.errors.AlreadyExists)) {
-        throw new ConfigError(`Failed to create config directory: ${(error as Error).message}`);
+        throw new ConfigError(
+          `Failed to create config directory: ${(error as Error).message}`,
+        );
       }
     }
   }
@@ -177,22 +179,24 @@ export class ConfigManager {
    */
   async loadProfiles(): Promise<void> {
     const profilesDir = `${this.userConfigDir}/profiles`;
-    
+
     try {
       for await (const entry of Deno.readDir(profilesDir)) {
-        if (entry.isFile && entry.name.endsWith('.json')) {
-          const profileName = entry.name.replace('.json', '');
+        if (entry.isFile && entry.name.endsWith(".json")) {
+          const profileName = entry.name.replace(".json", "");
           const profilePath = `${profilesDir}/${entry.name}`;
-          
+
           try {
             const content = await Deno.readTextFile(profilePath);
             const profileConfig = safeParseJSON<Partial<Config>>(content);
-            
+
             if (profileConfig) {
               this.profiles.set(profileName, profileConfig);
             }
           } catch (error) {
-            console.warn(`Failed to load profile ${profileName}: ${(error as Error).message}`);
+            console.warn(
+              `Failed to load profile ${profileName}: ${(error as Error).message}`,
+            );
           }
         }
       }
@@ -206,7 +210,7 @@ export class ConfigManager {
    */
   async applyProfile(profileName: string): Promise<void> {
     await this.loadProfiles();
-    
+
     const profile = this.profiles.get(profileName);
     if (!profile) {
       throw new ConfigError(`Profile '${profileName}' not found`);
@@ -220,18 +224,21 @@ export class ConfigManager {
   /**
    * Saves current configuration as a profile
    */
-  async saveProfile(profileName: string, config?: Partial<Config>): Promise<void> {
+  async saveProfile(
+    profileName: string,
+    config?: Partial<Config>,
+  ): Promise<void> {
     await this.ensureUserConfigDir();
-    
+
     const profilesDir = `${this.userConfigDir}/profiles`;
     await Deno.mkdir(profilesDir, { recursive: true });
-    
+
     const profileConfig = config || this.config;
     const profilePath = `${profilesDir}/${profileName}.json`;
-    
+
     const content = JSON.stringify(profileConfig, null, 2);
     await Deno.writeTextFile(profilePath, content);
-    
+
     this.profiles.set(profileName, profileConfig);
   }
 
@@ -240,7 +247,7 @@ export class ConfigManager {
    */
   async deleteProfile(profileName: string): Promise<void> {
     const profilePath = `${this.userConfigDir}/profiles/${profileName}.json`;
-    
+
     try {
       await Deno.remove(profilePath);
       this.profiles.delete(profileName);
@@ -248,7 +255,9 @@ export class ConfigManager {
       if (error instanceof Deno.errors.NotFound) {
         throw new ConfigError(`Profile '${profileName}' not found`);
       }
-      throw new ConfigError(`Failed to delete profile: ${(error as Error).message}`);
+      throw new ConfigError(
+        `Failed to delete profile: ${(error as Error).message}`,
+      );
     }
   }
 
@@ -279,9 +288,9 @@ export class ConfigManager {
    * Sets a configuration value by path
    */
   set(path: string, value: any): void {
-    const keys = path.split('.');
+    const keys = path.split(".");
     let current: any = this.config;
-    
+
     for (let i = 0; i < keys.length - 1; i++) {
       const key = keys[i];
       if (!(key in current)) {
@@ -289,7 +298,7 @@ export class ConfigManager {
       }
       current = current[key];
     }
-    
+
     current[keys[keys.length - 1]] = value;
     this.validate(this.config);
   }
@@ -298,17 +307,17 @@ export class ConfigManager {
    * Gets a configuration value by path
    */
   getValue(path: string): any {
-    const keys = path.split('.');
+    const keys = path.split(".");
     let current: any = this.config;
-    
+
     for (const key of keys) {
-      if (current && typeof current === 'object' && key in current) {
+      if (current && typeof current === "object" && key in current) {
         current = current[key];
       } else {
         return undefined;
       }
     }
-    
+
     return current;
   }
 
@@ -326,53 +335,76 @@ export class ConfigManager {
   getSchema(): any {
     return {
       orchestrator: {
-        maxConcurrentAgents: { type: 'number', min: 1, max: 100 },
-        taskQueueSize: { type: 'number', min: 1, max: 10000 },
-        healthCheckInterval: { type: 'number', min: 1000, max: 300000 },
-        shutdownTimeout: { type: 'number', min: 1000, max: 300000 },
+        maxConcurrentAgents: { type: "number", min: 1, max: 100 },
+        taskQueueSize: { type: "number", min: 1, max: 10000 },
+        healthCheckInterval: { type: "number", min: 1000, max: 300000 },
+        shutdownTimeout: { type: "number", min: 1000, max: 300000 },
       },
       terminal: {
-        type: { type: 'string', values: ['auto', 'vscode', 'native'] },
-        poolSize: { type: 'number', min: 1, max: 50 },
-        recycleAfter: { type: 'number', min: 1, max: 1000 },
-        healthCheckInterval: { type: 'number', min: 1000, max: 3600000 },
-        commandTimeout: { type: 'number', min: 1000, max: 3600000 },
+        type: { type: "string", values: ["auto", "vscode", "native"] },
+        poolSize: { type: "number", min: 1, max: 50 },
+        recycleAfter: { type: "number", min: 1, max: 1000 },
+        healthCheckInterval: { type: "number", min: 1000, max: 3600000 },
+        commandTimeout: { type: "number", min: 1000, max: 3600000 },
       },
       memory: {
-        backend: { type: 'string', values: ['sqlite', 'markdown', 'hybrid'] },
-        cacheSizeMB: { type: 'number', min: 1, max: 10000 },
-        syncInterval: { type: 'number', min: 1000, max: 300000 },
-        conflictResolution: { type: 'string', values: ['crdt', 'timestamp', 'manual'] },
-        retentionDays: { type: 'number', min: 1, max: 3650 },
+        backend: { type: "string", values: ["sqlite", "markdown", "hybrid"] },
+        cacheSizeMB: { type: "number", min: 1, max: 10000 },
+        syncInterval: { type: "number", min: 1000, max: 300000 },
+        conflictResolution: {
+          type: "string",
+          values: ["crdt", "timestamp", "manual"],
+        },
+        retentionDays: { type: "number", min: 1, max: 3650 },
       },
       coordination: {
-        maxRetries: { type: 'number', min: 0, max: 100 },
-        retryDelay: { type: 'number', min: 100, max: 60000 },
-        deadlockDetection: { type: 'boolean' },
-        resourceTimeout: { type: 'number', min: 1000, max: 3600000 },
-        messageTimeout: { type: 'number', min: 1000, max: 300000 },
+        maxRetries: { type: "number", min: 0, max: 100 },
+        retryDelay: { type: "number", min: 100, max: 60000 },
+        deadlockDetection: { type: "boolean" },
+        resourceTimeout: { type: "number", min: 1000, max: 3600000 },
+        messageTimeout: { type: "number", min: 1000, max: 300000 },
       },
       mcp: {
-        transport: { type: 'string', values: ['stdio', 'http', 'websocket'] },
-        port: { type: 'number', min: 1, max: 65535 },
-        tlsEnabled: { type: 'boolean' },
+        transport: { type: "string", values: ["stdio", "http", "websocket"] },
+        port: { type: "number", min: 1, max: 65535 },
+        tlsEnabled: { type: "boolean" },
       },
       logging: {
-        level: { type: 'string', values: ['debug', 'info', 'warn', 'error'] },
-        format: { type: 'string', values: ['json', 'text'] },
-        destination: { type: 'string', values: ['console', 'file'] },
+        level: { type: "string", values: ["debug", "info", "warn", "error"] },
+        format: { type: "string", values: ["json", "text"] },
+        destination: { type: "string", values: ["console", "file"] },
       },
       swarm: {
-        maxAgents: { type: 'number', min: 1, max: 100 },
-        defaultStrategy: { type: 'string', values: ['auto', 'research', 'development', 'analysis', 'testing', 'optimization', 'maintenance'] },
-        defaultMode: { type: 'string', values: ['centralized', 'distributed', 'hierarchical', 'mesh', 'hybrid'] },
-        timeoutMinutes: { type: 'number', min: 1, max: 1440 },
-        qualityThreshold: { type: 'number', min: 0, max: 1 },
-        enableMonitoring: { type: 'boolean' },
-        enableEncryption: { type: 'boolean' },
-        backgroundExecution: { type: 'boolean' },
-        autoRetry: { type: 'boolean' },
-        maxRetries: { type: 'number', min: 0, max: 10 },
+        maxAgents: { type: "number", min: 1, max: 100 },
+        defaultStrategy: {
+          type: "string",
+          values: [
+            "auto",
+            "research",
+            "development",
+            "analysis",
+            "testing",
+            "optimization",
+            "maintenance",
+          ],
+        },
+        defaultMode: {
+          type: "string",
+          values: [
+            "centralized",
+            "distributed",
+            "hierarchical",
+            "mesh",
+            "hybrid",
+          ],
+        },
+        timeoutMinutes: { type: "number", min: 1, max: 1440 },
+        qualityThreshold: { type: "number", min: 0, max: 1 },
+        enableMonitoring: { type: "boolean" },
+        enableEncryption: { type: "boolean" },
+        backgroundExecution: { type: "boolean" },
+        autoRetry: { type: "boolean" },
+        maxRetries: { type: "number", min: 0, max: 10 },
       },
     };
   }
@@ -381,8 +413,8 @@ export class ConfigManager {
    * Validates a value against schema
    */
   private validateValue(value: any, schema: any, path: string): void {
-    if (schema.type === 'number') {
-      if (typeof value !== 'number' || isNaN(value)) {
+    if (schema.type === "number") {
+      if (typeof value !== "number" || isNaN(value)) {
         throw new ValidationError(`${path}: must be a number`);
       }
       if (schema.min !== undefined && value < schema.min) {
@@ -391,15 +423,17 @@ export class ConfigManager {
       if (schema.max !== undefined && value > schema.max) {
         throw new ValidationError(`${path}: must be at most ${schema.max}`);
       }
-    } else if (schema.type === 'string') {
-      if (typeof value !== 'string') {
+    } else if (schema.type === "string") {
+      if (typeof value !== "string") {
         throw new ValidationError(`${path}: must be a string`);
       }
       if (schema.values && !schema.values.includes(value)) {
-        throw new ValidationError(`${path}: must be one of [${schema.values.join(', ')}]`);
+        throw new ValidationError(
+          `${path}: must be one of [${schema.values.join(", ")}]`,
+        );
       }
-    } else if (schema.type === 'boolean') {
-      if (typeof value !== 'boolean') {
+    } else if (schema.type === "boolean") {
+      if (typeof value !== "boolean") {
         throw new ValidationError(`${path}: must be a boolean`);
       }
     }
@@ -411,15 +445,23 @@ export class ConfigManager {
   getDiff(): any {
     const defaultConfig = DEFAULT_CONFIG;
     const diff: any = {};
-    
-    const findDifferences = (current: any, defaults: any, path: string = '') => {
+
+    const findDifferences = (
+      current: any,
+      defaults: any,
+      path: string = "",
+    ) => {
       for (const key in current) {
         const currentValue = current[key];
         const defaultValue = defaults[key];
         const fullPath = path ? `${path}.${key}` : key;
-        
-        if (typeof currentValue === 'object' && currentValue !== null && !Array.isArray(currentValue)) {
-          if (typeof defaultValue === 'object' && defaultValue !== null) {
+
+        if (
+          typeof currentValue === "object" &&
+          currentValue !== null &&
+          !Array.isArray(currentValue)
+        ) {
+          if (typeof defaultValue === "object" && defaultValue !== null) {
             const nestedDiff = {};
             findDifferences(currentValue, defaultValue, fullPath);
             if (Object.keys(nestedDiff).length > 0) {
@@ -429,7 +471,7 @@ export class ConfigManager {
             }
           }
         } else if (currentValue !== defaultValue) {
-          const pathParts = fullPath.split('.');
+          const pathParts = fullPath.split(".");
           let target = diff;
           for (let i = 0; i < pathParts.length - 1; i++) {
             if (!target[pathParts[i]]) {
@@ -441,7 +483,7 @@ export class ConfigManager {
         }
       }
     };
-    
+
     findDifferences(this.config, defaultConfig);
     return diff;
   }
@@ -451,7 +493,7 @@ export class ConfigManager {
    */
   export(): any {
     return {
-      version: '1.0.0',
+      version: "1.0.0",
       exported: new Date().toISOString(),
       profile: this.currentProfile,
       config: this.config,
@@ -464,9 +506,9 @@ export class ConfigManager {
    */
   import(data: any): void {
     if (!data.config) {
-      throw new ConfigError('Invalid configuration export format');
+      throw new ConfigError("Invalid configuration export format");
     }
-    
+
     this.validate(data.config);
     this.config = data.config;
     this.currentProfile = data.profile;
@@ -479,7 +521,7 @@ export class ConfigManager {
     try {
       const content = await Deno.readTextFile(path);
       const config = safeParseJSON<Partial<Config>>(content);
-      
+
       if (!config) {
         throw new ConfigError(`Invalid JSON in configuration file: ${path}`);
       }
@@ -490,7 +532,9 @@ export class ConfigManager {
         // File doesn't exist, use defaults
         return {};
       }
-      throw new ConfigError(`Failed to load configuration from ${path}: ${(error as Error).message}`);
+      throw new ConfigError(
+        `Failed to load configuration from ${path}: ${(error as Error).message}`,
+      );
     }
   }
 
@@ -501,7 +545,7 @@ export class ConfigManager {
     const config: Partial<Config> = {};
 
     // Orchestrator settings
-    const maxAgents = Deno.env.get('CLAUDE_FLOW_MAX_AGENTS');
+    const maxAgents = Deno.env.get("CLAUDE_FLOW_MAX_AGENTS");
     if (maxAgents) {
       if (!config.orchestrator) {
         config.orchestrator = {} as any;
@@ -514,8 +558,12 @@ export class ConfigManager {
     }
 
     // Terminal settings
-    const terminalType = Deno.env.get('CLAUDE_FLOW_TERMINAL_TYPE');
-    if (terminalType === 'vscode' || terminalType === 'native' || terminalType === 'auto') {
+    const terminalType = Deno.env.get("CLAUDE_FLOW_TERMINAL_TYPE");
+    if (
+      terminalType === "vscode" ||
+      terminalType === "native" ||
+      terminalType === "auto"
+    ) {
       config.terminal = {
         ...DEFAULT_CONFIG.terminal,
         ...config.terminal,
@@ -524,8 +572,12 @@ export class ConfigManager {
     }
 
     // Memory settings
-    const memoryBackend = Deno.env.get('CLAUDE_FLOW_MEMORY_BACKEND');
-    if (memoryBackend === 'sqlite' || memoryBackend === 'markdown' || memoryBackend === 'hybrid') {
+    const memoryBackend = Deno.env.get("CLAUDE_FLOW_MEMORY_BACKEND");
+    if (
+      memoryBackend === "sqlite" ||
+      memoryBackend === "markdown" ||
+      memoryBackend === "hybrid"
+    ) {
       config.memory = {
         ...DEFAULT_CONFIG.memory,
         ...config.memory,
@@ -534,8 +586,12 @@ export class ConfigManager {
     }
 
     // MCP settings
-    const mcpTransport = Deno.env.get('CLAUDE_FLOW_MCP_TRANSPORT');
-    if (mcpTransport === 'stdio' || mcpTransport === 'http' || mcpTransport === 'websocket') {
+    const mcpTransport = Deno.env.get("CLAUDE_FLOW_MCP_TRANSPORT");
+    if (
+      mcpTransport === "stdio" ||
+      mcpTransport === "http" ||
+      mcpTransport === "websocket"
+    ) {
       config.mcp = {
         ...DEFAULT_CONFIG.mcp,
         ...config.mcp,
@@ -543,7 +599,7 @@ export class ConfigManager {
       };
     }
 
-    const mcpPort = Deno.env.get('CLAUDE_FLOW_MCP_PORT');
+    const mcpPort = Deno.env.get("CLAUDE_FLOW_MCP_PORT");
     if (mcpPort) {
       config.mcp = {
         ...DEFAULT_CONFIG.mcp,
@@ -553,8 +609,13 @@ export class ConfigManager {
     }
 
     // Logging settings
-    const logLevel = Deno.env.get('CLAUDE_FLOW_LOG_LEVEL');
-    if (logLevel === 'debug' || logLevel === 'info' || logLevel === 'warn' || logLevel === 'error') {
+    const logLevel = Deno.env.get("CLAUDE_FLOW_LOG_LEVEL");
+    if (
+      logLevel === "debug" ||
+      logLevel === "info" ||
+      logLevel === "warn" ||
+      logLevel === "error"
+    ) {
       config.logging = {
         ...DEFAULT_CONFIG.logging,
         ...config.logging,
@@ -563,36 +624,63 @@ export class ConfigManager {
     }
 
     // Swarm settings
-    const swarmMaxAgents = Deno.env.get('CLAUDE_FLOW_SWARM_MAX_AGENTS');
-    const swarmStrategy = Deno.env.get('CLAUDE_FLOW_SWARM_STRATEGY');
-    const swarmMode = Deno.env.get('CLAUDE_FLOW_SWARM_MODE');
-    const swarmTimeout = Deno.env.get('CLAUDE_FLOW_SWARM_TIMEOUT');
-    const swarmMonitoring = Deno.env.get('CLAUDE_FLOW_SWARM_MONITORING');
-    const swarmEncryption = Deno.env.get('CLAUDE_FLOW_SWARM_ENCRYPTION');
-    
-    if (swarmMaxAgents || swarmStrategy || swarmMode || swarmTimeout || swarmMonitoring || swarmEncryption) {
+    const swarmMaxAgents = Deno.env.get("CLAUDE_FLOW_SWARM_MAX_AGENTS");
+    const swarmStrategy = Deno.env.get("CLAUDE_FLOW_SWARM_STRATEGY");
+    const swarmMode = Deno.env.get("CLAUDE_FLOW_SWARM_MODE");
+    const swarmTimeout = Deno.env.get("CLAUDE_FLOW_SWARM_TIMEOUT");
+    const swarmMonitoring = Deno.env.get("CLAUDE_FLOW_SWARM_MONITORING");
+    const swarmEncryption = Deno.env.get("CLAUDE_FLOW_SWARM_ENCRYPTION");
+
+    if (
+      swarmMaxAgents ||
+      swarmStrategy ||
+      swarmMode ||
+      swarmTimeout ||
+      swarmMonitoring ||
+      swarmEncryption
+    ) {
       config.swarm = {
         ...DEFAULT_CONFIG.swarm,
         ...config.swarm,
       };
-      
+
       if (swarmMaxAgents) {
         config.swarm.maxAgents = parseInt(swarmMaxAgents, 10);
       }
-      if (swarmStrategy && ['auto', 'research', 'development', 'analysis', 'testing', 'optimization', 'maintenance'].includes(swarmStrategy)) {
+      if (
+        swarmStrategy &&
+        [
+          "auto",
+          "research",
+          "development",
+          "analysis",
+          "testing",
+          "optimization",
+          "maintenance",
+        ].includes(swarmStrategy)
+      ) {
         config.swarm.defaultStrategy = swarmStrategy as any;
       }
-      if (swarmMode && ['centralized', 'distributed', 'hierarchical', 'mesh', 'hybrid'].includes(swarmMode)) {
+      if (
+        swarmMode &&
+        [
+          "centralized",
+          "distributed",
+          "hierarchical",
+          "mesh",
+          "hybrid",
+        ].includes(swarmMode)
+      ) {
         config.swarm.defaultMode = swarmMode as any;
       }
       if (swarmTimeout) {
         config.swarm.timeoutMinutes = parseInt(swarmTimeout, 10);
       }
-      if (swarmMonitoring === 'true' || swarmMonitoring === 'false') {
-        config.swarm.enableMonitoring = swarmMonitoring === 'true';
+      if (swarmMonitoring === "true" || swarmMonitoring === "false") {
+        config.swarm.enableMonitoring = swarmMonitoring === "true";
       }
-      if (swarmEncryption === 'true' || swarmEncryption === 'false') {
-        config.swarm.enableEncryption = swarmEncryption === 'true';
+      if (swarmEncryption === "true" || swarmEncryption === "false") {
+        config.swarm.enableEncryption = swarmEncryption === "true";
       }
     }
 
@@ -605,53 +693,66 @@ export class ConfigManager {
   private validate(config: Config): void {
     // Orchestrator validation
     if (config.orchestrator.maxConcurrentAgents < 1) {
-      throw new ValidationError('maxConcurrentAgents must be at least 1');
+      throw new ValidationError("maxConcurrentAgents must be at least 1");
     }
     if (config.orchestrator.taskQueueSize < 1) {
-      throw new ValidationError('taskQueueSize must be at least 1');
+      throw new ValidationError("taskQueueSize must be at least 1");
     }
 
     // Terminal validation
     if (config.terminal.poolSize < 1) {
-      throw new ValidationError('terminal poolSize must be at least 1');
+      throw new ValidationError("terminal poolSize must be at least 1");
     }
     if (config.terminal.recycleAfter < 1) {
-      throw new ValidationError('terminal recycleAfter must be at least 1');
+      throw new ValidationError("terminal recycleAfter must be at least 1");
     }
 
     // Memory validation
     if (config.memory.cacheSizeMB < 1) {
-      throw new ValidationError('memory cacheSizeMB must be at least 1');
+      throw new ValidationError("memory cacheSizeMB must be at least 1");
     }
     if (config.memory.retentionDays < 1) {
-      throw new ValidationError('memory retentionDays must be at least 1');
+      throw new ValidationError("memory retentionDays must be at least 1");
     }
 
     // Coordination validation
     if (config.coordination.maxRetries < 0) {
-      throw new ValidationError('coordination maxRetries cannot be negative');
+      throw new ValidationError("coordination maxRetries cannot be negative");
     }
 
     // MCP validation
-    if (config.mcp.transport === 'http' || config.mcp.transport === 'websocket') {
+    if (
+      config.mcp.transport === "http" ||
+      config.mcp.transport === "websocket"
+    ) {
       if (!config.mcp.port || config.mcp.port < 1 || config.mcp.port > 65535) {
-        throw new ValidationError('Invalid MCP port number');
+        throw new ValidationError("Invalid MCP port number");
       }
     }
 
     // Swarm validation
     if (config.swarm) {
       if (config.swarm.maxAgents < 1 || config.swarm.maxAgents > 100) {
-        throw new ValidationError('swarm maxAgents must be between 1 and 100');
+        throw new ValidationError("swarm maxAgents must be between 1 and 100");
       }
-      if (config.swarm.timeoutMinutes < 1 || config.swarm.timeoutMinutes > 1440) {
-        throw new ValidationError('swarm timeoutMinutes must be between 1 and 1440');
+      if (
+        config.swarm.timeoutMinutes < 1 ||
+        config.swarm.timeoutMinutes > 1440
+      ) {
+        throw new ValidationError(
+          "swarm timeoutMinutes must be between 1 and 1440",
+        );
       }
-      if (config.swarm.qualityThreshold < 0 || config.swarm.qualityThreshold > 1) {
-        throw new ValidationError('swarm qualityThreshold must be between 0 and 1');
+      if (
+        config.swarm.qualityThreshold < 0 ||
+        config.swarm.qualityThreshold > 1
+      ) {
+        throw new ValidationError(
+          "swarm qualityThreshold must be between 0 and 1",
+        );
       }
       if (config.swarm.maxRetries < 0 || config.swarm.maxRetries > 10) {
-        throw new ValidationError('swarm maxRetries must be between 0 and 10');
+        throw new ValidationError("swarm maxRetries must be between 0 and 10");
       }
     }
   }
@@ -670,12 +771,15 @@ function deepClone<T>(obj: T): T {
 }
 
 // Custom deepMerge for Config type
-function deepMergeConfig(target: Config, ...sources: Partial<Config>[]): Config {
+function deepMergeConfig(
+  target: Config,
+  ...sources: Partial<Config>[]
+): Config {
   const result = deepClone(target);
-  
+
   for (const source of sources) {
     if (!source) continue;
-    
+
     // Merge each section
     if (source.orchestrator) {
       result.orchestrator = { ...result.orchestrator, ...source.orchestrator };
@@ -696,6 +800,6 @@ function deepMergeConfig(target: Config, ...sources: Partial<Config>[]): Config 
       result.logging = { ...result.logging, ...source.logging };
     }
   }
-  
+
   return result;
 }

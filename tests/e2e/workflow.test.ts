@@ -2,27 +2,30 @@
  * End-to-end workflow tests
  */
 
-import { assertEquals } from 'https://deno.land/std@0.208.0/testing/asserts.ts';
-import { delay } from '../../src/utils/helpers.ts';
+import { assertEquals } from "https://deno.land/std@0.208.0/testing/asserts.ts";
+import { delay } from "../../src/utils/helpers.ts";
 
-Deno.test('E2E - CLI should show help', async () => {
+Deno.test("E2E - CLI should show help", async () => {
   const command = new Deno.Command(Deno.execPath(), {
-    args: ['run', '--allow-all', 'src/cli/index.ts', '--help'],
-    stdout: 'piped',
-    stderr: 'piped',
+    args: ["run", "--allow-all", "src/cli/index.ts", "--help"],
+    stdout: "piped",
+    stderr: "piped",
   });
 
   const { code, stdout } = await command.output();
   const output = new TextDecoder().decode(stdout);
 
   assertEquals(code, 0);
-  assertEquals(output.includes('Claude-Flow: Advanced AI agent orchestration system'), true);
-  assertEquals(output.includes('COMMANDS'), true);
+  assertEquals(
+    output.includes("Claude-Flow: Advanced AI agent orchestration system"),
+    true,
+  );
+  assertEquals(output.includes("COMMANDS"), true);
 });
 
-Deno.test('E2E - Config init should create file', async () => {
-  const testFile = './test-config.json';
-  
+Deno.test("E2E - Config init should create file", async () => {
+  const testFile = "./test-config.json";
+
   try {
     // Remove test file if it exists
     try {
@@ -32,16 +35,23 @@ Deno.test('E2E - Config init should create file', async () => {
     }
 
     const command = new Deno.Command(Deno.execPath(), {
-      args: ['run', '--allow-all', 'src/cli/index.ts', 'config', 'init', testFile],
-      stdout: 'piped',
-      stderr: 'piped',
+      args: [
+        "run",
+        "--allow-all",
+        "src/cli/index.ts",
+        "config",
+        "init",
+        testFile,
+      ],
+      stdout: "piped",
+      stderr: "piped",
     });
 
     const { code, stdout } = await command.output();
     const output = new TextDecoder().decode(stdout);
 
     assertEquals(code, 0);
-    assertEquals(output.includes('Configuration file created'), true);
+    assertEquals(output.includes("Configuration file created"), true);
 
     // Verify file was created
     const stat = await Deno.stat(testFile);
@@ -50,9 +60,9 @@ Deno.test('E2E - Config init should create file', async () => {
     // Verify content is valid JSON
     const content = await Deno.readTextFile(testFile);
     const config = JSON.parse(content);
-    assertEquals(typeof config.orchestrator, 'object');
-    assertEquals(typeof config.terminal, 'object');
-    assertEquals(typeof config.memory, 'object');
+    assertEquals(typeof config.orchestrator, "object");
+    assertEquals(typeof config.terminal, "object");
+    assertEquals(typeof config.memory, "object");
   } finally {
     // Cleanup
     try {
@@ -63,54 +73,60 @@ Deno.test('E2E - Config init should create file', async () => {
   }
 });
 
-Deno.test('E2E - Agent spawn command should create profile', async () => {
+Deno.test("E2E - Agent spawn command should create profile", async () => {
   const command = new Deno.Command(Deno.execPath(), {
     args: [
-      'run', 
-      '--allow-all', 
-      'src/cli/index.ts', 
-      'agent', 
-      'spawn', 
-      'researcher',
-      '--name', 'test-researcher',
-      '--priority', '5',
+      "run",
+      "--allow-all",
+      "src/cli/index.ts",
+      "agent",
+      "spawn",
+      "researcher",
+      "--name",
+      "test-researcher",
+      "--priority",
+      "5",
     ],
-    stdout: 'piped',
-    stderr: 'piped',
+    stdout: "piped",
+    stderr: "piped",
   });
 
   const { code, stdout } = await command.output();
   const output = new TextDecoder().decode(stdout);
 
   assertEquals(code, 0);
-  assertEquals(output.includes('Agent profile created'), true);
+  assertEquals(output.includes("Agent profile created"), true);
   assertEquals(output.includes('"name": "test-researcher"'), true);
   assertEquals(output.includes('"type": "researcher"'), true);
   assertEquals(output.includes('"priority": 5'), true);
 });
 
-Deno.test('E2E - Task create command should create task', async () => {
+Deno.test("E2E - Task create command should create task", async () => {
   const command = new Deno.Command(Deno.execPath(), {
     args: [
-      'run', 
-      '--allow-all', 
-      'src/cli/index.ts', 
-      'task', 
-      'create',
-      'analysis',
-      'Analyze the test results',
-      '--priority', '10',
+      "run",
+      "--allow-all",
+      "src/cli/index.ts",
+      "task",
+      "create",
+      "analysis",
+      "Analyze the test results",
+      "--priority",
+      "10",
     ],
-    stdout: 'piped',
-    stderr: 'piped',
+    stdout: "piped",
+    stderr: "piped",
   });
 
   const { code, stdout } = await command.output();
   const output = new TextDecoder().decode(stdout);
 
   assertEquals(code, 0);
-  assertEquals(output.includes('Task created'), true);
+  assertEquals(output.includes("Task created"), true);
   assertEquals(output.includes('"type": "analysis"'), true);
-  assertEquals(output.includes('"description": "Analyze the test results"'), true);
+  assertEquals(
+    output.includes('"description": "Analyze the test results"'),
+    true,
+  );
   assertEquals(output.includes('"priority": 10'), true);
 });

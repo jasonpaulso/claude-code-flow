@@ -1,21 +1,21 @@
 #!/usr/bin/env node
 
-const os = require('os');
-const path = require('path');
-const fs = require('fs');
-const https = require('https');
-const { spawn } = require('child_process');
+const os = require("os");
+const path = require("path");
+const fs = require("fs");
+const https = require("https");
+const { spawn } = require("child_process");
 
-console.log('Installing Claude-Flow...');
+console.log("Installing Claude-Flow...");
 
 // Check if Deno is available
 function checkDeno() {
   return new Promise((resolve) => {
-    const deno = spawn('deno', ['--version'], { stdio: 'pipe' });
-    deno.on('close', (code) => {
+    const deno = spawn("deno", ["--version"], { stdio: "pipe" });
+    deno.on("close", (code) => {
       resolve(code === 0);
     });
-    deno.on('error', () => {
+    deno.on("error", () => {
       resolve(false);
     });
   });
@@ -23,28 +23,32 @@ function checkDeno() {
 
 // Install Deno if not available
 async function installDeno() {
-  console.log('Deno not found. Installing Deno...');
-  
+  console.log("Deno not found. Installing Deno...");
+
   const platform = os.platform();
   const arch = os.arch();
-  
-  if (platform === 'win32') {
-    console.log('Please install Deno manually from https://deno.land/');
+
+  if (platform === "win32") {
+    console.log("Please install Deno manually from https://deno.land/");
     process.exit(1);
   }
-  
+
   return new Promise((resolve, reject) => {
-    const installScript = spawn('curl', ['-fsSL', 'https://deno.land/x/install/install.sh'], { stdio: 'pipe' });
-    const sh = spawn('sh', [], { stdio: ['pipe', 'inherit', 'inherit'] });
-    
+    const installScript = spawn(
+      "curl",
+      ["-fsSL", "https://deno.land/x/install/install.sh"],
+      { stdio: "pipe" },
+    );
+    const sh = spawn("sh", [], { stdio: ["pipe", "inherit", "inherit"] });
+
     installScript.stdout.pipe(sh.stdin);
-    
-    sh.on('close', (code) => {
+
+    sh.on("close", (code) => {
       if (code === 0) {
-        console.log('Deno installed successfully!');
+        console.log("Deno installed successfully!");
         resolve();
       } else {
-        reject(new Error('Failed to install Deno'));
+        reject(new Error("Failed to install Deno"));
       }
     });
   });
@@ -54,17 +58,20 @@ async function installDeno() {
 async function main() {
   try {
     const denoAvailable = await checkDeno();
-    
+
     if (!denoAvailable) {
       await installDeno();
     }
-    
-    console.log('Claude-Flow installation completed!');
-    console.log('You can now use: npx claude-flow or claude-flow (if installed globally)');
-    
+
+    console.log("Claude-Flow installation completed!");
+    console.log(
+      "You can now use: npx claude-flow or claude-flow (if installed globally)",
+    );
   } catch (error) {
-    console.error('Installation failed:', error.message);
-    console.log('Please install Deno manually from https://deno.land/ and try again.');
+    console.error("Installation failed:", error.message);
+    console.log(
+      "Please install Deno manually from https://deno.land/ and try again.",
+    );
     process.exit(1);
   }
 }

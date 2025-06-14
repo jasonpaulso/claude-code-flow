@@ -95,13 +95,13 @@ Controls the main orchestration system and agent management.
 
 **Configuration Options:**
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `maxConcurrentAgents` | number | 10 | Maximum number of agents that can run simultaneously |
-| `taskQueueSize` | number | 100 | Maximum number of tasks in the queue |
-| `healthCheckInterval` | number | 30000 | Health check frequency in milliseconds |
-| `shutdownTimeout` | number | 30000 | Grace period for clean shutdown in milliseconds |
-| `agentTimeoutMs` | number | 300000 | Maximum time an agent can run a single task |
+| Option                       | Type   | Default    | Description                                                                 |
+| ---------------------------- | ------ | ---------- | --------------------------------------------------------------------------- |
+| `maxConcurrentAgents`        | number | 10         | Maximum number of agents that can run simultaneously                        |
+| `taskQueueSize`              | number | 100        | Maximum number of tasks in the queue                                        |
+| `healthCheckInterval`        | number | 30000      | Health check frequency in milliseconds                                      |
+| `shutdownTimeout`            | number | 30000      | Grace period for clean shutdown in milliseconds                             |
+| `agentTimeoutMs`             | number | 300000     | Maximum time an agent can run a single task                                 |
 | `resourceAllocationStrategy` | string | "balanced" | Resource allocation strategy: `balanced`, `performance`, `memory-optimized` |
 
 **Resource Allocation Strategies:**
@@ -145,22 +145,12 @@ Manages terminal sessions and command execution.
 - **headless**: Use headless terminal sessions
 
 **Security Configuration:**
+
 ```json
 {
   "security": {
-    "allowedCommands": [
-      "npm.*",
-      "git.*",
-      "python.*",
-      "node.*",
-      "deno.*"
-    ],
-    "blockedCommands": [
-      "rm -rf /",
-      "sudo rm",
-      "format.*",
-      "del /s /q"
-    ],
+    "allowedCommands": ["npm.*", "git.*", "python.*", "node.*", "deno.*"],
+    "blockedCommands": ["rm -rf /", "sudo rm", "format.*", "del /s /q"],
     "sandboxed": true,
     "maxExecutionTime": 600000
   }
@@ -209,6 +199,7 @@ Controls the memory management system and storage.
 - **manual**: Manual conflict resolution required
 
 **Encryption Options:**
+
 ```json
 {
   "encryption": {
@@ -297,6 +288,7 @@ Model Context Protocol server settings.
 - **websocket**: WebSocket for real-time communication
 
 **Security Configuration:**
+
 ```json
 {
   "security": {
@@ -570,15 +562,17 @@ claude-flow config validate --strict
 ### Common Validation Errors
 
 **Invalid Range Values:**
+
 ```json
 {
   "orchestrator": {
-    "maxConcurrentAgents": -1  // Error: Must be positive
+    "maxConcurrentAgents": -1 // Error: Must be positive
   }
 }
 ```
 
 **Missing Required Fields:**
+
 ```json
 {
   "mcp": {
@@ -589,10 +583,11 @@ claude-flow config validate --strict
 ```
 
 **Type Mismatches:**
+
 ```json
 {
   "memory": {
-    "cacheSizeMB": "large"  // Error: Must be number
+    "cacheSizeMB": "large" // Error: Must be number
   }
 }
 ```
@@ -600,26 +595,31 @@ claude-flow config validate --strict
 ## Best Practices
 
 ### 1. Environment Separation
+
 - Use separate configurations for dev/staging/production
 - Never commit sensitive values to version control
 - Use environment variables for secrets
 
 ### 2. Performance Tuning
+
 - Monitor system metrics to optimize settings
 - Adjust pool sizes based on workload
 - Enable compression for large datasets
 
 ### 3. Security Hardening
+
 - Enable encryption for sensitive data
 - Use TLS for remote communications
 - Implement proper access controls
 
 ### 4. Monitoring and Alerting
+
 - Configure appropriate log levels
 - Set up health check intervals
 - Monitor resource usage patterns
 
 ### 5. Backup and Recovery
+
 - Enable automatic backups
 - Test backup restoration procedures
 - Implement proper retention policies

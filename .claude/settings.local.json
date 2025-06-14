@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(deno test:*)",
+      "Bash(deno info:*)",
+      "Bash(deno run:*)",
+      "Bash(rm:*)",
+      "Bash(deno check:*)",
+      "Bash(chmod:*)",
+      "Bash(./test-sqlite-backend.ts)",
+      "Bash(curl:*)",
+      "Bash(npm test:*)",
+      "Bash(npm run lint)",
+      "Bash(npm run typecheck:*)",
+      "Bash(npm run build:*)",
+      "Bash(grep:*)"
+    ],
+    "deny": []
+  }
+}

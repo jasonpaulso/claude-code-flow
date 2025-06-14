@@ -85,16 +85,20 @@ class CoverageAnalyzer {
 
     // Load coverage data
     const coverageData = await this.loadCoverageData();
-    
+
     // Get all source files
     const sourceFiles = await this.getSourceFiles();
-    
+
     // Analyze each file
     const fileAnalysis = await this.analyzeFiles(sourceFiles, coverageData);
-    
+
     // Find uncovered files
-    const coveredFiles = new Set(coverageData.map(d => this.normalizePath(d.url)));
-    const uncoveredFiles = sourceFiles.filter(file => !coveredFiles.has(file));
+    const coveredFiles = new Set(
+      coverageData.map((d) => this.normalizePath(d.url)),
+    );
+    const uncoveredFiles = sourceFiles.filter(
+      (file) => !coveredFiles.has(file),
+    );
 
     // Calculate summary
     const summary = this.calculateSummary(fileAnalysis, uncoveredFiles.length);
@@ -118,17 +122,17 @@ class CoverageAnalyzer {
   private async loadCoverageData(): Promise<CoverageData[]> {
     const coverageFiles: CoverageData[] = [];
 
-    if (!await exists(this.coverageDir)) {
+    if (!(await exists(this.coverageDir))) {
       throw new Error(`Coverage directory not found: ${this.coverageDir}`);
     }
 
-    for await (const entry of walk(this.coverageDir, { 
+    for await (const entry of walk(this.coverageDir, {
       exts: [".json"],
-      includeDirs: false 
+      includeDirs: false,
     })) {
       const content = await Deno.readTextFile(entry.path);
       const data = JSON.parse(content);
-      
+
       if (data.url && data.ranges) {
         coverageFiles.push(data);
       }
@@ -143,7 +147,7 @@ class CoverageAnalyzer {
     for await (const entry of walk(this.sourceDir, {
       exts: [".ts"],
       includeDirs: false,
-      skip: [/\.test\.ts$/, /test\.ts$/, /tests?\//]
+      skip: [/\.test\.ts$/, /test\.ts$/, /tests?\//],
     })) {
       // Normalize path
       const relativePath = entry.path.replace(Deno.cwd() + "/", "");
@@ -158,21 +162,26 @@ class CoverageAnalyzer {
     if (url.startsWith("file://")) {
       url = url.replace("file://", "");
     }
-    
+
     // Remove leading slash and make relative to cwd
     const cwd = Deno.cwd();
     if (url.startsWith(cwd)) {
       url = url.replace(cwd + "/", "");
     }
-    
+
     return url;
   }
 
-  private async analyzeFiles(sourceFiles: string[], coverageData: CoverageData[]): Promise<FileCoverage[]> {
+  private async analyzeFiles(
+    sourceFiles: string[],
+    coverageData: CoverageData[],
+  ): Promise<FileCoverage[]> {
     const analysis: FileCoverage[] = [];
 
     for (const file of sourceFiles) {
-      const coverage = coverageData.find(d => this.normalizePath(d.url) === file);
+      const coverage = coverageData.find(
+        (d) => this.normalizePath(d.url) === file,
+      );
       const fileAnalysis = await this.analyzeFile(file, coverage);
       analysis.push(fileAnalysis);
     }
@@ -180,10 +189,15 @@ class CoverageAnalyzer {
     return analysis;
   }
 
-  private async analyzeFile(filePath: string, coverage?: CoverageData): Promise<FileCoverage> {
+  private async analyzeFile(
+    filePath: string,
+    coverage?: CoverageData,
+  ): Promise<FileCoverage> {
     const content = await Deno.readTextFile(filePath);
-    const lines = content.split('\n');
-    const totalLines = lines.filter(line => line.trim() && !line.trim().startsWith('//')).length;
+    const lines = content.split("\n");
+    const totalLines = lines.filter(
+      (line) => line.trim() && !line.trim().startsWith("//"),
+    ).length;
 
     if (!coverage) {
       return {
@@ -198,7 +212,7 @@ class CoverageAnalyzer {
 
     // Analyze covered lines
     const coveredLines = new Set<number>();
-    
+
     for (const range of coverage.ranges) {
       for (let line = range.start.line; line <= range.end.line; line++) {
         coveredLines.add(line);
@@ -208,12 +222,15 @@ class CoverageAnalyzer {
     const uncoveredLines: number[] = [];
     for (let i = 1; i <= lines.length; i++) {
       const line = lines[i - 1].trim();
-      if (line && !line.startsWith('//') && !coveredLines.has(i)) {
+      if (line && !line.startsWith("//") && !coveredLines.has(i)) {
         uncoveredLines.push(i);
       }
     }
 
-    const coveragePercent = totalLines > 0 ? ((totalLines - uncoveredLines.length) / totalLines) * 100 : 100;
+    const coveragePercent =
+      totalLines > 0
+        ? ((totalLines - uncoveredLines.length) / totalLines) * 100
+        : 100;
 
     return {
       path: filePath,
@@ -225,9 +242,13 @@ class CoverageAnalyzer {
     };
   }
 
-  private extractFunctions(content: string, checkCoverage: boolean, coveredLines?: Set<number>): FunctionCoverage[] {
+  private extractFunctions(
+    content: string,
+    checkCoverage: boolean,
+    coveredLines?: Set<number>,
+  ): FunctionCoverage[] {
     const functions: FunctionCoverage[] = [];
-    const lines = content.split('\n');
+    const lines = content.split("\n");
 
     // Simple regex patterns for TypeScript functions
     const patterns = [
@@ -239,14 +260,16 @@ class CoverageAnalyzer {
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      
+
       for (const pattern of patterns) {
         const match = line.match(pattern);
         if (match) {
           const functionName = match[1];
           const lineNumber = i + 1;
-          const covered = checkCoverage ? (coveredLines?.has(lineNumber) ?? false) : false;
-          
+          const covered = checkCoverage
+            ? (coveredLines?.has(lineNumber) ?? false)
+            : false;
+
           functions.push({
             name: functionName,
             line: lineNumber,
@@ -260,10 +283,16 @@ class CoverageAnalyzer {
     return functions;
   }
 
-  private calculateSummary(files: FileCoverage[], uncoveredFileCount: number): CoverageReport['summary'] {
+  private calculateSummary(
+    files: FileCoverage[],
+    uncoveredFileCount: number,
+  ): CoverageReport["summary"] {
     const totalFiles = files.length + uncoveredFileCount;
     const totalLines = files.reduce((sum, file) => sum + file.totalLines, 0);
-    const coveredLines = files.reduce((sum, file) => sum + file.coveredLines, 0);
+    const coveredLines = files.reduce(
+      (sum, file) => sum + file.coveredLines,
+      0,
+    );
     const coverage = totalLines > 0 ? (coveredLines / totalLines) * 100 : 100;
 
     const passed = coverage >= this.thresholds.lines;
@@ -281,22 +310,26 @@ class CoverageAnalyzer {
   private async generateHTMLReport(report: CoverageReport): Promise<void> {
     const fileRows = report.files
       .sort((a, b) => a.coverage - b.coverage)
-      .map(file => {
-        const coverageClass = file.coverage >= 80 ? 'high' : file.coverage >= 60 ? 'medium' : 'low';
+      .map((file) => {
+        const coverageClass =
+          file.coverage >= 80 ? "high" : file.coverage >= 60 ? "medium" : "low";
         const coverageBar = `<div class="coverage-bar"><div class="coverage-fill ${coverageClass}" style="width: ${file.coverage}%"></div></div>`;
-        
+
         return `
           <tr class="${coverageClass}">
-            <td><a href="#file-${file.path.replace(/[^a-zA-Z0-9]/g, '-')}">${file.path}</a></td>
+            <td><a href="#file-${file.path.replace(/[^a-zA-Z0-9]/g, "-")}">${file.path}</a></td>
             <td>${file.coverage.toFixed(2)}%</td>
             <td>${coverageBar}</td>
             <td>${file.coveredLines}/${file.totalLines}</td>
             <td>${file.uncoveredLines.length}</td>
-            <td>${file.functions.filter(f => f.covered).length}/${file.functions.length}</td>
+            <td>${file.functions.filter((f) => f.covered).length}/${file.functions.length}</td>
           </tr>`;
-      }).join('');
+      })
+      .join("");
 
-    const uncoveredRows = report.uncoveredFiles.map(file => `
+    const uncoveredRows = report.uncoveredFiles
+      .map(
+        (file) => `
       <tr class="uncovered">
         <td>${file}</td>
         <td>0%</td>
@@ -305,28 +338,37 @@ class CoverageAnalyzer {
         <td>-</td>
         <td>0/0</td>
       </tr>
-    `).join('');
+    `,
+      )
+      .join("");
 
-    const fileDetails = report.files.map(file => {
-      const uncoveredLinesStr = file.uncoveredLines.length > 0
-        ? file.uncoveredLines.slice(0, 20).join(', ') + (file.uncoveredLines.length > 20 ? '...' : '')
-        : 'All lines covered';
+    const fileDetails = report.files
+      .map((file) => {
+        const uncoveredLinesStr =
+          file.uncoveredLines.length > 0
+            ? file.uncoveredLines.slice(0, 20).join(", ") +
+              (file.uncoveredLines.length > 20 ? "..." : "")
+            : "All lines covered";
 
-      const functionRows = file.functions.map(func => `
-        <tr class="${func.covered ? 'covered' : 'uncovered'}">
+        const functionRows = file.functions
+          .map(
+            (func) => `
+        <tr class="${func.covered ? "covered" : "uncovered"}">
           <td>${func.name}</td>
           <td>${func.line}</td>
-          <td>${func.covered ? '✅' : '❌'}</td>
+          <td>${func.covered ? "✅" : "❌"}</td>
         </tr>
-      `).join('');
+      `,
+          )
+          .join("");
 
-      return `
-        <div class="file-detail" id="file-${file.path.replace(/[^a-zA-Z0-9]/g, '-')}">
+        return `
+        <div class="file-detail" id="file-${file.path.replace(/[^a-zA-Z0-9]/g, "-")}">
           <h3>📄 ${file.path}</h3>
           <div class="file-summary">
             <div class="metric">
               <span class="label">Coverage:</span>
-              <span class="value ${file.coverage >= 80 ? 'high' : file.coverage >= 60 ? 'medium' : 'low'}">${file.coverage.toFixed(2)}%</span>
+              <span class="value ${file.coverage >= 80 ? "high" : file.coverage >= 60 ? "medium" : "low"}">${file.coverage.toFixed(2)}%</span>
             </div>
             <div class="metric">
               <span class="label">Lines:</span>
@@ -334,18 +376,24 @@ class CoverageAnalyzer {
             </div>
             <div class="metric">
               <span class="label">Functions:</span>
-              <span class="value">${file.functions.filter(f => f.covered).length}/${file.functions.length}</span>
+              <span class="value">${file.functions.filter((f) => f.covered).length}/${file.functions.length}</span>
             </div>
           </div>
           
-          ${file.uncoveredLines.length > 0 ? `
+          ${
+            file.uncoveredLines.length > 0
+              ? `
             <div class="uncovered-lines">
               <h4>Uncovered Lines:</h4>
               <p>${uncoveredLinesStr}</p>
             </div>
-          ` : ''}
+          `
+              : ""
+          }
           
-          ${file.functions.length > 0 ? `
+          ${
+            file.functions.length > 0
+              ? `
             <div class="functions">
               <h4>Functions:</h4>
               <table>
@@ -361,9 +409,12 @@ class CoverageAnalyzer {
                 </tbody>
               </table>
             </div>
-          ` : ''}
+          `
+              : ""
+          }
         </div>`;
-    }).join('');
+      })
+      .join("");
 
     const html = `<!DOCTYPE html>
 <html>
@@ -428,14 +479,14 @@ class CoverageAnalyzer {
         <div class="timestamp">Generated: ${report.timestamp}</div>
     </div>
     
-    <div class="coverage-status ${report.summary.passed ? 'passed' : 'failed'}">
-        ${report.summary.passed ? '✅ Coverage thresholds passed' : '❌ Coverage thresholds not met'}
+    <div class="coverage-status ${report.summary.passed ? "passed" : "failed"}">
+        ${report.summary.passed ? "✅ Coverage thresholds passed" : "❌ Coverage thresholds not met"}
     </div>
     
     <div class="summary">
         <div class="summary-card">
             <h3>Overall Coverage</h3>
-            <div class="value ${report.summary.coverage >= 80 ? 'high' : report.summary.coverage >= 60 ? 'medium' : 'low'}">${report.summary.coverage.toFixed(2)}%</div>
+            <div class="value ${report.summary.coverage >= 80 ? "high" : report.summary.coverage >= 60 ? "medium" : "low"}">${report.summary.coverage.toFixed(2)}%</div>
             <div class="threshold">Threshold: ${this.thresholds.lines}%</div>
         </div>
         <div class="summary-card">
@@ -449,7 +500,7 @@ class CoverageAnalyzer {
         </div>
         <div class="summary-card">
             <h3>Uncovered Files</h3>
-            <div class="value ${report.uncoveredFiles.length === 0 ? 'high' : 'low'}">${report.uncoveredFiles.length}</div>
+            <div class="value ${report.uncoveredFiles.length === 0 ? "high" : "low"}">${report.uncoveredFiles.length}</div>
         </div>
     </div>
     
@@ -491,52 +542,66 @@ class CoverageAnalyzer {
   private async generateJSONReport(report: CoverageReport): Promise<void> {
     await Deno.writeTextFile(
       `${this.outputDir}/coverage-report.json`,
-      JSON.stringify(report, null, 2)
+      JSON.stringify(report, null, 2),
     );
     console.log("  ✅ JSON coverage report generated");
   }
 
   private async generateTextReport(report: CoverageReport): Promise<void> {
     const lines: string[] = [];
-    
+
     lines.push("📊 CLAUDE-FLOW COVERAGE REPORT");
     lines.push("=".repeat(50));
     lines.push(`Generated: ${report.timestamp}`);
     lines.push("");
-    
+
     lines.push("📈 SUMMARY");
     lines.push("-".repeat(20));
     lines.push(`Overall Coverage: ${report.summary.coverage.toFixed(2)}%`);
     lines.push(`Total Files: ${report.summary.totalFiles}`);
-    lines.push(`Covered Lines: ${report.summary.coveredLines}/${report.summary.totalLines}`);
+    lines.push(
+      `Covered Lines: ${report.summary.coveredLines}/${report.summary.totalLines}`,
+    );
     lines.push(`Uncovered Files: ${report.uncoveredFiles.length}`);
     lines.push("");
-    
+
     lines.push("🎯 THRESHOLDS");
     lines.push("-".repeat(20));
-    lines.push(`Lines: ${report.summary.coverage.toFixed(2)}% (threshold: ${report.summary.thresholds.lines}%)`);
-    lines.push(`Status: ${report.summary.passed ? '✅ PASSED' : '❌ FAILED'}`);
+    lines.push(
+      `Lines: ${report.summary.coverage.toFixed(2)}% (threshold: ${report.summary.thresholds.lines}%)`,
+    );
+    lines.push(`Status: ${report.summary.passed ? "✅ PASSED" : "❌ FAILED"}`);
     lines.push("");
-    
+
     if (report.files.length > 0) {
       lines.push("📁 FILES BY COVERAGE");
       lines.push("-".repeat(20));
-      
-      const sortedFiles = [...report.files].sort((a, b) => a.coverage - b.coverage);
-      
+
+      const sortedFiles = [...report.files].sort(
+        (a, b) => a.coverage - b.coverage,
+      );
+
       for (const file of sortedFiles) {
-        const status = file.coverage >= 80 ? '✅' : file.coverage >= 60 ? '⚠️' : '❌';
-        lines.push(`${status} ${file.path}: ${file.coverage.toFixed(2)}% (${file.coveredLines}/${file.totalLines} lines)`);
-        
-        if (file.uncoveredLines.length > 0 && file.uncoveredLines.length <= 10) {
-          lines.push(`   Uncovered lines: ${file.uncoveredLines.join(', ')}`);
+        const status =
+          file.coverage >= 80 ? "✅" : file.coverage >= 60 ? "⚠️" : "❌";
+        lines.push(
+          `${status} ${file.path}: ${file.coverage.toFixed(2)}% (${file.coveredLines}/${file.totalLines} lines)`,
+        );
+
+        if (
+          file.uncoveredLines.length > 0 &&
+          file.uncoveredLines.length <= 10
+        ) {
+          lines.push(`   Uncovered lines: ${file.uncoveredLines.join(", ")}`);
         } else if (file.uncoveredLines.length > 10) {
-          lines.push(`   Uncovered lines: ${file.uncoveredLines.slice(0, 10).join(', ')}... (+${file.uncoveredLines.length - 10} more)`);
+          lines.push(
+            `   Uncovered lines: ${file.uncoveredLines.slice(0, 10).join(", ")}... (+${file.uncoveredLines.length - 10} more)`,
+          );
         }
       }
       lines.push("");
     }
-    
+
     if (report.uncoveredFiles.length > 0) {
       lines.push("🚫 UNCOVERED FILES");
       lines.push("-".repeat(20));
@@ -545,63 +610,76 @@ class CoverageAnalyzer {
       }
       lines.push("");
     }
-    
+
     lines.push("💡 RECOMMENDATIONS");
     lines.push("-".repeat(20));
-    
-    const lowCoverageFiles = report.files.filter(f => f.coverage < 60);
+
+    const lowCoverageFiles = report.files.filter((f) => f.coverage < 60);
     if (lowCoverageFiles.length > 0) {
       lines.push("• Focus on improving coverage for these files:");
       for (const file of lowCoverageFiles.slice(0, 5)) {
         lines.push(`  - ${file.path} (${file.coverage.toFixed(2)}%)`);
       }
     }
-    
+
     if (report.uncoveredFiles.length > 0) {
       lines.push("• Add tests for uncovered files:");
       for (const file of report.uncoveredFiles.slice(0, 5)) {
         lines.push(`  - ${file}`);
       }
     }
-    
+
     if (report.summary.coverage >= 90) {
       lines.push("• Excellent coverage! Consider adding edge case tests.");
     } else if (report.summary.coverage >= 80) {
-      lines.push("• Good coverage! Focus on critical paths and error handling.");
+      lines.push(
+        "• Good coverage! Focus on critical paths and error handling.",
+      );
     } else {
-      lines.push("• Coverage needs improvement. Add tests for core functionality first.");
+      lines.push(
+        "• Coverage needs improvement. Add tests for core functionality first.",
+      );
     }
 
-    await Deno.writeTextFile(`${this.outputDir}/coverage-report.txt`, lines.join('\n'));
+    await Deno.writeTextFile(
+      `${this.outputDir}/coverage-report.txt`,
+      lines.join("\n"),
+    );
     console.log("  ✅ Text coverage report generated");
   }
 
   private async generateBadges(report: CoverageReport): Promise<void> {
     const coverage = report.summary.coverage;
-    const color = coverage >= 90 ? 'brightgreen' :
-                 coverage >= 80 ? 'green' :
-                 coverage >= 70 ? 'yellow' :
-                 coverage >= 60 ? 'orange' : 'red';
-    
+    const color =
+      coverage >= 90
+        ? "brightgreen"
+        : coverage >= 80
+          ? "green"
+          : coverage >= 70
+            ? "yellow"
+            : coverage >= 60
+              ? "orange"
+              : "red";
+
     const badgeUrl = `https://img.shields.io/badge/coverage-${coverage.toFixed(1)}%25-${color}`;
-    
+
     const badgeMarkdown = `![Coverage](${badgeUrl})`;
     const badgeHTML = `<img src="${badgeUrl}" alt="Coverage ${coverage.toFixed(1)}%">`;
-    
+
     const badges = {
       url: badgeUrl,
       markdown: badgeMarkdown,
       html: badgeHTML,
       coverage: coverage.toFixed(1),
       color,
-      status: report.summary.passed ? 'passed' : 'failed',
+      status: report.summary.passed ? "passed" : "failed",
     };
-    
+
     await Deno.writeTextFile(
       `${this.outputDir}/coverage-badges.json`,
-      JSON.stringify(badges, null, 2)
+      JSON.stringify(badges, null, 2),
     );
-    
+
     console.log("  ✅ Coverage badges generated");
   }
 }
@@ -662,25 +740,26 @@ EXAMPLES:
 
   try {
     const report = await analyzer.generateReport();
-    
+
     console.log("\n📊 COVERAGE SUMMARY");
     console.log("=".repeat(40));
     console.log(`Overall Coverage: ${report.summary.coverage.toFixed(2)}%`);
     console.log(`Total Files: ${report.summary.totalFiles}`);
-    console.log(`Covered Lines: ${report.summary.coveredLines}/${report.summary.totalLines}`);
+    console.log(
+      `Covered Lines: ${report.summary.coveredLines}/${report.summary.totalLines}`,
+    );
     console.log(`Uncovered Files: ${report.uncoveredFiles.length}`);
-    
+
     const status = report.summary.passed ? "✅ PASSED" : "❌ FAILED";
     console.log(`Status: ${status}`);
-    
+
     console.log(`\n📄 Reports generated in: ${args["output-dir"]}`);
     console.log(`  - Detailed HTML: coverage-detailed.html`);
     console.log(`  - JSON Data: coverage-report.json`);
     console.log(`  - Text Summary: coverage-report.txt`);
     console.log(`  - Badges: coverage-badges.json`);
-    
+
     Deno.exit(report.summary.passed ? 0 : 1);
-    
   } catch (error) {
     console.error("❌ Coverage analysis failed:", error.message);
     Deno.exit(1);

@@ -2,10 +2,15 @@
  * VSCode terminal adapter implementation
  */
 
-import { ITerminalAdapter, Terminal } from './base.ts';
-import { ILogger } from '../../core/logger.ts';
-import { TerminalError } from '../../utils/errors.ts';
-import { generateId, delay, timeout, createDeferred } from '../../utils/helpers.ts';
+import { ITerminalAdapter, Terminal } from "./base.ts";
+import { ILogger } from "../../core/logger.ts";
+import { TerminalError } from "../../utils/errors.ts";
+import {
+  generateId,
+  delay,
+  timeout,
+  createDeferred,
+} from "../../utils/helpers.ts";
 
 /**
  * VSCode API interface (injected via extension)
@@ -18,7 +23,9 @@ interface VSCodeAPI {
       shellArgs?: string[];
       env?: Record<string, string>;
     }): VSCodeTerminal;
-    onDidCloseTerminal(listener: (terminal: VSCodeTerminal) => void): { dispose(): void };
+    onDidCloseTerminal(listener: (terminal: VSCodeTerminal) => void): {
+      dispose(): void;
+    };
   };
 }
 
@@ -38,7 +45,7 @@ class VSCodeTerminalWrapper implements Terminal {
   id: string;
   pid?: number;
   private vscodeTerminal?: VSCodeTerminal;
-  private outputBuffer = '';
+  private outputBuffer = "";
   private commandMarker: string;
   private outputDeferred = createDeferred<string>();
   private isDisposed = false;
@@ -48,7 +55,7 @@ class VSCodeTerminalWrapper implements Terminal {
     private shellType: string,
     private logger: ILogger,
   ) {
-    this.id = generateId('vscode-term');
+    this.id = generateId("vscode-term");
     this.commandMarker = `__CLAUDE_FLOW_${this.id}__`;
   }
 
@@ -60,15 +67,16 @@ class VSCodeTerminalWrapper implements Terminal {
         name: `Claude-Flow Terminal ${this.id}`,
         shellArgs: this.getShellArgs(),
         env: {
-          CLAUDE_FLOW_TERMINAL: 'true',
+          CLAUDE_FLOW_TERMINAL: "true",
           CLAUDE_FLOW_TERMINAL_ID: this.id,
-          PS1: '$ ', // Simple prompt
+          PS1: "$ ", // Simple prompt
         },
       };
       if (shellPath !== undefined) {
         terminalOptions.shellPath = shellPath;
       }
-      this.vscodeTerminal = this.vscodeApi.window.createTerminal(terminalOptions);
+      this.vscodeTerminal =
+        this.vscodeApi.window.createTerminal(terminalOptions);
 
       // Get process ID
       const processId = await this.vscodeTerminal.processId;
@@ -82,20 +90,23 @@ class VSCodeTerminalWrapper implements Terminal {
       // Wait for terminal to be ready
       await this.waitForReady();
 
-      this.logger.debug('VSCode terminal initialized', { id: this.id, pid: this.pid });
+      this.logger.debug("VSCode terminal initialized", {
+        id: this.id,
+        pid: this.pid,
+      });
     } catch (error) {
-      throw new TerminalError('Failed to create VSCode terminal', { error });
+      throw new TerminalError("Failed to create VSCode terminal", { error });
     }
   }
 
   async executeCommand(command: string): Promise<string> {
     if (!this.vscodeTerminal || !this.isAlive()) {
-      throw new TerminalError('Terminal is not alive');
+      throw new TerminalError("Terminal is not alive");
     }
 
     try {
       // Clear output buffer
-      this.outputBuffer = '';
+      this.outputBuffer = "";
       this.outputDeferred = createDeferred<string>();
 
       // Send command with marker
@@ -106,18 +117,18 @@ class VSCodeTerminalWrapper implements Terminal {
       const output = await timeout(
         this.outputDeferred.promise,
         30000,
-        'Command execution timeout',
+        "Command execution timeout",
       );
 
       return output;
     } catch (error) {
-      throw new TerminalError('Failed to execute command', { command, error });
+      throw new TerminalError("Failed to execute command", { command, error });
     }
   }
 
   async write(data: string): Promise<void> {
     if (!this.vscodeTerminal || !this.isAlive()) {
-      throw new TerminalError('Terminal is not alive');
+      throw new TerminalError("Terminal is not alive");
     }
 
     this.vscodeTerminal.sendText(data, false);
@@ -125,12 +136,12 @@ class VSCodeTerminalWrapper implements Terminal {
 
   async read(): Promise<string> {
     if (!this.vscodeTerminal || !this.isAlive()) {
-      throw new TerminalError('Terminal is not alive');
+      throw new TerminalError("Terminal is not alive");
     }
 
     // Return buffered output
     const output = this.outputBuffer;
-    this.outputBuffer = '';
+    this.outputBuffer = "";
     return output;
   }
 
@@ -142,14 +153,17 @@ class VSCodeTerminalWrapper implements Terminal {
     if (this.vscodeTerminal && !this.isDisposed) {
       try {
         // Try graceful shutdown first
-        this.vscodeTerminal.sendText('exit', true);
+        this.vscodeTerminal.sendText("exit", true);
         await delay(500);
 
         // Dispose terminal
         this.vscodeTerminal.dispose();
         this.isDisposed = true;
       } catch (error) {
-        this.logger.warn('Error killing VSCode terminal', { id: this.id, error });
+        this.logger.warn("Error killing VSCode terminal", {
+          id: this.id,
+          error,
+        });
       }
     }
   }
@@ -165,11 +179,11 @@ class VSCodeTerminalWrapper implements Terminal {
     if (markerIndex !== -1) {
       // Extract output before marker
       const output = this.outputBuffer.substring(0, markerIndex).trim();
-      
+
       // Clear buffer up to after marker
-      this.outputBuffer = this.outputBuffer.substring(
-        markerIndex + this.commandMarker.length,
-      ).trim();
+      this.outputBuffer = this.outputBuffer
+        .substring(markerIndex + this.commandMarker.length)
+        .trim();
 
       // Resolve pending command
       this.outputDeferred.resolve(output);
@@ -178,14 +192,14 @@ class VSCodeTerminalWrapper implements Terminal {
 
   private getShellPath(): string | undefined {
     switch (this.shellType) {
-      case 'bash':
-        return '/bin/bash';
-      case 'zsh':
-        return '/bin/zsh';
-      case 'powershell':
-        return Deno.build.os === 'windows' ? 'powershell.exe' : 'pwsh';
-      case 'cmd':
-        return Deno.build.os === 'windows' ? 'cmd.exe' : undefined;
+      case "bash":
+        return "/bin/bash";
+      case "zsh":
+        return "/bin/zsh";
+      case "powershell":
+        return Deno.build.os === "windows" ? "powershell.exe" : "pwsh";
+      case "cmd":
+        return Deno.build.os === "windows" ? "cmd.exe" : undefined;
       default:
         return undefined;
     }
@@ -193,14 +207,14 @@ class VSCodeTerminalWrapper implements Terminal {
 
   private getShellArgs(): string[] {
     switch (this.shellType) {
-      case 'bash':
-        return ['--norc', '--noprofile'];
-      case 'zsh':
-        return ['--no-rcs'];
-      case 'powershell':
-        return ['-NoProfile', '-NonInteractive'];
-      case 'cmd':
-        return ['/Q'];
+      case "bash":
+        return ["--norc", "--noprofile"];
+      case "zsh":
+        return ["--no-rcs"];
+      case "powershell":
+        return ["-NoProfile", "-NonInteractive"];
+      case "cmd":
+        return ["/Q"];
       default:
         return [];
     }
@@ -209,17 +223,17 @@ class VSCodeTerminalWrapper implements Terminal {
   private async waitForReady(): Promise<void> {
     // Send a test command to ensure terminal is ready
     this.vscodeTerminal!.sendText('echo "READY"', true);
-    
+
     const startTime = Date.now();
     while (Date.now() - startTime < 5000) {
-      if (this.outputBuffer.includes('READY')) {
-        this.outputBuffer = '';
+      if (this.outputBuffer.includes("READY")) {
+        this.outputBuffer = "";
         return;
       }
       await delay(100);
     }
-    
-    throw new TerminalError('Terminal failed to become ready');
+
+    throw new TerminalError("Terminal failed to become ready");
   }
 }
 
@@ -237,37 +251,39 @@ export class VSCodeAdapter implements ITerminalAdapter {
   }
 
   async initialize(): Promise<void> {
-    this.logger.info('Initializing VSCode terminal adapter');
-    
+    this.logger.info("Initializing VSCode terminal adapter");
+
     // Check if running in VSCode extension context
     if (!this.isVSCodeExtensionContext()) {
-      throw new TerminalError('Not running in VSCode extension context');
+      throw new TerminalError("Not running in VSCode extension context");
     }
 
     // Get VSCode API from global
     this.vscodeApi = (globalThis as any).vscode;
     if (!this.vscodeApi) {
-      throw new TerminalError('VSCode API not available');
+      throw new TerminalError("VSCode API not available");
     }
 
     // Register terminal close listener
-    this.terminalCloseListener = this.vscodeApi.window.onDidCloseTerminal((terminal) => {
-      // Find and clean up closed terminal
-      for (const [id, wrapper] of this.terminals.entries()) {
-        if ((wrapper as any).vscodeTerminal === terminal) {
-          this.logger.info('VSCode terminal closed', { id });
-          this.terminals.delete(id);
-          break;
+    this.terminalCloseListener = this.vscodeApi.window.onDidCloseTerminal(
+      (terminal) => {
+        // Find and clean up closed terminal
+        for (const [id, wrapper] of this.terminals.entries()) {
+          if ((wrapper as any).vscodeTerminal === terminal) {
+            this.logger.info("VSCode terminal closed", { id });
+            this.terminals.delete(id);
+            break;
+          }
         }
-      }
-    });
+      },
+    );
 
-    this.logger.info('VSCode terminal adapter initialized');
+    this.logger.info("VSCode terminal adapter initialized");
   }
 
   async shutdown(): Promise<void> {
-    this.logger.info('Shutting down VSCode terminal adapter');
-    
+    this.logger.info("Shutting down VSCode terminal adapter");
+
     // Dispose listener
     if (this.terminalCloseListener) {
       this.terminalCloseListener.dispose();
@@ -275,14 +291,14 @@ export class VSCodeAdapter implements ITerminalAdapter {
 
     // Kill all terminals
     const terminals = Array.from(this.terminals.values());
-    await Promise.all(terminals.map(term => term.kill()));
-    
+    await Promise.all(terminals.map((term) => term.kill()));
+
     this.terminals.clear();
   }
 
   async createTerminal(): Promise<Terminal> {
     if (!this.vscodeApi) {
-      throw new TerminalError('VSCode API not initialized');
+      throw new TerminalError("VSCode API not initialized");
     }
 
     const terminal = new VSCodeTerminalWrapper(
@@ -290,16 +306,18 @@ export class VSCodeAdapter implements ITerminalAdapter {
       this.shellType,
       this.logger,
     );
-    
+
     await terminal.initialize();
     this.terminals.set(terminal.id, terminal);
-    
+
     // Register output processor if extension provides it
     const outputProcessor = (globalThis as any).registerTerminalOutputProcessor;
     if (outputProcessor) {
-      outputProcessor(terminal.id, (data: string) => terminal.processOutput(data));
+      outputProcessor(terminal.id, (data: string) =>
+        terminal.processOutput(data),
+      );
     }
-    
+
     return terminal;
   }
 
@@ -310,31 +328,33 @@ export class VSCodeAdapter implements ITerminalAdapter {
 
   private isVSCodeExtensionContext(): boolean {
     // Check for VSCode extension environment
-    return typeof (globalThis as any).vscode !== 'undefined' &&
-           typeof (globalThis as any).vscode.window !== 'undefined';
+    return (
+      typeof (globalThis as any).vscode !== "undefined" &&
+      typeof (globalThis as any).vscode.window !== "undefined"
+    );
   }
 
   private detectShell(): string {
     // Get default shell from VSCode settings or environment
     const platform = Deno.build.os;
-    
-    if (platform === 'windows') {
+
+    if (platform === "windows") {
       // Windows defaults
-      const comspec = Deno.env.get('COMSPEC');
-      if (comspec?.toLowerCase().includes('powershell')) {
-        return 'powershell';
+      const comspec = Deno.env.get("COMSPEC");
+      if (comspec?.toLowerCase().includes("powershell")) {
+        return "powershell";
       }
-      return 'cmd';
+      return "cmd";
     } else {
       // Unix-like defaults
-      const shell = Deno.env.get('SHELL');
+      const shell = Deno.env.get("SHELL");
       if (shell) {
-        const shellName = shell.split('/').pop();
-        if (shellName && ['bash', 'zsh', 'fish', 'sh'].includes(shellName)) {
+        const shellName = shell.split("/").pop();
+        if (shellName && ["bash", "zsh", "fish", "sh"].includes(shellName)) {
           return shellName;
         }
       }
-      return 'bash';
+      return "bash";
     }
   }
 }

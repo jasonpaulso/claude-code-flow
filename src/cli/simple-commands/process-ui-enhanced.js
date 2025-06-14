@@ -1,5 +1,5 @@
 // process-ui-enhanced.js - Enhanced process management UI with multiple views
-import { printSuccess, printError, printWarning, printInfo } from '../utils.js';
+import { printSuccess, printError, printWarning, printInfo } from "../utils.js";
 
 // Simple color utilities
 const colors = {
@@ -12,26 +12,50 @@ const colors = {
   blue: (text) => `\x1b[34m${text}\x1b[0m`,
   magenta: (text) => `\x1b[35m${text}\x1b[0m`,
   bold: (text) => `\x1b[1m${text}\x1b[0m`,
-  dim: (text) => `\x1b[2m${text}\x1b[0m`
+  dim: (text) => `\x1b[2m${text}\x1b[0m`,
 };
 
 const PROCESSES = [
-  { id: 'event-bus', name: 'Event Bus', description: 'Central event distribution system' },
-  { id: 'orchestrator', name: 'Orchestrator', description: 'Main coordination engine' },
-  { id: 'memory-manager', name: 'Memory Manager', description: 'Persistent memory system' },
-  { id: 'terminal-pool', name: 'Terminal Pool', description: 'Terminal session management' },
-  { id: 'mcp-server', name: 'MCP Server', description: 'Model Context Protocol server' },
-  { id: 'coordinator', name: 'Coordinator', description: 'Task coordination service' }
+  {
+    id: "event-bus",
+    name: "Event Bus",
+    description: "Central event distribution system",
+  },
+  {
+    id: "orchestrator",
+    name: "Orchestrator",
+    description: "Main coordination engine",
+  },
+  {
+    id: "memory-manager",
+    name: "Memory Manager",
+    description: "Persistent memory system",
+  },
+  {
+    id: "terminal-pool",
+    name: "Terminal Pool",
+    description: "Terminal session management",
+  },
+  {
+    id: "mcp-server",
+    name: "MCP Server",
+    description: "Model Context Protocol server",
+  },
+  {
+    id: "coordinator",
+    name: "Coordinator",
+    description: "Task coordination service",
+  },
 ];
 
 // View modes
 const VIEWS = {
-  PROCESSES: 'processes',
-  STATUS: 'status',
-  ORCHESTRATION: 'orchestration',
-  MEMORY: 'memory',
-  LOGS: 'logs',
-  HELP: 'help'
+  PROCESSES: "processes",
+  STATUS: "status",
+  ORCHESTRATION: "orchestration",
+  MEMORY: "memory",
+  LOGS: "logs",
+  HELP: "help",
 };
 
 export class EnhancedProcessUI {
@@ -45,7 +69,7 @@ export class EnhancedProcessUI {
     this.memoryStats = {
       totalEntries: 0,
       totalSize: 0,
-      namespaces: []
+      namespaces: [],
     };
     this.logs = [];
     this.systemStats = {
@@ -54,78 +78,120 @@ export class EnhancedProcessUI {
       completedTasks: 0,
       activeAgents: 0,
       memoryUsage: 0,
-      cpuUsage: 0
+      cpuUsage: 0,
     };
-    
+
     // Initialize process states
-    PROCESSES.forEach(p => {
+    PROCESSES.forEach((p) => {
       this.processes.set(p.id, {
         ...p,
-        status: 'stopped',
+        status: "stopped",
         pid: null,
         uptime: 0,
         cpu: Math.random() * 5,
-        memory: Math.random() * 100
+        memory: Math.random() * 100,
       });
     });
-    
+
     // Start system uptime counter
     setInterval(() => {
       this.systemStats.uptime++;
     }, 1000);
-    
+
     // Simulate some initial data
     this.initializeMockData();
   }
-  
+
   initializeMockData() {
     // Mock agents
     this.agents = [
-      { id: 'agent-001', name: 'Research Agent', type: 'researcher', status: 'idle', tasks: 0 },
-      { id: 'agent-002', name: 'Code Developer', type: 'implementer', status: 'working', tasks: 2 },
-      { id: 'agent-003', name: 'Data Analyst', type: 'analyst', status: 'idle', tasks: 0 }
+      {
+        id: "agent-001",
+        name: "Research Agent",
+        type: "researcher",
+        status: "idle",
+        tasks: 0,
+      },
+      {
+        id: "agent-002",
+        name: "Code Developer",
+        type: "implementer",
+        status: "working",
+        tasks: 2,
+      },
+      {
+        id: "agent-003",
+        name: "Data Analyst",
+        type: "analyst",
+        status: "idle",
+        tasks: 0,
+      },
     ];
-    
+
     // Mock tasks
     this.tasks = [
-      { id: 'task-001', description: 'Analyze user requirements', status: 'completed', assignedTo: 'agent-001' },
-      { id: 'task-002', description: 'Implement authentication', status: 'in_progress', assignedTo: 'agent-002' },
-      { id: 'task-003', description: 'Write unit tests', status: 'pending', assignedTo: 'agent-002' },
-      { id: 'task-004', description: 'Review security', status: 'pending', assignedTo: null }
+      {
+        id: "task-001",
+        description: "Analyze user requirements",
+        status: "completed",
+        assignedTo: "agent-001",
+      },
+      {
+        id: "task-002",
+        description: "Implement authentication",
+        status: "in_progress",
+        assignedTo: "agent-002",
+      },
+      {
+        id: "task-003",
+        description: "Write unit tests",
+        status: "pending",
+        assignedTo: "agent-002",
+      },
+      {
+        id: "task-004",
+        description: "Review security",
+        status: "pending",
+        assignedTo: null,
+      },
     ];
-    
+
     // Mock memory namespaces
     this.memoryStats = {
       totalEntries: 42,
-      totalSize: '156.3 KB',
+      totalSize: "156.3 KB",
       namespaces: [
-        { name: 'sparc', entries: 15, size: '45.2 KB' },
-        { name: 'agents', entries: 12, size: '38.7 KB' },
-        { name: 'tasks', entries: 8, size: '24.1 KB' },
-        { name: 'system', entries: 7, size: '48.3 KB' }
-      ]
+        { name: "sparc", entries: 15, size: "45.2 KB" },
+        { name: "agents", entries: 12, size: "38.7 KB" },
+        { name: "tasks", entries: 8, size: "24.1 KB" },
+        { name: "system", entries: 7, size: "48.3 KB" },
+      ],
     };
-    
+
     // Mock logs
     this.logs = [
-      { time: new Date(), level: 'info', message: 'System initialized' },
-      { time: new Date(), level: 'success', message: 'All processes ready' },
-      { time: new Date(), level: 'warning', message: 'High memory usage detected' }
+      { time: new Date(), level: "info", message: "System initialized" },
+      { time: new Date(), level: "success", message: "All processes ready" },
+      {
+        time: new Date(),
+        level: "warning",
+        message: "High memory usage detected",
+      },
     ];
   }
-  
+
   async start() {
     // Clear screen
     console.clear();
-    
+
     // Show welcome
-    printSuccess('🧠 Claude-Flow Process Management UI v1.0.43');
-    console.log('─'.repeat(80));
+    printSuccess("🧠 Claude-Flow Process Management UI v1.0.43");
+    console.log("─".repeat(80));
     console.log();
-    
+
     // Initial render
     this.render();
-    
+
     // Main UI loop
     while (this.running) {
       await this.handleInput();
@@ -134,14 +200,14 @@ export class EnhancedProcessUI {
       }
     }
   }
-  
+
   render() {
     // Clear screen and move cursor to top
-    console.log('\x1b[2J\x1b[H');
-    
+    console.log("\x1b[2J\x1b[H");
+
     // Header with navigation
     this.renderHeader();
-    
+
     // Main content based on current view
     switch (this.currentView) {
       case VIEWS.PROCESSES:
@@ -163,303 +229,373 @@ export class EnhancedProcessUI {
         this.renderHelpView();
         break;
     }
-    
+
     // Footer with controls
     this.renderFooter();
   }
-  
+
   renderHeader() {
-    console.log(colors.cyan(colors.bold('🧠 Claude-Flow Process Manager')));
-    console.log(colors.gray('─'.repeat(80)));
-    
+    console.log(colors.cyan(colors.bold("🧠 Claude-Flow Process Manager")));
+    console.log(colors.gray("─".repeat(80)));
+
     // Navigation tabs
     const tabs = [
-      { key: '1', view: VIEWS.PROCESSES, label: 'Processes' },
-      { key: '2', view: VIEWS.STATUS, label: 'Status' },
-      { key: '3', view: VIEWS.ORCHESTRATION, label: 'Orchestration' },
-      { key: '4', view: VIEWS.MEMORY, label: 'Memory' },
-      { key: '5', view: VIEWS.LOGS, label: 'Logs' },
-      { key: '6', view: VIEWS.HELP, label: 'Help' }
+      { key: "1", view: VIEWS.PROCESSES, label: "Processes" },
+      { key: "2", view: VIEWS.STATUS, label: "Status" },
+      { key: "3", view: VIEWS.ORCHESTRATION, label: "Orchestration" },
+      { key: "4", view: VIEWS.MEMORY, label: "Memory" },
+      { key: "5", view: VIEWS.LOGS, label: "Logs" },
+      { key: "6", view: VIEWS.HELP, label: "Help" },
     ];
-    
-    let tabLine = '';
-    tabs.forEach(tab => {
+
+    let tabLine = "";
+    tabs.forEach((tab) => {
       const isActive = this.currentView === tab.view;
-      const label = isActive ? colors.yellow(`[${tab.label}]`) : colors.gray(`${tab.label}`);
+      const label = isActive
+        ? colors.yellow(`[${tab.label}]`)
+        : colors.gray(`${tab.label}`);
       tabLine += `  ${colors.bold(tab.key)}:${label}`;
     });
-    
+
     console.log(tabLine);
-    console.log(colors.gray('─'.repeat(80)));
+    console.log(colors.gray("─".repeat(80)));
     console.log();
   }
-  
+
   renderProcessView() {
-    console.log(colors.white(colors.bold('Process Management')));
+    console.log(colors.white(colors.bold("Process Management")));
     console.log();
-    
+
     let index = 0;
     for (const [id, process] of this.processes) {
       const selected = index === this.selectedIndex;
-      const prefix = selected ? colors.yellow('▶ ') : '  ';
+      const prefix = selected ? colors.yellow("▶ ") : "  ";
       const status = this.getStatusIcon(process.status);
-      const name = selected ? colors.yellow(process.name) : colors.white(process.name);
-      
+      const name = selected
+        ? colors.yellow(process.name)
+        : colors.white(process.name);
+
       console.log(`${prefix}${status} ${name}`);
       console.log(`     ${colors.gray(process.description)}`);
-      
-      if (process.status === 'running') {
-        const stats = colors.dim(`PID: ${process.pid} | Uptime: ${this.formatUptime(process.uptime)} | CPU: ${process.cpu.toFixed(1)}% | Mem: ${process.memory.toFixed(0)}MB`);
+
+      if (process.status === "running") {
+        const stats = colors.dim(
+          `PID: ${process.pid} | Uptime: ${this.formatUptime(process.uptime)} | CPU: ${process.cpu.toFixed(1)}% | Mem: ${process.memory.toFixed(0)}MB`,
+        );
         console.log(`     ${stats}`);
       }
       console.log();
-      
+
       index++;
     }
-    
+
     // Quick stats
-    const running = Array.from(this.processes.values()).filter(p => p.status === 'running').length;
-    console.log(colors.gray('─'.repeat(80)));
-    console.log(colors.white(`Total: ${this.processes.size} | Running: ${colors.green(running)} | Stopped: ${colors.gray(this.processes.size - running)}`));
+    const running = Array.from(this.processes.values()).filter(
+      (p) => p.status === "running",
+    ).length;
+    console.log(colors.gray("─".repeat(80)));
+    console.log(
+      colors.white(
+        `Total: ${this.processes.size} | Running: ${colors.green(running)} | Stopped: ${colors.gray(this.processes.size - running)}`,
+      ),
+    );
   }
-  
+
   renderStatusView() {
-    console.log(colors.white(colors.bold('System Status')));
+    console.log(colors.white(colors.bold("System Status")));
     console.log();
-    
+
     // System overview
-    console.log(colors.cyan('📊 System Overview'));
-    console.log(`  Uptime: ${colors.green(this.formatUptime(this.systemStats.uptime))}`);
+    console.log(colors.cyan("📊 System Overview"));
+    console.log(
+      `  Uptime: ${colors.green(this.formatUptime(this.systemStats.uptime))}`,
+    );
     console.log(`  Process Health: ${this.getHealthBar()}`);
     console.log();
-    
+
     // Resource usage
-    console.log(colors.cyan('💻 Resource Usage'));
-    console.log(`  CPU Usage: ${this.getUsageBar(this.systemStats.cpuUsage, 100)} ${this.systemStats.cpuUsage}%`);
-    console.log(`  Memory: ${this.getUsageBar(this.systemStats.memoryUsage, 100)} ${this.systemStats.memoryUsage}%`);
+    console.log(colors.cyan("💻 Resource Usage"));
+    console.log(
+      `  CPU Usage: ${this.getUsageBar(this.systemStats.cpuUsage, 100)} ${this.systemStats.cpuUsage}%`,
+    );
+    console.log(
+      `  Memory: ${this.getUsageBar(this.systemStats.memoryUsage, 100)} ${this.systemStats.memoryUsage}%`,
+    );
     console.log();
-    
+
     // Activity metrics
-    console.log(colors.cyan('📈 Activity Metrics'));
-    console.log(`  Active Agents: ${colors.yellow(this.agents.filter(a => a.status === 'working').length)}/${this.agents.length}`);
+    console.log(colors.cyan("📈 Activity Metrics"));
+    console.log(
+      `  Active Agents: ${colors.yellow(this.agents.filter((a) => a.status === "working").length)}/${this.agents.length}`,
+    );
     console.log(`  Total Tasks: ${this.tasks.length}`);
-    console.log(`  Completed: ${colors.green(this.tasks.filter(t => t.status === 'completed').length)}`);
-    console.log(`  In Progress: ${colors.yellow(this.tasks.filter(t => t.status === 'in_progress').length)}`);
-    console.log(`  Pending: ${colors.gray(this.tasks.filter(t => t.status === 'pending').length)}`);
+    console.log(
+      `  Completed: ${colors.green(this.tasks.filter((t) => t.status === "completed").length)}`,
+    );
+    console.log(
+      `  In Progress: ${colors.yellow(this.tasks.filter((t) => t.status === "in_progress").length)}`,
+    );
+    console.log(
+      `  Pending: ${colors.gray(this.tasks.filter((t) => t.status === "pending").length)}`,
+    );
     console.log();
-    
+
     // Recent events
-    console.log(colors.cyan('🔔 Recent Events'));
-    this.logs.slice(-3).forEach(log => {
+    console.log(colors.cyan("🔔 Recent Events"));
+    this.logs.slice(-3).forEach((log) => {
       const time = log.time.toLocaleTimeString();
-      const icon = log.level === 'success' ? '✓' : log.level === 'warning' ? '⚠' : 'ℹ';
-      const color = log.level === 'success' ? colors.green : log.level === 'warning' ? colors.yellow : colors.blue;
+      const icon =
+        log.level === "success" ? "✓" : log.level === "warning" ? "⚠" : "ℹ";
+      const color =
+        log.level === "success"
+          ? colors.green
+          : log.level === "warning"
+            ? colors.yellow
+            : colors.blue;
       console.log(`  ${colors.gray(time)} ${color(icon)} ${log.message}`);
     });
   }
-  
+
   renderOrchestrationView() {
-    console.log(colors.white(colors.bold('Orchestration Management')));
+    console.log(colors.white(colors.bold("Orchestration Management")));
     console.log();
-    
+
     // Agents section
-    console.log(colors.cyan('🤖 Active Agents'));
+    console.log(colors.cyan("🤖 Active Agents"));
     console.log();
     this.agents.forEach((agent, index) => {
-      const selected = this.currentView === VIEWS.ORCHESTRATION && index === this.selectedIndex;
-      const prefix = selected ? colors.yellow('▶ ') : '  ';
-      const statusIcon = agent.status === 'working' ? colors.green('●') : colors.gray('○');
-      const name = selected ? colors.yellow(agent.name) : colors.white(agent.name);
-      
+      const selected =
+        this.currentView === VIEWS.ORCHESTRATION &&
+        index === this.selectedIndex;
+      const prefix = selected ? colors.yellow("▶ ") : "  ";
+      const statusIcon =
+        agent.status === "working" ? colors.green("●") : colors.gray("○");
+      const name = selected
+        ? colors.yellow(agent.name)
+        : colors.white(agent.name);
+
       console.log(`${prefix}${statusIcon} ${name} (${agent.type})`);
-      console.log(`     ID: ${agent.id} | Tasks: ${agent.tasks} | Status: ${agent.status}`);
+      console.log(
+        `     ID: ${agent.id} | Tasks: ${agent.tasks} | Status: ${agent.status}`,
+      );
       console.log();
     });
-    
-    console.log(colors.gray('─'.repeat(40)));
-    
+
+    console.log(colors.gray("─".repeat(40)));
+
     // Tasks section
-    console.log(colors.cyan('📋 Task Queue'));
+    console.log(colors.cyan("📋 Task Queue"));
     console.log();
-    this.tasks.slice(0, 5).forEach(task => {
-      const statusColor = task.status === 'completed' ? colors.green : 
-                         task.status === 'in_progress' ? colors.yellow : colors.gray;
+    this.tasks.slice(0, 5).forEach((task) => {
+      const statusColor =
+        task.status === "completed"
+          ? colors.green
+          : task.status === "in_progress"
+            ? colors.yellow
+            : colors.gray;
       const status = statusColor(`[${task.status}]`);
       console.log(`  ${status} ${task.description}`);
       if (task.assignedTo) {
-        const agent = this.agents.find(a => a.id === task.assignedTo);
-        console.log(`       Assigned to: ${agent ? agent.name : task.assignedTo}`);
+        const agent = this.agents.find((a) => a.id === task.assignedTo);
+        console.log(
+          `       Assigned to: ${agent ? agent.name : task.assignedTo}`,
+        );
       }
     });
-    
+
     if (this.tasks.length > 5) {
       console.log(colors.gray(`  ... and ${this.tasks.length - 5} more tasks`));
     }
   }
-  
+
   renderMemoryView() {
-    console.log(colors.white(colors.bold('Memory Bank Management')));
+    console.log(colors.white(colors.bold("Memory Bank Management")));
     console.log();
-    
+
     // Overview
-    console.log(colors.cyan('💾 Memory Overview'));
-    console.log(`  Total Entries: ${colors.yellow(this.memoryStats.totalEntries)}`);
+    console.log(colors.cyan("💾 Memory Overview"));
+    console.log(
+      `  Total Entries: ${colors.yellow(this.memoryStats.totalEntries)}`,
+    );
     console.log(`  Total Size: ${colors.yellow(this.memoryStats.totalSize)}`);
     console.log();
-    
+
     // Namespaces
-    console.log(colors.cyan('📁 Namespaces'));
+    console.log(colors.cyan("📁 Namespaces"));
     console.log();
     this.memoryStats.namespaces.forEach((ns, index) => {
-      const selected = this.currentView === VIEWS.MEMORY && index === this.selectedIndex;
-      const prefix = selected ? colors.yellow('▶ ') : '  ';
+      const selected =
+        this.currentView === VIEWS.MEMORY && index === this.selectedIndex;
+      const prefix = selected ? colors.yellow("▶ ") : "  ";
       const name = selected ? colors.yellow(ns.name) : colors.white(ns.name);
-      
+
       console.log(`${prefix}${name}`);
       console.log(`     Entries: ${ns.entries} | Size: ${ns.size}`);
       console.log();
     });
-    
+
     // Recent operations
-    console.log(colors.gray('─'.repeat(40)));
-    console.log(colors.cyan('🔄 Recent Operations'));
-    console.log(`  ${colors.green('✓')} Stored: config.api.key`);
-    console.log(`  ${colors.blue('↓')} Retrieved: sparc.modes`);
-    console.log(`  ${colors.yellow('✎')} Updated: agent.status`);
+    console.log(colors.gray("─".repeat(40)));
+    console.log(colors.cyan("🔄 Recent Operations"));
+    console.log(`  ${colors.green("✓")} Stored: config.api.key`);
+    console.log(`  ${colors.blue("↓")} Retrieved: sparc.modes`);
+    console.log(`  ${colors.yellow("✎")} Updated: agent.status`);
   }
-  
+
   renderLogsView() {
-    console.log(colors.white(colors.bold('System Logs')));
+    console.log(colors.white(colors.bold("System Logs")));
     console.log();
-    
+
     // Log filters
-    console.log(colors.cyan('🔍 Filters: ') + colors.gray('[A]ll [I]nfo [W]arning [E]rror'));
-    console.log(colors.gray('─'.repeat(80)));
+    console.log(
+      colors.cyan("🔍 Filters: ") +
+        colors.gray("[A]ll [I]nfo [W]arning [E]rror"),
+    );
+    console.log(colors.gray("─".repeat(80)));
     console.log();
-    
+
     // Display logs
     const displayLogs = this.logs.slice(-15);
-    displayLogs.forEach(log => {
+    displayLogs.forEach((log) => {
       const time = log.time.toLocaleTimeString();
       let icon, color;
-      
+
       switch (log.level) {
-        case 'success':
-          icon = '✓';
+        case "success":
+          icon = "✓";
           color = colors.green;
           break;
-        case 'warning':
-          icon = '⚠';
+        case "warning":
+          icon = "⚠";
           color = colors.yellow;
           break;
-        case 'error':
-          icon = '✗';
+        case "error":
+          icon = "✗";
           color = colors.red;
           break;
         default:
-          icon = 'ℹ';
+          icon = "ℹ";
           color = colors.blue;
       }
-      
+
       console.log(`${colors.gray(time)} ${color(icon)} ${log.message}`);
     });
-    
+
     if (this.logs.length > 15) {
       console.log();
       console.log(colors.gray(`Showing last 15 of ${this.logs.length} logs`));
     }
   }
-  
+
   renderHelpView() {
-    console.log(colors.white(colors.bold('Help & Documentation')));
+    console.log(colors.white(colors.bold("Help & Documentation")));
     console.log();
-    
-    console.log(colors.cyan('🎯 Navigation'));
-    console.log(`  ${colors.yellow('1-6')}     Switch between views`);
-    console.log(`  ${colors.yellow('Tab')}     Cycle through views`);
-    console.log(`  ${colors.yellow('↑/↓')}     Navigate items (when available)`);
+
+    console.log(colors.cyan("🎯 Navigation"));
+    console.log(`  ${colors.yellow("1-6")}     Switch between views`);
+    console.log(`  ${colors.yellow("Tab")}     Cycle through views`);
+    console.log(
+      `  ${colors.yellow("↑/↓")}     Navigate items (when available)`,
+    );
     console.log();
-    
-    console.log(colors.cyan('⚡ Process Controls'));
-    console.log(`  ${colors.yellow('Space')}   Toggle selected process`);
-    console.log(`  ${colors.yellow('A')}       Start all processes`);
-    console.log(`  ${colors.yellow('Z')}       Stop all processes`);
-    console.log(`  ${colors.yellow('R')}       Restart all processes`);
+
+    console.log(colors.cyan("⚡ Process Controls"));
+    console.log(`  ${colors.yellow("Space")}   Toggle selected process`);
+    console.log(`  ${colors.yellow("A")}       Start all processes`);
+    console.log(`  ${colors.yellow("Z")}       Stop all processes`);
+    console.log(`  ${colors.yellow("R")}       Restart all processes`);
     console.log();
-    
-    console.log(colors.cyan('🤖 Orchestration'));
-    console.log(`  ${colors.yellow('N')}       Spawn new agent`);
-    console.log(`  ${colors.yellow('T')}       Create new task`);
-    console.log(`  ${colors.yellow('D')}       Delete selected item`);
+
+    console.log(colors.cyan("🤖 Orchestration"));
+    console.log(`  ${colors.yellow("N")}       Spawn new agent`);
+    console.log(`  ${colors.yellow("T")}       Create new task`);
+    console.log(`  ${colors.yellow("D")}       Delete selected item`);
     console.log();
-    
-    console.log(colors.cyan('💾 Memory Operations'));
-    console.log(`  ${colors.yellow('S')}       Store new entry`);
-    console.log(`  ${colors.yellow('G')}       Get/search entries`);
-    console.log(`  ${colors.yellow('C')}       Clear namespace`);
+
+    console.log(colors.cyan("💾 Memory Operations"));
+    console.log(`  ${colors.yellow("S")}       Store new entry`);
+    console.log(`  ${colors.yellow("G")}       Get/search entries`);
+    console.log(`  ${colors.yellow("C")}       Clear namespace`);
     console.log();
-    
-    console.log(colors.cyan('🔧 Other'));
-    console.log(`  ${colors.yellow('L')}       Clear logs`);
-    console.log(`  ${colors.yellow('H/?')}     Show this help`);
-    console.log(`  ${colors.yellow('Q')}       Quit`);
+
+    console.log(colors.cyan("🔧 Other"));
+    console.log(`  ${colors.yellow("L")}       Clear logs`);
+    console.log(`  ${colors.yellow("H/?")}     Show this help`);
+    console.log(`  ${colors.yellow("Q")}       Quit`);
   }
-  
+
   renderFooter() {
     console.log();
-    console.log(colors.gray('─'.repeat(80)));
-    
+    console.log(colors.gray("─".repeat(80)));
+
     // Context-sensitive controls
-    let controls = '';
+    let controls = "";
     switch (this.currentView) {
       case VIEWS.PROCESSES:
-        controls = `${colors.yellow('Space')} Toggle | ${colors.yellow('A')} Start All | ${colors.yellow('Z')} Stop All | ${colors.yellow('R')} Restart`;
+        controls = `${colors.yellow("Space")} Toggle | ${colors.yellow("A")} Start All | ${colors.yellow("Z")} Stop All | ${colors.yellow("R")} Restart`;
         break;
       case VIEWS.ORCHESTRATION:
-        controls = `${colors.yellow('N')} New Agent | ${colors.yellow('T')} New Task | ${colors.yellow('D')} Delete`;
+        controls = `${colors.yellow("N")} New Agent | ${colors.yellow("T")} New Task | ${colors.yellow("D")} Delete`;
         break;
       case VIEWS.MEMORY:
-        controls = `${colors.yellow('S')} Store | ${colors.yellow('G')} Get | ${colors.yellow('C')} Clear`;
+        controls = `${colors.yellow("S")} Store | ${colors.yellow("G")} Get | ${colors.yellow("C")} Clear`;
         break;
       case VIEWS.LOGS:
-        controls = `${colors.yellow('L')} Clear | ${colors.yellow('F')} Filter`;
+        controls = `${colors.yellow("L")} Clear | ${colors.yellow("F")} Filter`;
         break;
       default:
-        controls = `${colors.yellow('Tab')} Next View | ${colors.yellow('?')} Help`;
+        controls = `${colors.yellow("Tab")} Next View | ${colors.yellow("?")} Help`;
     }
-    
-    console.log(`${controls} | ${colors.yellow('Q')} Quit`);
-    console.log(colors.gray('─'.repeat(80)));
+
+    console.log(`${controls} | ${colors.yellow("Q")} Quit`);
+    console.log(colors.gray("─".repeat(80)));
   }
-  
+
   getStatusIcon(status) {
     switch (status) {
-      case 'running': return colors.green('●');
-      case 'stopped': return colors.gray('○');
-      case 'error': return colors.red('✗');
-      case 'starting': return colors.yellow('◐');
-      default: return colors.gray('?');
+      case "running":
+        return colors.green("●");
+      case "stopped":
+        return colors.gray("○");
+      case "error":
+        return colors.red("✗");
+      case "starting":
+        return colors.yellow("◐");
+      default:
+        return colors.gray("?");
     }
   }
-  
+
   getHealthBar() {
-    const running = Array.from(this.processes.values()).filter(p => p.status === 'running').length;
+    const running = Array.from(this.processes.values()).filter(
+      (p) => p.status === "running",
+    ).length;
     const total = this.processes.size;
     const percentage = (running / total) * 100;
     const filled = Math.round(percentage / 10);
-    const bar = '█'.repeat(filled) + '░'.repeat(10 - filled);
-    const color = percentage >= 80 ? colors.green : percentage >= 50 ? colors.yellow : colors.red;
+    const bar = "█".repeat(filled) + "░".repeat(10 - filled);
+    const color =
+      percentage >= 80
+        ? colors.green
+        : percentage >= 50
+          ? colors.yellow
+          : colors.red;
     return color(bar) + ` ${percentage.toFixed(0)}%`;
   }
-  
+
   getUsageBar(value, max) {
     const percentage = (value / max) * 100;
     const filled = Math.round(percentage / 10);
-    const bar = '▓'.repeat(filled) + '░'.repeat(10 - filled);
-    const color = percentage >= 80 ? colors.red : percentage >= 50 ? colors.yellow : colors.green;
+    const bar = "▓".repeat(filled) + "░".repeat(10 - filled);
+    const color =
+      percentage >= 80
+        ? colors.red
+        : percentage >= 50
+          ? colors.yellow
+          : colors.green;
     return color(bar);
   }
-  
+
   formatUptime(seconds) {
     if (seconds < 60) return `${seconds}s`;
     if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
@@ -467,80 +603,80 @@ export class EnhancedProcessUI {
     const minutes = Math.floor((seconds % 3600) / 60);
     return `${hours}h ${minutes}m`;
   }
-  
+
   async handleInput() {
     const decoder = new TextDecoder();
     const encoder = new TextEncoder();
-    
-    await Deno.stdout.write(encoder.encode('\nCommand: '));
-    
+
+    await Deno.stdout.write(encoder.encode("\nCommand: "));
+
     const buf = new Uint8Array(1024);
     const n = await Deno.stdin.read(buf);
     if (n === null) return;
-    
+
     const rawInput = decoder.decode(buf.subarray(0, n)).trim();
-    const input = rawInput.split('\n')[0].toLowerCase();
-    
+    const input = rawInput.split("\n")[0].toLowerCase();
+
     // Global commands
     switch (input) {
-      case 'q':
-      case 'quit':
+      case "q":
+      case "quit":
         this.running = false;
         console.clear();
-        printSuccess('Goodbye!');
+        printSuccess("Goodbye!");
         Deno.exit(0);
         break;
-        
-      case '1':
+
+      case "1":
         this.currentView = VIEWS.PROCESSES;
         this.selectedIndex = 0;
         break;
-        
-      case '2':
+
+      case "2":
         this.currentView = VIEWS.STATUS;
         this.selectedIndex = 0;
         break;
-        
-      case '3':
+
+      case "3":
         this.currentView = VIEWS.ORCHESTRATION;
         this.selectedIndex = 0;
         break;
-        
-      case '4':
+
+      case "4":
         this.currentView = VIEWS.MEMORY;
         this.selectedIndex = 0;
         break;
-        
-      case '5':
+
+      case "5":
         this.currentView = VIEWS.LOGS;
         this.selectedIndex = 0;
         break;
-        
-      case '6':
-      case '?':
-      case 'h':
-      case 'help':
+
+      case "6":
+      case "?":
+      case "h":
+      case "help":
         this.currentView = VIEWS.HELP;
         break;
-        
-      case 'tab':
-      case '\t':
+
+      case "tab":
+      case "\t":
         // Cycle through views
         const viewKeys = Object.values(VIEWS);
         const currentIndex = viewKeys.indexOf(this.currentView);
         this.currentView = viewKeys[(currentIndex + 1) % viewKeys.length];
         this.selectedIndex = 0;
         break;
-        
+
       default:
         // View-specific commands
         await this.handleViewSpecificInput(input);
     }
-    
+
     // Update system stats
     this.updateSystemStats();
   }
-  
+
   async handleViewSpecificInput(input) {
     switch (this.currentView) {
       case VIEWS.PROCESSES:
@@ -557,169 +693,184 @@ export class EnhancedProcessUI {
         break;
     }
   }
-  
+
   async handleProcessInput(input) {
     switch (input) {
-      case 'a':
+      case "a":
         await this.startAll();
         break;
-        
-      case 'z':
+
+      case "z":
         await this.stopAll();
         break;
-        
-      case 'r':
+
+      case "r":
         await this.restartAll();
         break;
-        
-      case ' ':
-      case 'space':
-      case 'enter':
-      case '':
+
+      case " ":
+      case "space":
+      case "enter":
+      case "":
         await this.toggleSelected();
         break;
-        
-      case 'up':
-      case 'k':
+
+      case "up":
+      case "k":
         this.selectedIndex = Math.max(0, this.selectedIndex - 1);
         break;
-        
-      case 'down':
-      case 'j':
-        this.selectedIndex = Math.min(this.processes.size - 1, this.selectedIndex + 1);
+
+      case "down":
+      case "j":
+        this.selectedIndex = Math.min(
+          this.processes.size - 1,
+          this.selectedIndex + 1,
+        );
         break;
     }
   }
-  
+
   async handleOrchestrationInput(input) {
     switch (input) {
-      case 'n':
-        this.addLog('info', 'Agent spawning not yet implemented');
+      case "n":
+        this.addLog("info", "Agent spawning not yet implemented");
         break;
-        
-      case 't':
-        this.addLog('info', 'Task creation not yet implemented');
+
+      case "t":
+        this.addLog("info", "Task creation not yet implemented");
         break;
-        
-      case 'd':
-        this.addLog('warning', 'Deletion not yet implemented');
+
+      case "d":
+        this.addLog("warning", "Deletion not yet implemented");
         break;
     }
   }
-  
+
   async handleMemoryInput(input) {
     switch (input) {
-      case 's':
-        this.addLog('info', 'Memory storage not yet implemented');
+      case "s":
+        this.addLog("info", "Memory storage not yet implemented");
         break;
-        
-      case 'g':
-        this.addLog('info', 'Memory retrieval not yet implemented');
+
+      case "g":
+        this.addLog("info", "Memory retrieval not yet implemented");
         break;
-        
-      case 'c':
-        this.addLog('warning', 'Memory clearing not yet implemented');
+
+      case "c":
+        this.addLog("warning", "Memory clearing not yet implemented");
         break;
     }
   }
-  
+
   async handleLogsInput(input) {
     switch (input) {
-      case 'l':
+      case "l":
         this.logs = [];
-        this.addLog('info', 'Logs cleared');
+        this.addLog("info", "Logs cleared");
         break;
-        
-      case 'f':
-        this.addLog('info', 'Log filtering not yet implemented');
+
+      case "f":
+        this.addLog("info", "Log filtering not yet implemented");
         break;
     }
   }
-  
+
   addLog(level, message) {
     this.logs.push({
       time: new Date(),
       level,
-      message
+      message,
     });
   }
-  
+
   updateSystemStats() {
     // Update random stats for demo
-    this.systemStats.cpuUsage = Math.min(100, Math.max(0, this.systemStats.cpuUsage + (Math.random() - 0.5) * 10));
-    this.systemStats.memoryUsage = Math.min(100, Math.max(0, this.systemStats.memoryUsage + (Math.random() - 0.5) * 5));
-    
+    this.systemStats.cpuUsage = Math.min(
+      100,
+      Math.max(0, this.systemStats.cpuUsage + (Math.random() - 0.5) * 10),
+    );
+    this.systemStats.memoryUsage = Math.min(
+      100,
+      Math.max(0, this.systemStats.memoryUsage + (Math.random() - 0.5) * 5),
+    );
+
     // Update process stats
     for (const [id, process] of this.processes) {
-      if (process.status === 'running') {
+      if (process.status === "running") {
         process.uptime++;
-        process.cpu = Math.min(100, Math.max(0, process.cpu + (Math.random() - 0.5) * 2));
-        process.memory = Math.min(200, Math.max(10, process.memory + (Math.random() - 0.5) * 5));
+        process.cpu = Math.min(
+          100,
+          Math.max(0, process.cpu + (Math.random() - 0.5) * 2),
+        );
+        process.memory = Math.min(
+          200,
+          Math.max(10, process.memory + (Math.random() - 0.5) * 5),
+        );
       }
     }
   }
-  
+
   async toggleSelected() {
     const process = Array.from(this.processes.values())[this.selectedIndex];
-    if (process.status === 'stopped') {
+    if (process.status === "stopped") {
       await this.startProcess(process.id);
     } else {
       await this.stopProcess(process.id);
     }
   }
-  
+
   async startProcess(id) {
     const process = this.processes.get(id);
     if (!process) return;
-    
-    this.addLog('info', `Starting ${process.name}...`);
-    process.status = 'starting';
-    
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    process.status = 'running';
+
+    this.addLog("info", `Starting ${process.name}...`);
+    process.status = "starting";
+
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    process.status = "running";
     process.pid = Math.floor(Math.random() * 10000) + 1000;
     process.uptime = 0;
-    
-    this.addLog('success', `${process.name} started successfully`);
+
+    this.addLog("success", `${process.name} started successfully`);
   }
-  
+
   async stopProcess(id) {
     const process = this.processes.get(id);
     if (!process) return;
-    
-    this.addLog('info', `Stopping ${process.name}...`);
-    process.status = 'stopped';
+
+    this.addLog("info", `Stopping ${process.name}...`);
+    process.status = "stopped";
     process.pid = null;
     process.uptime = 0;
-    
-    await new Promise(resolve => setTimeout(resolve, 300));
-    this.addLog('success', `${process.name} stopped`);
+
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    this.addLog("success", `${process.name} stopped`);
   }
-  
+
   async startAll() {
-    this.addLog('info', 'Starting all processes...');
+    this.addLog("info", "Starting all processes...");
     for (const [id, process] of this.processes) {
-      if (process.status === 'stopped') {
+      if (process.status === "stopped") {
         await this.startProcess(id);
       }
     }
-    this.addLog('success', 'All processes started');
+    this.addLog("success", "All processes started");
   }
-  
+
   async stopAll() {
-    this.addLog('info', 'Stopping all processes...');
+    this.addLog("info", "Stopping all processes...");
     for (const [id, process] of this.processes) {
-      if (process.status === 'running') {
+      if (process.status === "running") {
         await this.stopProcess(id);
       }
     }
-    this.addLog('success', 'All processes stopped');
+    this.addLog("success", "All processes stopped");
   }
-  
+
   async restartAll() {
     await this.stopAll();
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 500));
     await this.startAll();
   }
 }

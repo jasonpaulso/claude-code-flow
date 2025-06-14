@@ -35,8 +35,8 @@ export interface MemoryQuery {
   asOf?: number; // Time-travel query
   limit?: number;
   offset?: number;
-  orderBy?: 'timestamp' | 'key' | 'category';
-  orderDirection?: 'asc' | 'desc';
+  orderBy?: "timestamp" | "key" | "category";
+  orderDirection?: "asc" | "desc";
   vectorSearch?: {
     embedding: number[];
     threshold?: number;
@@ -51,7 +51,11 @@ export interface MemoryBackend {
   get(category: string, key: string): Promise<MemoryItem | null>;
   query(query: MemoryQuery): Promise<MemoryItem[]>;
   delete(category: string, key: string): Promise<boolean>;
-  update(category: string, key: string, updates: Partial<MemoryItem>): Promise<boolean>;
+  update(
+    category: string,
+    key: string,
+    updates: Partial<MemoryItem>,
+  ): Promise<boolean>;
   getStats(): Promise<BackendStats>;
   close(): Promise<void>;
 }
@@ -71,15 +75,15 @@ export interface ConflictResolution {
 export interface CacheConfig {
   maxSize: number;
   ttl: number;
-  strategy: 'lru' | 'lfu' | 'fifo';
+  strategy: "lru" | "lfu" | "fifo";
   onEvict?: (key: string, value: any) => void;
 }
 
 export interface ReplicationConfig {
-  mode: 'master-slave' | 'peer-to-peer';
+  mode: "master-slave" | "peer-to-peer";
   nodes: ReplicationNode[];
   syncInterval?: number;
-  conflictResolution?: 'last-write-wins' | 'vector-clock' | 'custom';
+  conflictResolution?: "last-write-wins" | "vector-clock" | "custom";
   retryAttempts?: number;
   retryDelay?: number;
 }
@@ -87,7 +91,7 @@ export interface ReplicationConfig {
 export interface ReplicationNode {
   id: string;
   url: string;
-  role?: 'master' | 'slave' | 'peer';
+  role?: "master" | "slave" | "peer";
   priority?: number;
 }
 
@@ -120,7 +124,7 @@ export interface VectorSearchResult {
 }
 
 export interface ImportExportOptions {
-  format: 'json' | 'markdown' | 'csv';
+  format: "json" | "markdown" | "csv";
   includeMetadata?: boolean;
   compress?: boolean;
   encryption?: {
@@ -138,7 +142,13 @@ export interface MemorySnapshot {
 }
 
 export interface MemoryEvent {
-  type: 'stored' | 'updated' | 'deleted' | 'imported' | 'exported' | 'replicated';
+  type:
+    | "stored"
+    | "updated"
+    | "deleted"
+    | "imported"
+    | "exported"
+    | "replicated";
   timestamp: number;
   data: any;
 }

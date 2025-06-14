@@ -2,8 +2,8 @@
  * Logging infrastructure for Claude-Flow
  */
 
-import { LoggingConfig } from '../utils/types.ts';
-import { formatBytes } from '../utils/helpers.ts';
+import { LoggingConfig } from "../utils/types.ts";
+import { formatBytes } from "../utils/helpers.ts";
 
 export interface ILogger {
   debug(message: string, meta?: unknown): void;
@@ -42,17 +42,20 @@ export class Logger implements ILogger {
 
   constructor(
     config: LoggingConfig = {
-      level: 'info',
-      format: 'json',
-      destination: 'console',
+      level: "info",
+      format: "json",
+      destination: "console",
     },
     context: Record<string, unknown> = {},
   ) {
     // Validate file path if file destination
-    if ((config.destination === 'file' || config.destination === 'both') && !config.filePath) {
-      throw new Error('File path required for file logging');
+    if (
+      (config.destination === "file" || config.destination === "both") &&
+      !config.filePath
+    ) {
+      throw new Error("File path required for file logging");
     }
-    
+
     this.config = config;
     this.context = context;
   }
@@ -64,14 +67,14 @@ export class Logger implements ILogger {
     if (!Logger.instance) {
       if (!config) {
         // Use default config if none provided and not in test environment
-        const isTestEnv = Deno.env.get('CLAUDE_FLOW_ENV') === 'test';
+        const isTestEnv = Deno.env.get("CLAUDE_FLOW_ENV") === "test";
         if (isTestEnv) {
-          throw new Error('Logger configuration required for initialization');
+          throw new Error("Logger configuration required for initialization");
         }
         config = {
-          level: 'info',
-          format: 'json',
-          destination: 'console',
+          level: "info",
+          format: "json",
+          destination: "console",
         };
       }
       Logger.instance = new Logger(config);
@@ -84,9 +87,13 @@ export class Logger implements ILogger {
    */
   async configure(config: LoggingConfig): Promise<void> {
     this.config = config;
-    
+
     // Reset file handle if destination changed
-    if (this.fileHandle && config.destination !== 'file' && config.destination !== 'both') {
+    if (
+      this.fileHandle &&
+      config.destination !== "file" &&
+      config.destination !== "both"
+    ) {
       await this.fileHandle.close();
       delete this.fileHandle;
     }
@@ -115,7 +122,12 @@ export class Logger implements ILogger {
     return new Logger(this.config, { ...this.context, ...context });
   }
 
-  private log(level: LogLevel, message: string, data?: unknown, error?: unknown): void {
+  private log(
+    level: LogLevel,
+    message: string,
+    data?: unknown,
+    error?: unknown,
+  ): void {
     if (!this.shouldLog(level)) {
       return;
     }
@@ -131,24 +143,31 @@ export class Logger implements ILogger {
 
     const formatted = this.format(entry);
 
-    if (this.config.destination === 'console' || this.config.destination === 'both') {
+    if (
+      this.config.destination === "console" ||
+      this.config.destination === "both"
+    ) {
       this.writeToConsole(level, formatted);
     }
 
-    if (this.config.destination === 'file' || this.config.destination === 'both') {
+    if (
+      this.config.destination === "file" ||
+      this.config.destination === "both"
+    ) {
       this.writeToFile(formatted);
     }
   }
 
   private shouldLog(level: LogLevel): boolean {
     // Default to 'info' if level is not set
-    const levelStr = this.config.level || 'info';
-    const configLevel = LogLevel[levelStr.toUpperCase() as keyof typeof LogLevel];
+    const levelStr = this.config.level || "info";
+    const configLevel =
+      LogLevel[levelStr.toUpperCase() as keyof typeof LogLevel];
     return level >= configLevel;
   }
 
   private format(entry: LogEntry): string {
-    if (this.config.format === 'json') {
+    if (this.config.format === "json") {
       // Handle error serialization for JSON format
       const jsonEntry = { ...entry };
       if (jsonEntry.error instanceof Error) {
@@ -162,17 +181,18 @@ export class Logger implements ILogger {
     }
 
     // Text format
-    const contextStr = Object.keys(entry.context).length > 0
-      ? ` ${JSON.stringify(entry.context)}`
-      : '';
-    const dataStr = entry.data !== undefined
-      ? ` ${JSON.stringify(entry.data)}`
-      : '';
-    const errorStr = entry.error !== undefined
-      ? entry.error instanceof Error
-        ? `\n  Error: ${entry.error.message}\n  Stack: ${entry.error.stack}`
-        : ` Error: ${JSON.stringify(entry.error)}`
-      : '';
+    const contextStr =
+      Object.keys(entry.context).length > 0
+        ? ` ${JSON.stringify(entry.context)}`
+        : "";
+    const dataStr =
+      entry.data !== undefined ? ` ${JSON.stringify(entry.data)}` : "";
+    const errorStr =
+      entry.error !== undefined
+        ? entry.error instanceof Error
+          ? `\n  Error: ${entry.error.message}\n  Stack: ${entry.error.stack}`
+          : ` Error: ${JSON.stringify(entry.error)}`
+        : "";
 
     return `[${entry.timestamp}] ${entry.level} ${entry.message}${contextStr}${dataStr}${errorStr}`;
   }
@@ -216,11 +236,11 @@ export class Logger implements ILogger {
 
       // Write the message
       const encoder = new TextEncoder();
-      const data = encoder.encode(message + '\n');
+      const data = encoder.encode(message + "\n");
       await this.fileHandle.write(data);
       this.currentFileSize += data.length;
     } catch (error) {
-      console.error('Failed to write to log file:', error);
+      console.error("Failed to write to log file:", error);
     }
   }
 
@@ -249,7 +269,7 @@ export class Logger implements ILogger {
     }
 
     // Rename current file
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     const rotatedPath = `${this.config.filePath}.${timestamp}`;
     await Deno.rename(this.config.filePath, rotatedPath);
 
@@ -265,12 +285,17 @@ export class Logger implements ILogger {
       return;
     }
 
-    const dir = this.config.filePath.substring(0, this.config.filePath.lastIndexOf('/'));
-    const baseFileName = this.config.filePath.substring(this.config.filePath.lastIndexOf('/') + 1);
+    const dir = this.config.filePath.substring(
+      0,
+      this.config.filePath.lastIndexOf("/"),
+    );
+    const baseFileName = this.config.filePath.substring(
+      this.config.filePath.lastIndexOf("/") + 1,
+    );
 
     const files: string[] = [];
     for await (const entry of Deno.readDir(dir)) {
-      if (entry.isFile && entry.name.startsWith(baseFileName + '.')) {
+      if (entry.isFile && entry.name.startsWith(baseFileName + ".")) {
         files.push(entry.name);
       }
     }

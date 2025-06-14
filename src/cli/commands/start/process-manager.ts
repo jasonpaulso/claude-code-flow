@@ -2,25 +2,24 @@
  * Process Manager - Handles lifecycle of system processes
  */
 
-import { EventEmitter } from './event-emitter.ts';
-import { colors } from '@cliffy/ansi/colors';
-import { 
-  ProcessInfo, 
-  ProcessType, 
-  ProcessStatus, 
-  ProcessMetrics,
-  SystemStats 
-} from './types.ts';
-import { Orchestrator } from '../../../core/orchestrator.ts';
-import { TerminalManager } from '../../../terminal/manager.ts';
-import { MemoryManager } from '../../../memory/manager.ts';
-import { CoordinationManager } from '../../../coordination/manager.ts';
-import { MCPServer } from '../../../mcp/server.ts';
-import { eventBus } from '../../../core/event-bus.ts';
-import { logger } from '../../../core/logger.ts';
-import { configManager } from '../../../core/config.ts';
-import { HealthServer } from '../../../monitoring/health-server.ts';
-import { HealthCheckEndpoint } from '../../../monitoring/health-endpoint.ts';
+import { colors } from "@cliffy/ansi/colors";
+import { CoordinationManager } from "../../../coordination/manager.ts";
+import { configManager } from "../../../core/config.ts";
+import { eventBus } from "../../../core/event-bus.ts";
+import { logger } from "../../../core/logger.ts";
+import { Orchestrator } from "../../../core/orchestrator.ts";
+import { MCPServer } from "../../../mcp/server.ts";
+import { MemoryManager } from "../../../memory/manager.ts";
+import { HealthCheckEndpoint } from "../../../monitoring/health-endpoint.ts";
+import { HealthServer } from "../../../monitoring/health-server.ts";
+import { TerminalManager } from "../../../terminal/manager.ts";
+import { EventEmitter } from "./event-emitter.ts";
+import {
+  ProcessInfo,
+  ProcessStatus,
+  ProcessType,
+  SystemStats,
+} from "./types.ts";
 
 export class ProcessManager extends EventEmitter {
   private processes: Map<string, ProcessInfo> = new Map();
@@ -42,47 +41,47 @@ export class ProcessManager extends EventEmitter {
     // Define all manageable processes
     const processDefinitions: ProcessInfo[] = [
       {
-        id: 'event-bus',
-        name: 'Event Bus',
+        id: "event-bus",
+        name: "Event Bus",
         type: ProcessType.EVENT_BUS,
-        status: ProcessStatus.STOPPED
+        status: ProcessStatus.STOPPED,
       },
       {
-        id: 'orchestrator',
-        name: 'Orchestrator Engine',
+        id: "orchestrator",
+        name: "Orchestrator Engine",
         type: ProcessType.ORCHESTRATOR,
-        status: ProcessStatus.STOPPED
+        status: ProcessStatus.STOPPED,
       },
       {
-        id: 'memory-manager',
-        name: 'Memory Manager',
+        id: "memory-manager",
+        name: "Memory Manager",
         type: ProcessType.MEMORY_MANAGER,
-        status: ProcessStatus.STOPPED
+        status: ProcessStatus.STOPPED,
       },
       {
-        id: 'terminal-pool',
-        name: 'Terminal Pool',
+        id: "terminal-pool",
+        name: "Terminal Pool",
         type: ProcessType.TERMINAL_POOL,
-        status: ProcessStatus.STOPPED
+        status: ProcessStatus.STOPPED,
       },
       {
-        id: 'mcp-server',
-        name: 'MCP Server',
+        id: "mcp-server",
+        name: "MCP Server",
         type: ProcessType.MCP_SERVER,
-        status: ProcessStatus.STOPPED
+        status: ProcessStatus.STOPPED,
       },
       {
-        id: 'coordinator',
-        name: 'Coordination Manager',
+        id: "coordinator",
+        name: "Coordination Manager",
         type: ProcessType.COORDINATOR,
-        status: ProcessStatus.STOPPED
+        status: ProcessStatus.STOPPED,
       },
       {
-        id: 'health-server',
-        name: 'Health Server',
+        id: "health-server",
+        name: "Health Server",
         type: ProcessType.HEALTH_SERVER,
-        status: ProcessStatus.STOPPED
-      }
+        status: ProcessStatus.STOPPED,
+      },
     ];
 
     for (const process of processDefinitions) {
@@ -93,9 +92,9 @@ export class ProcessManager extends EventEmitter {
   async initialize(configPath?: string): Promise<void> {
     try {
       this.config = await configManager.load(configPath);
-      this.emit('initialized', { config: this.config });
+      this.emit("initialized", { config: this.config });
     } catch (error) {
-      this.emit('error', { component: 'ProcessManager', error });
+      this.emit("error", { component: "ProcessManager", error });
       throw error;
     }
   }
@@ -116,7 +115,7 @@ export class ProcessManager extends EventEmitter {
       switch (process.type) {
         case ProcessType.EVENT_BUS:
           // Event bus is already initialized globally
-          process.pid = Deno.pid;
+          process.pid = globalThis.process.pid;
           break;
 
         case ProcessType.MEMORY_MANAGER:
@@ -147,20 +146,20 @@ export class ProcessManager extends EventEmitter {
           break;
 
         case ProcessType.MCP_SERVER:
-          this.mcpServer = new MCPServer(
-            this.config.mcp,
-            eventBus,
-            logger
-          );
+          this.mcpServer = new MCPServer(this.config.mcp, eventBus, logger);
           await this.mcpServer.start();
           break;
 
         case ProcessType.ORCHESTRATOR:
-          if (!this.terminalManager || !this.memoryManager || 
-              !this.coordinationManager || !this.mcpServer) {
-            throw new Error('Required components not initialized');
+          if (
+            !this.terminalManager ||
+            !this.memoryManager ||
+            !this.coordinationManager ||
+            !this.mcpServer
+          ) {
+            throw new Error("Required components not initialized");
           }
-          
+
           this.orchestrator = new Orchestrator(
             this.config,
             this.terminalManager,
@@ -172,7 +171,7 @@ export class ProcessManager extends EventEmitter {
           );
           await this.orchestrator.initialize();
           break;
-          
+
         case ProcessType.HEALTH_SERVER:
           // Create health endpoint with references to running services
           this.healthEndpoint = new HealthCheckEndpoint(
@@ -180,11 +179,11 @@ export class ProcessManager extends EventEmitter {
             this.memoryManager,
             this.terminalManager
           );
-          
+
           // Start health server
           this.healthServer = new HealthServer(this.healthEndpoint, {
             port: 3001,
-            host: 'localhost'
+            host: "localhost",
           });
           await this.healthServer.start();
           break;
@@ -192,15 +191,14 @@ export class ProcessManager extends EventEmitter {
 
       process.startTime = Date.now();
       this.updateProcessStatus(processId, ProcessStatus.RUNNING);
-      this.emit('processStarted', { processId, process });
-
+      this.emit("processStarted", { processId, process });
     } catch (error) {
       this.updateProcessStatus(processId, ProcessStatus.ERROR);
       process.metrics = {
         ...process.metrics,
-        lastError: (error as Error).message
+        lastError: (error as Error).message,
       };
-      this.emit('processError', { processId, error });
+      this.emit("processError", { processId, error });
       throw error;
     }
   }
@@ -249,7 +247,7 @@ export class ProcessManager extends EventEmitter {
             this.coordinationManager = undefined;
           }
           break;
-          
+
         case ProcessType.HEALTH_SERVER:
           if (this.healthServer) {
             await this.healthServer.stop();
@@ -260,38 +258,40 @@ export class ProcessManager extends EventEmitter {
       }
 
       this.updateProcessStatus(processId, ProcessStatus.STOPPED);
-      this.emit('processStopped', { processId });
-
+      this.emit("processStopped", { processId });
     } catch (error) {
       this.updateProcessStatus(processId, ProcessStatus.ERROR);
-      this.emit('processError', { processId, error });
+      this.emit("processError", { processId, error });
       throw error;
     }
   }
 
   async restartProcess(processId: string): Promise<void> {
     await this.stopProcess(processId);
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Brief delay
+    await new Promise((resolve) => setTimeout(resolve, 1000)); // Brief delay
     await this.startProcess(processId);
   }
 
   async startAll(): Promise<void> {
     // Start in dependency order
     const startOrder = [
-      'event-bus',
-      'memory-manager',
-      'terminal-pool',
-      'coordinator',
-      'mcp-server',
-      'orchestrator',
-      'health-server'  // Start after orchestrator so all services are available
+      "event-bus",
+      "memory-manager",
+      "terminal-pool",
+      "coordinator",
+      "mcp-server",
+      "orchestrator",
+      "health-server", // Start after orchestrator so all services are available
     ];
 
     for (const processId of startOrder) {
       try {
         await this.startProcess(processId);
       } catch (error) {
-        console.error(colors.red(`Failed to start ${processId}:`), (error as Error).message);
+        console.error(
+          colors.red(`Failed to start ${processId}:`),
+          (error as Error).message
+        );
         // Continue with other processes
       }
     }
@@ -300,13 +300,13 @@ export class ProcessManager extends EventEmitter {
   async stopAll(): Promise<void> {
     // Stop in reverse dependency order
     const stopOrder = [
-      'health-server',  // Stop health server first
-      'orchestrator',
-      'mcp-server',
-      'coordinator',
-      'terminal-pool',
-      'memory-manager',
-      'event-bus'
+      "health-server", // Stop health server first
+      "orchestrator",
+      "mcp-server",
+      "coordinator",
+      "terminal-pool",
+      "memory-manager",
+      "event-bus",
     ];
 
     for (const processId of stopOrder) {
@@ -315,7 +315,10 @@ export class ProcessManager extends EventEmitter {
         try {
           await this.stopProcess(processId);
         } catch (error) {
-          console.error(colors.red(`Failed to stop ${processId}:`), (error as Error).message);
+          console.error(
+            colors.red(`Failed to stop ${processId}:`),
+            (error as Error).message
+          );
         }
       }
     }
@@ -331,9 +334,15 @@ export class ProcessManager extends EventEmitter {
 
   getSystemStats(): SystemStats {
     const processes = this.getAllProcesses();
-    const runningProcesses = processes.filter(p => p.status === ProcessStatus.RUNNING);
-    const stoppedProcesses = processes.filter(p => p.status === ProcessStatus.STOPPED);
-    const errorProcesses = processes.filter(p => p.status === ProcessStatus.ERROR);
+    const runningProcesses = processes.filter(
+      (p) => p.status === ProcessStatus.RUNNING
+    );
+    const stoppedProcesses = processes.filter(
+      (p) => p.status === ProcessStatus.STOPPED
+    );
+    const errorProcesses = processes.filter(
+      (p) => p.status === ProcessStatus.ERROR
+    );
 
     return {
       totalProcesses: processes.length,
@@ -342,7 +351,7 @@ export class ProcessManager extends EventEmitter {
       errorProcesses: errorProcesses.length,
       systemUptime: this.getSystemUptime(),
       totalMemory: this.getTotalMemoryUsage(),
-      totalCpu: this.getTotalCpuUsage()
+      totalCpu: this.getTotalCpuUsage(),
     };
   }
 
@@ -350,12 +359,12 @@ export class ProcessManager extends EventEmitter {
     const process = this.processes.get(processId);
     if (process) {
       process.status = status;
-      this.emit('statusChanged', { processId, status });
+      this.emit("statusChanged", { processId, status });
     }
   }
 
   private getSystemUptime(): number {
-    const orchestrator = this.processes.get('orchestrator');
+    const orchestrator = this.processes.get("orchestrator");
     if (orchestrator && orchestrator.startTime) {
       return Date.now() - orchestrator.startTime;
     }
@@ -372,11 +381,14 @@ export class ProcessManager extends EventEmitter {
     return 0;
   }
 
-  async getProcessLogs(processId: string, lines: number = 50): Promise<string[]> {
+  async getProcessLogs(
+    processId: string,
+    lines: number = 50
+  ): Promise<string[]> {
     // Placeholder - would integrate with actual logging system
     return [
       `[${new Date().toISOString()}] Process ${processId} started`,
-      `[${new Date().toISOString()}] Process ${processId} is running normally`
+      `[${new Date().toISOString()}] Process ${processId} is running normally`,
     ];
   }
 }

@@ -66,6 +66,7 @@ npm pack
 ## Architecture
 
 The project uses:
+
 - **Runtime**: Deno for execution
 - **Launcher**: Node.js wrapper script to avoid Deno compile issues
 - **Global Access**: npm link creates a global symlink

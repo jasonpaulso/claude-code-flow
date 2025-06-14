@@ -7,9 +7,10 @@ Using BatchTool for orchestration, I get real concurrency: one agent researching
 This is what modern development should feel like: modular, recursive, and fast. Claude Code isn’t just a new tool—it’s an entirely new development rhythm.
 
 Great. I’ll develop a full implementation plan, directory structure, and test strategy for integrating multi-terminal orchestration into the Claude-SPARC CLI system. This will cover integration design, VS Code terminal control, argument parsing, test coverage (mocked and behavioral), and compatibility guidance.
- 
- # Multi-Terminal Execution in Claude-SPARC CLI
- Here’s a lightweight extension to your `claude-sparc.sh` that lets you kick off multiple VS Code integrated terminals and run a distinct command in each. You can invoke it anywhere in your CLI flow—just drop in the helper and add the new `--multi-term` option.
+
+# Multi-Terminal Execution in Claude-SPARC CLI
+
+Here’s a lightweight extension to your `claude-sparc.sh` that lets you kick off multiple VS Code integrated terminals and run a distinct command in each. You can invoke it anywhere in your CLI flow—just drop in the helper and add the new `--multi-term` option.
 
 ```bash
 # ────────────────────────────────────────────────────────────────────────────
@@ -63,14 +64,13 @@ done
 
 Drop this into your management CLI and you’ll have fully orchestrated, parallel terminals at your fingertips.
 
-
 # Full Implementation Plan for Multi-Terminal Execution in Claude-SPARC CLI
 
 ## 1. Implementation Plan: Multi-Terminal Execution Feature
 
 ### Integration Approach (`--multi-term` Flag vs. SPARC Phase Option)
 
-We will introduce a new **command-line flag** `--multi-term` to enable multi-terminal execution. This flag can optionally accept a configuration file path (e.g. `--multi-term path/to/config.json`); if no file is given, it defaults to a project-level config (like `.multi-term.json`). Using a CLI flag keeps the feature invocation explicit and flexible. Internally, the multi-terminal logic will be invoked during the appropriate SPARC phase (likely during *Refinement* or *Completion* – see SPARC integration notes below) when the development automation is ready to launch the application or parallel tasks. This means that if `--multi-term` is set, after code generation and setup, the script will trigger the multi-terminal routine. Integrating as a flag (rather than a new SPARC phase) avoids altering the core SPARC sequence; it simply hooks into an existing phase to launch the terminals at the right time.
+We will introduce a new **command-line flag** `--multi-term` to enable multi-terminal execution. This flag can optionally accept a configuration file path (e.g. `--multi-term path/to/config.json`); if no file is given, it defaults to a project-level config (like `.multi-term.json`). Using a CLI flag keeps the feature invocation explicit and flexible. Internally, the multi-terminal logic will be invoked during the appropriate SPARC phase (likely during _Refinement_ or _Completion_ – see SPARC integration notes below) when the development automation is ready to launch the application or parallel tasks. This means that if `--multi-term` is set, after code generation and setup, the script will trigger the multi-terminal routine. Integrating as a flag (rather than a new SPARC phase) avoids altering the core SPARC sequence; it simply hooks into an existing phase to launch the terminals at the right time.
 
 In the CLI argument parser of `claude-sparc.sh`, we will add handling for this new flag. For example, using a Bash `getopts` or `case` parsing approach:
 
@@ -80,13 +80,13 @@ MULTI_TERM=false
 MULTI_TERM_CONFIG=""
 while [[ "$#" -gt 0 ]]; do
   case "$1" in
-    --multi-term) 
-       MULTI_TERM=true 
+    --multi-term)
+       MULTI_TERM=true
        # If next argument is a file (e.g., ends with .json), treat it as config path
-       if [[ -n "$2" && "$2" != "-"* ]]; then 
-         MULTI_TERM_CONFIG="$2"; shift 
-       fi 
-       ;; 
+       if [[ -n "$2" && "$2" != "-"* ]]; then
+         MULTI_TERM_CONFIG="$2"; shift
+       fi
+       ;;
     # ... other options ...
   esac
   shift
@@ -181,9 +181,9 @@ launch_vscode_terminals() {
     return 1
   fi
   # 2. Open VS Code on the project (reuse window if already open)
-  code -r "$project_dir" 
+  code -r "$project_dir"
   sleep 2  # brief pause to let VS Code initialize
-  
+
   # 3. Read multi-terminal commands from config (JSON parsing)
   if [[ ! -f "$config_file" ]]; then
     echo "Multi-terminal config '$config_file' not found." >&2
@@ -194,7 +194,7 @@ launch_vscode_terminals() {
   while IFS= read -r cmd; do
     commands+=("$cmd")
   done < <(jq -r '.terminals[].command' "$config_file")
-  
+
   # 4. Open the first terminal (if not already open, focus will create one)
   open_vscode_uri "vscode://workbench.action.terminal.focus"
   if ((${#commands[@]} > 0)); then
@@ -255,9 +255,9 @@ For unit tests, we will **mock the VS Code CLI and URI calls** to verify our scr
 
 Specific unit tests:
 
-* **Config Parsing:** Provide a sample multi-term JSON and ensure our parsing extracts the correct commands. This can be done by calling the parsing portion of `launch_vscode_terminals` with a known temp file and verifying the resulting array of commands matches expected. We can instrument the script to echo parsed commands when in a test mode.
-* **Command Encoding:** Test that a command containing special characters (spaces, ampersands, etc.) is correctly encoded into the URI. We can have a function `encode_command_for_uri(cmd)` and test that `encode_command_for_uri("echo hello")` returns the expected `%22echo%20hello%5Cu000D%22` segment inside the URI. This ensures our `send_to_vscode_terminal` logic produces valid output.
-* **Flag Handling:** Test the CLI argument parser by invoking `claude-sparc.sh` (or its parsing function) with various combinations like `--multi-term`, `--multi-term config.json`, no flag, etc., and verify that the internal variables are set as expected (`MULTI_TERM=true/false`, `MULTI_TERM_CONFIG` path correctly captured). This can be done by sourcing the script in a test context or checking output of `--help` to ensure the new flag is listed.
+- **Config Parsing:** Provide a sample multi-term JSON and ensure our parsing extracts the correct commands. This can be done by calling the parsing portion of `launch_vscode_terminals` with a known temp file and verifying the resulting array of commands matches expected. We can instrument the script to echo parsed commands when in a test mode.
+- **Command Encoding:** Test that a command containing special characters (spaces, ampersands, etc.) is correctly encoded into the URI. We can have a function `encode_command_for_uri(cmd)` and test that `encode_command_for_uri("echo hello")` returns the expected `%22echo%20hello%5Cu000D%22` segment inside the URI. This ensures our `send_to_vscode_terminal` logic produces valid output.
+- **Flag Handling:** Test the CLI argument parser by invoking `claude-sparc.sh` (or its parsing function) with various combinations like `--multi-term`, `--multi-term config.json`, no flag, etc., and verify that the internal variables are set as expected (`MULTI_TERM=true/false`, `MULTI_TERM_CONFIG` path correctly captured). This can be done by sourcing the script in a test context or checking output of `--help` to ensure the new flag is listed.
 
 These unit tests will use minimal dependencies. We might utilize a lightweight testing framework (even just bash scripts in `tests/` directory using assertions). For example, `tests/test_multiterm.sh` could run scenarios and echo “OK” or “FAIL” based on outcomes.
 
@@ -267,8 +267,8 @@ For integration tests, we want to simulate the whole CLI run with the multi-term
 
 We will test on both Linux and macOS environments in CI if available:
 
-* On Linux, ensure the script tries to use `xdg-open` (we can override `xdg-open` similarly to log calls).
-* On macOS, ensure it uses `open` with correct parameters.
+- On Linux, ensure the script tries to use `xdg-open` (we can override `xdg-open` similarly to log calls).
+- On macOS, ensure it uses `open` with correct parameters.
   For Windows (if we plan to support it), we would test that the script either warns or attempts a fallback. In a Windows test environment, we could simulate `OS=CYGWIN` or `MSYS` to represent Git Bash, and ensure the script doesn’t break parsing paths, etc. (Full native Windows support might be limited; see below.)
 
 **Behavioral Validation:** The tests will also verify that enabling `--multi-term` does not interfere with normal operation when not used. For example, running the CLI without `--multi-term` should behave exactly as before (so we run a sample spec through a dry-run and ensure outputs match expected). With `--multi-term`, since we can’t fully spawn processes in tests, we mainly verify the intentions (calls to code CLI). If possible, a manual test will be performed: actually run the CLI on a real sample project with multi-term and observe that multiple terminals open in VS Code and run the commands. This manual verification will complement automated tests.
@@ -277,15 +277,15 @@ We will test on both Linux and macOS environments in CI if available:
 
 We plan to support Linux and macOS fully, with an **optional Windows fallback**. The testing strategy includes:
 
-* **Linux:** Test on a typical Linux environment (Ubuntu in CI) where `xdg-open` is present. Ensure that the URIs we construct are well-formed (we may parse the logged `xdg-open` arguments to verify they contain properly encoded JSON). We also check behavior if `jq` is missing (simulate by temporarily removing it from PATH) – the script should detect the absence and produce a reasonable error.
-* **macOS:** Test on macOS (if available in CI or via local testing) that the `open` commands are formed correctly. Also test an AppleScript path if we decide to use AppleScript for more complex behaviors (though currently plan is to use `open` for URIs which should be sufficient).
-* **Windows:** Since VS Code’s CLI on Windows (`code.cmd`) can be used similarly, we will attempt to support it. However, automatic URI opening on Windows might require using PowerShell’s `Start-Process` or `start` command. We will implement a minimal solution: if `OSTYPE` indicates Windows, use `cmd.exe /C start vscode://...` for URIs (this will cause VS Code to handle the protocol). This will be tested on a Windows machine manually. If it proves too inconsistent, we will document that multi-terminal is only fully supported on UNIX-like systems for now. Our test strategy for Windows might just verify that the script recognizes the OS and either warns or attempts the start command string (without actually verifying VS Code opened in headless test).
+- **Linux:** Test on a typical Linux environment (Ubuntu in CI) where `xdg-open` is present. Ensure that the URIs we construct are well-formed (we may parse the logged `xdg-open` arguments to verify they contain properly encoded JSON). We also check behavior if `jq` is missing (simulate by temporarily removing it from PATH) – the script should detect the absence and produce a reasonable error.
+- **macOS:** Test on macOS (if available in CI or via local testing) that the `open` commands are formed correctly. Also test an AppleScript path if we decide to use AppleScript for more complex behaviors (though currently plan is to use `open` for URIs which should be sufficient).
+- **Windows:** Since VS Code’s CLI on Windows (`code.cmd`) can be used similarly, we will attempt to support it. However, automatic URI opening on Windows might require using PowerShell’s `Start-Process` or `start` command. We will implement a minimal solution: if `OSTYPE` indicates Windows, use `cmd.exe /C start vscode://...` for URIs (this will cause VS Code to handle the protocol). This will be tested on a Windows machine manually. If it proves too inconsistent, we will document that multi-terminal is only fully supported on UNIX-like systems for now. Our test strategy for Windows might just verify that the script recognizes the OS and either warns or attempts the start command string (without actually verifying VS Code opened in headless test).
 
 Furthermore, we’ll include tests for **failure scenarios**:
 
-* Provide a malformed JSON config and ensure the script catches the parse error (we can simulate `jq` returning error).
-* Use `--multi-term` flag when `code` is not installed: our test can temporarily rename `code` and ensure the script exits with the error message “VS Code CLI not found”.
-* Run the multi-term function with zero commands (empty list) – it should open VS Code but simply not open extra terminals or send anything (perhaps just open one blank terminal). The test verifies no `sendSequence` was attempted in that case.
+- Provide a malformed JSON config and ensure the script catches the parse error (we can simulate `jq` returning error).
+- Use `--multi-term` flag when `code` is not installed: our test can temporarily rename `code` and ensure the script exits with the error message “VS Code CLI not found”.
+- Run the multi-term function with zero commands (empty list) – it should open VS Code but simply not open extra terminals or send anything (perhaps just open one blank terminal). The test verifies no `sendSequence` was attempted in that case.
 
 By covering unit, integration, and cross-platform scenarios, we will have a high confidence that the multi-terminal feature is robust and behaves as expected in different environments.
 
@@ -312,7 +312,7 @@ Along with an explanation: “After running the above, VS Code will open and sta
 
 In the **Command Line Options** section of the README (and `--help` output), we will add an entry for the new flag. For example:
 
-* `--multi-term [CONFIG]` – Launch multiple VS Code integrated terminals as defined by the optional CONFIG JSON file (default config: `.multi-term.json`).
+- `--multi-term [CONFIG]` – Launch multiple VS Code integrated terminals as defined by the optional CONFIG JSON file (default config: `.multi-term.json`).
 
 We will also mention any environment requirements, e.g., “Requires VS Code with CLI (`code`) in PATH.” and “Currently supported on macOS/Linux (Windows support in beta)”.
 
@@ -322,9 +322,9 @@ We will add documentation notes about how the feature works under the hood and a
 
 For usage patterns, we might suggest common scenarios:
 
-* Starting a back-end API server and front-end dev server together.
-* Running a test watcher alongside the application.
-* Launching multiple microservices or worker processes for an orchestrated test environment.
+- Starting a back-end API server and front-end dev server together.
+- Running a test watcher alongside the application.
+- Launching multiple microservices or worker processes for an orchestrated test environment.
 
 By documenting these patterns, users can get ideas of how to leverage multi-terminal execution in their workflow.
 
@@ -364,9 +364,9 @@ Optionally, we could introduce a specialized tool or command in the agent’s to
 
 In summary, from the SPARC workflow perspective:
 
-* **No impact on Specification/Pseudocode/Architecture phases:** those remain unchanged.
-* **Refinement phase:** if tests or concurrent checks were to be run in visible terminals (not typical), we could integrate, but by default we won’t disturb automated tests by opening terminals. Those will still run via BatchTool and headless Bash as before.
-* **Completion phase:** this is where multi-terminal is naturally fitted. After final code completion and perhaps a successful test run, the multi-terminal is launched to allow the developer to **manually verify the running application or environment**. It’s essentially an automated way to “launch the app” in dev mode across components.
+- **No impact on Specification/Pseudocode/Architecture phases:** those remain unchanged.
+- **Refinement phase:** if tests or concurrent checks were to be run in visible terminals (not typical), we could integrate, but by default we won’t disturb automated tests by opening terminals. Those will still run via BatchTool and headless Bash as before.
+- **Completion phase:** this is where multi-terminal is naturally fitted. After final code completion and perhaps a successful test run, the multi-terminal is launched to allow the developer to **manually verify the running application or environment**. It’s essentially an automated way to “launch the app” in dev mode across components.
 
 We will document this in developer notes: the multi-terminal step is outside the AI agent’s own operations (the agent isn’t “aware” of the terminals; it’s a convenience for the human developer after the automated workflow completes). This avoids confusion where the agent might try to read terminal output – it will not; the terminals are for the user.
 
@@ -374,7 +374,7 @@ Should there be a need in future to have the AI agent coordinate multiple termin
 
 ### BatchTool Parallel Execution vs Multi-Terminals
 
-It’s worth noting the difference between using the **BatchTool** for parallel tasks and our multi-terminal approach. BatchTool runs multiple tasks concurrently (e.g., running tests, linters in parallel) but all output still goes back to the CLI/agent context. The multi-terminal feature, on the other hand, is explicitly to open *interactive terminals* in VS Code for processes that are meant to continue running. We will clarify that these two are complementary: BatchTool is used during the automated phases for things like parallel computations or checks (headless), while multi-terminal is for interactive or long-running processes at the end.
+It’s worth noting the difference between using the **BatchTool** for parallel tasks and our multi-terminal approach. BatchTool runs multiple tasks concurrently (e.g., running tests, linters in parallel) but all output still goes back to the CLI/agent context. The multi-terminal feature, on the other hand, is explicitly to open _interactive terminals_ in VS Code for processes that are meant to continue running. We will clarify that these two are complementary: BatchTool is used during the automated phases for things like parallel computations or checks (headless), while multi-terminal is for interactive or long-running processes at the end.
 
 If needed, we could have the `launch_vscode_terminals` function itself use BatchTool logic internally (to, say, send multiple commands at once). However, since we are controlling VS Code, we will sequentially send the commands (which effectively start in parallel once launched). The slight delay between opening each terminal is not significant in human terms.
 

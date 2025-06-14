@@ -1,5 +1,8 @@
 // sparc-orchestrator.js - SPARC Orchestrator mode orchestration template
-export function getSparcOrchestratorOrchestration(taskDescription, memoryNamespace) {
+export function getSparcOrchestratorOrchestration(
+  taskDescription,
+  memoryNamespace,
+) {
   return `
 ## 🚀 SPARC Orchestrator - Complex Workflow Management
 

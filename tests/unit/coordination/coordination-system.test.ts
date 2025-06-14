@@ -3,30 +3,47 @@
  * Tests deadlock detection, task scheduling, and resource management
  */
 
-import { describe, it, beforeEach, afterEach } from "https://deno.land/std@0.220.0/testing/bdd.ts";
-import { assertEquals, assertExists, assertRejects, assertThrows } from "https://deno.land/std@0.220.0/assert/mod.ts";
+import {
+  describe,
+  it,
+  beforeEach,
+  afterEach,
+} from "https://deno.land/std@0.220.0/testing/bdd.ts";
+import {
+  assertEquals,
+  assertExists,
+  assertRejects,
+  assertThrows,
+} from "https://deno.land/std@0.220.0/assert/mod.ts";
 import { FakeTime } from "https://deno.land/std@0.220.0/testing/time.ts";
 import { spy, stub } from "https://deno.land/std@0.220.0/testing/mock.ts";
 
-import { CoordinationManager } from '../../../src/coordination/manager.ts';
-import { TaskScheduler } from '../../../src/coordination/scheduler.ts';
-import { ResourceManager } from '../../../src/coordination/resources.ts';
-import { ConflictResolver } from '../../../src/coordination/conflict-resolution.ts';
-import { CircuitBreaker } from '../../../src/coordination/circuit-breaker.ts';
-import { WorkStealingScheduler } from '../../../src/coordination/work-stealing.ts';
-import { DependencyGraph } from '../../../src/coordination/dependency-graph.ts';
-import { AdvancedScheduler } from '../../../src/coordination/advanced-scheduler.ts';
-import { 
-  AsyncTestUtils, 
-  MemoryTestUtils, 
+import { CoordinationManager } from "../../../src/coordination/manager.ts";
+import { TaskScheduler } from "../../../src/coordination/scheduler.ts";
+import { ResourceManager } from "../../../src/coordination/resources.ts";
+import { ConflictResolver } from "../../../src/coordination/conflict-resolution.ts";
+import { CircuitBreaker } from "../../../src/coordination/circuit-breaker.ts";
+import { WorkStealingScheduler } from "../../../src/coordination/work-stealing.ts";
+import { DependencyGraph } from "../../../src/coordination/dependency-graph.ts";
+import { AdvancedScheduler } from "../../../src/coordination/advanced-scheduler.ts";
+import {
+  AsyncTestUtils,
+  MemoryTestUtils,
   PerformanceTestUtils,
   TestAssertions,
-  MockFactory 
-} from '../../utils/test-utils.ts';
-import { generateCoordinationTasks, generateErrorScenarios } from '../../fixtures/generators.ts';
-import { setupTestEnv, cleanupTestEnv, TEST_CONFIG } from '../../test.config.ts';
+  MockFactory,
+} from "../../utils/test-utils.ts";
+import {
+  generateCoordinationTasks,
+  generateErrorScenarios,
+} from "../../fixtures/generators.ts";
+import {
+  setupTestEnv,
+  cleanupTestEnv,
+  TEST_CONFIG,
+} from "../../test.config.ts";
 
-describe('Coordination System - Comprehensive Tests', () => {
+describe("Coordination System - Comprehensive Tests", () => {
   let coordinationManager: CoordinationManager;
   let scheduler: TaskScheduler;
   let resourceManager: ResourceManager;
@@ -35,7 +52,7 @@ describe('Coordination System - Comprehensive Tests', () => {
 
   beforeEach(() => {
     setupTestEnv();
-    
+
     resourceManager = new ResourceManager({
       maxConcurrentTasks: 10,
       maxMemoryUsage: 1024 * 1024 * 100, // 100MB
@@ -50,7 +67,7 @@ describe('Coordination System - Comprehensive Tests', () => {
 
     conflictResolver = new ConflictResolver({
       enableConflictDetection: true,
-      resolutionStrategy: 'priority',
+      resolutionStrategy: "priority",
     });
 
     coordinationManager = new CoordinationManager({
@@ -67,140 +84,148 @@ describe('Coordination System - Comprehensive Tests', () => {
     await cleanupTestEnv();
   });
 
-  describe('Task Scheduling', () => {
+  describe("Task Scheduling", () => {
     beforeEach(async () => {
       await coordinationManager.initialize();
     });
 
-    it('should schedule tasks with correct priority', async () => {
+    it("should schedule tasks with correct priority", async () => {
       const tasks = [
-        { id: 'low-1', priority: 'low', execute: spy(async () => 'low-1') },
-        { id: 'high-1', priority: 'critical', execute: spy(async () => 'high-1') },
-        { id: 'medium-1', priority: 'medium', execute: spy(async () => 'medium-1') },
-        { id: 'high-2', priority: 'high', execute: spy(async () => 'high-2') },
+        { id: "low-1", priority: "low", execute: spy(async () => "low-1") },
+        {
+          id: "high-1",
+          priority: "critical",
+          execute: spy(async () => "high-1"),
+        },
+        {
+          id: "medium-1",
+          priority: "medium",
+          execute: spy(async () => "medium-1"),
+        },
+        { id: "high-2", priority: "high", execute: spy(async () => "high-2") },
       ];
 
       // Submit all tasks
-      const promises = tasks.map(task => 
-        coordinationManager.submitTask(task.id, task)
+      const promises = tasks.map((task) =>
+        coordinationManager.submitTask(task.id, task),
       );
 
       const results = await Promise.all(promises);
-      
+
       // Verify all tasks completed
       assertEquals(results.length, 4);
-      tasks.forEach(task => {
+      tasks.forEach((task) => {
         assertEquals(task.execute.calls.length, 1);
       });
     });
 
-    it('should handle task dependencies correctly', async () => {
+    it("should handle task dependencies correctly", async () => {
       const executionOrder: string[] = [];
-      
+
       const tasks = [
         {
-          id: 'task-a',
+          id: "task-a",
           dependencies: [],
           execute: spy(async () => {
             await AsyncTestUtils.delay(10);
-            executionOrder.push('task-a');
-            return 'a';
+            executionOrder.push("task-a");
+            return "a";
           }),
         },
         {
-          id: 'task-b',
-          dependencies: ['task-a'],
+          id: "task-b",
+          dependencies: ["task-a"],
           execute: spy(async () => {
             await AsyncTestUtils.delay(10);
-            executionOrder.push('task-b');
-            return 'b';
+            executionOrder.push("task-b");
+            return "b";
           }),
         },
         {
-          id: 'task-c',
-          dependencies: ['task-a', 'task-b'],
+          id: "task-c",
+          dependencies: ["task-a", "task-b"],
           execute: spy(async () => {
             await AsyncTestUtils.delay(10);
-            executionOrder.push('task-c');
-            return 'c';
+            executionOrder.push("task-c");
+            return "c";
           }),
         },
       ];
 
       // Submit tasks in random order
       const promises = [
-        coordinationManager.submitTask('task-c', tasks[2]),
-        coordinationManager.submitTask('task-a', tasks[0]),
-        coordinationManager.submitTask('task-b', tasks[1]),
+        coordinationManager.submitTask("task-c", tasks[2]),
+        coordinationManager.submitTask("task-a", tasks[0]),
+        coordinationManager.submitTask("task-b", tasks[1]),
       ];
 
       await Promise.all(promises);
-      
+
       // Verify execution order respected dependencies
-      assertEquals(executionOrder[0], 'task-a');
-      assertEquals(executionOrder[1], 'task-b');
-      assertEquals(executionOrder[2], 'task-c');
+      assertEquals(executionOrder[0], "task-a");
+      assertEquals(executionOrder[1], "task-b");
+      assertEquals(executionOrder[2], "task-c");
     });
 
-    it('should detect and handle circular dependencies', async () => {
+    it("should detect and handle circular dependencies", async () => {
       const tasks = [
-        { id: 'task-x', dependencies: ['task-y'], execute: spy() },
-        { id: 'task-y', dependencies: ['task-z'], execute: spy() },
-        { id: 'task-z', dependencies: ['task-x'], execute: spy() },
+        { id: "task-x", dependencies: ["task-y"], execute: spy() },
+        { id: "task-y", dependencies: ["task-z"], execute: spy() },
+        { id: "task-z", dependencies: ["task-x"], execute: spy() },
       ];
 
       // Submit tasks with circular dependencies
-      const promises = tasks.map(task => 
-        coordinationManager.submitTask(task.id, task)
+      const promises = tasks.map((task) =>
+        coordinationManager.submitTask(task.id, task),
       );
 
       // Should detect circular dependency and reject
       const results = await Promise.allSettled(promises);
-      const failures = results.filter(r => r.status === 'rejected');
-      
+      const failures = results.filter((r) => r.status === "rejected");
+
       assertEquals(failures.length >= 1, true);
-      
+
       // Verify circular dependency was detected
       const error = failures[0] as PromiseRejectedResult;
-      assertEquals(error.reason.message.includes('circular'), true);
+      assertEquals(error.reason.message.includes("circular"), true);
     });
 
-    it('should handle task timeouts correctly', async () => {
+    it("should handle task timeouts correctly", async () => {
       const longRunningTask = {
-        id: 'long-task',
+        id: "long-task",
         timeout: 100, // 100ms timeout
         execute: spy(async () => {
           await AsyncTestUtils.delay(200); // Take 200ms
-          return 'should not complete';
+          return "should not complete";
         }),
       };
 
       await TestAssertions.assertThrowsAsync(
-        () => coordinationManager.submitTask('long-task', longRunningTask),
+        () => coordinationManager.submitTask("long-task", longRunningTask),
         Error,
-        'timeout'
+        "timeout",
       );
     });
 
-    it('should handle concurrent task submission', async () => {
+    it("should handle concurrent task submission", async () => {
       const tasks = generateCoordinationTasks(20);
-      
-      const promises = tasks.map(task => 
+
+      const promises = tasks.map((task) =>
         coordinationManager.submitTask(task.id, {
           execute: spy(async () => `result-${task.id}`),
           priority: task.priority,
-        })
+        }),
       );
 
       const results = await Promise.all(promises);
-      
+
       assertEquals(results.length, 20);
       results.forEach((result, i) => {
         assertEquals(result, `result-${tasks[i].id}`);
       });
     });
 
-    it('should respect concurrency limits', async () => {
+    it("should respect concurrency limits", async () => {
       const limitedScheduler = new TaskScheduler({
         maxConcurrentTasks: 2, // Only 2 concurrent tasks
         taskTimeout: 10000,
@@ -228,68 +253,68 @@ describe('Coordination System - Comprehensive Tests', () => {
         }),
       }));
 
-      const promises = tasks.map(task => 
-        limitedManager.submitTask(task.id, task)
+      const promises = tasks.map((task) =>
+        limitedManager.submitTask(task.id, task),
       );
 
       await Promise.all(promises);
-      
+
       // Should never exceed the concurrency limit
       TestAssertions.assertInRange(maxActiveTasks, 1, 2);
     });
   });
 
-  describe('Deadlock Detection and Prevention', () => {
+  describe("Deadlock Detection and Prevention", () => {
     beforeEach(async () => {
       await coordinationManager.initialize();
     });
 
-    it('should detect simple deadlocks', async () => {
+    it("should detect simple deadlocks", async () => {
       const resourceLocks = new Map<string, string>();
-      
+
       const task1 = {
-        id: 'deadlock-1',
-        requiredResources: ['resource-a', 'resource-b'],
+        id: "deadlock-1",
+        requiredResources: ["resource-a", "resource-b"],
         execute: spy(async () => {
-          resourceLocks.set('resource-a', 'deadlock-1');
+          resourceLocks.set("resource-a", "deadlock-1");
           await AsyncTestUtils.delay(50);
-          resourceLocks.set('resource-b', 'deadlock-1');
-          return 'task1-complete';
+          resourceLocks.set("resource-b", "deadlock-1");
+          return "task1-complete";
         }),
       };
 
       const task2 = {
-        id: 'deadlock-2',
-        requiredResources: ['resource-b', 'resource-a'],
+        id: "deadlock-2",
+        requiredResources: ["resource-b", "resource-a"],
         execute: spy(async () => {
-          resourceLocks.set('resource-b', 'deadlock-2');
+          resourceLocks.set("resource-b", "deadlock-2");
           await AsyncTestUtils.delay(50);
-          resourceLocks.set('resource-a', 'deadlock-2');
-          return 'task2-complete';
+          resourceLocks.set("resource-a", "deadlock-2");
+          return "task2-complete";
         }),
       };
 
       // Submit both tasks simultaneously
       const promises = [
-        coordinationManager.submitTask('deadlock-1', task1),
-        coordinationManager.submitTask('deadlock-2', task2),
+        coordinationManager.submitTask("deadlock-1", task1),
+        coordinationManager.submitTask("deadlock-2", task2),
       ];
 
       const results = await Promise.allSettled(promises);
-      
+
       // At least one should be prevented/resolved
-      const successes = results.filter(r => r.status === 'fulfilled');
-      const failures = results.filter(r => r.status === 'rejected');
-      
+      const successes = results.filter((r) => r.status === "fulfilled");
+      const failures = results.filter((r) => r.status === "rejected");
+
       // Deadlock detection should prevent both from hanging
       assertEquals(successes.length + failures.length, 2);
     });
 
-    it('should prevent resource starvation', async () => {
+    it("should prevent resource starvation", async () => {
       const highPriorityTasks = Array.from({ length: 5 }, (_, i) => ({
         id: `high-${i}`,
-        priority: 'critical',
-        requiredResources: ['shared-resource'],
+        priority: "critical",
+        requiredResources: ["shared-resource"],
         execute: spy(async () => {
           await AsyncTestUtils.delay(100);
           return `high-${i}`;
@@ -297,104 +322,134 @@ describe('Coordination System - Comprehensive Tests', () => {
       }));
 
       const lowPriorityTask = {
-        id: 'low-priority',
-        priority: 'low',
-        requiredResources: ['shared-resource'],
+        id: "low-priority",
+        priority: "low",
+        requiredResources: ["shared-resource"],
         execute: spy(async () => {
           await AsyncTestUtils.delay(10);
-          return 'low-priority-complete';
+          return "low-priority-complete";
         }),
       };
 
       // Submit low priority task first
-      const lowPromise = coordinationManager.submitTask('low-priority', lowPriorityTask);
-      
+      const lowPromise = coordinationManager.submitTask(
+        "low-priority",
+        lowPriorityTask,
+      );
+
       // Then submit high priority tasks
-      const highPromises = highPriorityTasks.map(task => 
-        coordinationManager.submitTask(task.id, task)
+      const highPromises = highPriorityTasks.map((task) =>
+        coordinationManager.submitTask(task.id, task),
       );
 
       await AsyncTestUtils.delay(20); // Let low priority task get a chance
 
-      const allResults = await Promise.allSettled([lowPromise, ...highPromises]);
-      const successes = allResults.filter(r => r.status === 'fulfilled');
-      
+      const allResults = await Promise.allSettled([
+        lowPromise,
+        ...highPromises,
+      ]);
+      const successes = allResults.filter((r) => r.status === "fulfilled");
+
       // Low priority task should eventually complete (no starvation)
       assertEquals(successes.length, 6);
       assertEquals(lowPriorityTask.execute.calls.length, 1);
     });
 
-    it('should handle complex dependency chains without deadlock', async () => {
+    it("should handle complex dependency chains without deadlock", async () => {
       // Create a complex but non-circular dependency graph
       const tasks = [
-        { id: 'root', dependencies: [], execute: spy(async () => 'root') },
-        { id: 'branch-1', dependencies: ['root'], execute: spy(async () => 'branch-1') },
-        { id: 'branch-2', dependencies: ['root'], execute: spy(async () => 'branch-2') },
-        { id: 'merge-1', dependencies: ['branch-1', 'branch-2'], execute: spy(async () => 'merge-1') },
-        { id: 'leaf-1', dependencies: ['merge-1'], execute: spy(async () => 'leaf-1') },
-        { id: 'leaf-2', dependencies: ['merge-1'], execute: spy(async () => 'leaf-2') },
-        { id: 'final', dependencies: ['leaf-1', 'leaf-2'], execute: spy(async () => 'final') },
+        { id: "root", dependencies: [], execute: spy(async () => "root") },
+        {
+          id: "branch-1",
+          dependencies: ["root"],
+          execute: spy(async () => "branch-1"),
+        },
+        {
+          id: "branch-2",
+          dependencies: ["root"],
+          execute: spy(async () => "branch-2"),
+        },
+        {
+          id: "merge-1",
+          dependencies: ["branch-1", "branch-2"],
+          execute: spy(async () => "merge-1"),
+        },
+        {
+          id: "leaf-1",
+          dependencies: ["merge-1"],
+          execute: spy(async () => "leaf-1"),
+        },
+        {
+          id: "leaf-2",
+          dependencies: ["merge-1"],
+          execute: spy(async () => "leaf-2"),
+        },
+        {
+          id: "final",
+          dependencies: ["leaf-1", "leaf-2"],
+          execute: spy(async () => "final"),
+        },
       ];
 
-      const promises = tasks.map(task => 
-        coordinationManager.submitTask(task.id, task)
+      const promises = tasks.map((task) =>
+        coordinationManager.submitTask(task.id, task),
       );
 
       const results = await Promise.all(promises);
-      
+
       assertEquals(results.length, 7);
-      tasks.forEach(task => {
+      tasks.forEach((task) => {
         assertEquals(task.execute.calls.length, 1);
       });
     });
 
-    it('should recover from deadlock through timeout', async () => {
+    it("should recover from deadlock through timeout", async () => {
       const deadlockTimeout = 1000; // 1 second
-      
+
       const task1 = {
-        id: 'timeout-deadlock-1',
-        requiredResources: ['resource-x'],
+        id: "timeout-deadlock-1",
+        requiredResources: ["resource-x"],
         timeout: deadlockTimeout,
         execute: spy(async () => {
           await AsyncTestUtils.delay(2000); // Longer than timeout
-          return 'should-not-complete';
+          return "should-not-complete";
         }),
       };
 
       const task2 = {
-        id: 'timeout-deadlock-2',
-        requiredResources: ['resource-x'],
+        id: "timeout-deadlock-2",
+        requiredResources: ["resource-x"],
         execute: spy(async () => {
           await AsyncTestUtils.delay(100);
-          return 'task2-complete';
+          return "task2-complete";
         }),
       };
 
       const promises = [
-        coordinationManager.submitTask('timeout-deadlock-1', task1),
-        coordinationManager.submitTask('timeout-deadlock-2', task2),
+        coordinationManager.submitTask("timeout-deadlock-1", task1),
+        coordinationManager.submitTask("timeout-deadlock-2", task2),
       ];
 
       const results = await Promise.allSettled(promises);
-      
+
       // First task should timeout, second should complete
-      const successes = results.filter(r => r.status === 'fulfilled');
-      const failures = results.filter(r => r.status === 'rejected');
-      
+      const successes = results.filter((r) => r.status === "fulfilled");
+      const failures = results.filter((r) => r.status === "rejected");
+
       assertEquals(successes.length >= 1, true);
       assertEquals(failures.length >= 1, true);
     });
   });
 
-  describe('Resource Management', () => {
+  describe("Resource Management", () => {
     beforeEach(async () => {
       await coordinationManager.initialize();
     });
 
-    it('should track resource usage correctly', async () => {
+    it("should track resource usage correctly", async () => {
       const tasks = Array.from({ length: 5 }, (_, i) => ({
         id: `resource-task-${i}`,
-        requiredResources: [`cpu-${i % 2}`, 'memory'],
+        requiredResources: [`cpu-${i % 2}`, "memory"],
         estimatedMemoryUsage: 1024 * 1024 * 10, // 10MB
         execute: spy(async () => {
           await AsyncTestUtils.delay(100);
@@ -402,24 +457,24 @@ describe('Coordination System - Comprehensive Tests', () => {
         }),
       }));
 
-      const promises = tasks.map(task => 
-        coordinationManager.submitTask(task.id, task)
+      const promises = tasks.map((task) =>
+        coordinationManager.submitTask(task.id, task),
       );
 
       // Check resource usage during execution
       await AsyncTestUtils.delay(50);
-      
+
       const resourceStatus = await resourceManager.getResourceStatus();
       assertExists(resourceStatus);
-      
+
       // Should track active resource usage
-      assertEquals(typeof resourceStatus.memoryUsage, 'number');
-      assertEquals(typeof resourceStatus.activeResources, 'object');
+      assertEquals(typeof resourceStatus.memoryUsage, "number");
+      assertEquals(typeof resourceStatus.activeResources, "object");
 
       await Promise.all(promises);
     });
 
-    it('should enforce memory limits', async () => {
+    it("should enforce memory limits", async () => {
       const limitedResourceManager = new ResourceManager({
         maxMemoryUsage: 1024 * 1024 * 50, // 50MB limit
         resourceTimeout: 30000,
@@ -434,51 +489,51 @@ describe('Coordination System - Comprehensive Tests', () => {
       await limitedManager.initialize();
 
       const memoryHeavyTask = {
-        id: 'memory-heavy',
+        id: "memory-heavy",
         estimatedMemoryUsage: 1024 * 1024 * 100, // 100MB (exceeds limit)
-        execute: spy(async () => 'should-not-run'),
+        execute: spy(async () => "should-not-run"),
       };
 
       await TestAssertions.assertThrowsAsync(
-        () => limitedManager.submitTask('memory-heavy', memoryHeavyTask),
+        () => limitedManager.submitTask("memory-heavy", memoryHeavyTask),
         Error,
-        'memory'
+        "memory",
       );
     });
 
-    it('should handle resource conflicts correctly', async () => {
-      const sharedResource = 'exclusive-resource';
-      
+    it("should handle resource conflicts correctly", async () => {
+      const sharedResource = "exclusive-resource";
+
       const tasks = Array.from({ length: 3 }, (_, i) => ({
         id: `conflict-task-${i}`,
         requiredResources: [sharedResource],
-        resourceMode: 'exclusive',
+        resourceMode: "exclusive",
         execute: spy(async () => {
           await AsyncTestUtils.delay(100);
           return `task-${i}`;
         }),
       }));
 
-      const promises = tasks.map(task => 
-        coordinationManager.submitTask(task.id, task)
+      const promises = tasks.map((task) =>
+        coordinationManager.submitTask(task.id, task),
       );
 
       const results = await Promise.all(promises);
-      
+
       // All tasks should complete, but serialized due to exclusive resource
       assertEquals(results.length, 3);
-      tasks.forEach(task => {
+      tasks.forEach((task) => {
         assertEquals(task.execute.calls.length, 1);
       });
     });
 
-    it('should support resource sharing', async () => {
-      const sharedResource = 'shared-resource';
-      
+    it("should support resource sharing", async () => {
+      const sharedResource = "shared-resource";
+
       const tasks = Array.from({ length: 3 }, (_, i) => ({
         id: `shared-task-${i}`,
         requiredResources: [sharedResource],
-        resourceMode: 'shared',
+        resourceMode: "shared",
         execute: spy(async () => {
           await AsyncTestUtils.delay(50);
           return `shared-${i}`;
@@ -486,94 +541,97 @@ describe('Coordination System - Comprehensive Tests', () => {
       }));
 
       const startTime = Date.now();
-      
-      const promises = tasks.map(task => 
-        coordinationManager.submitTask(task.id, task)
+
+      const promises = tasks.map((task) =>
+        coordinationManager.submitTask(task.id, task),
       );
 
       await Promise.all(promises);
-      
+
       const duration = Date.now() - startTime;
-      
+
       // Should complete faster than serialized execution (less than 150ms vs 150ms+)
       TestAssertions.assertInRange(duration, 0, 120);
     });
 
-    it('should handle resource cleanup on task failure', async () => {
+    it("should handle resource cleanup on task failure", async () => {
       const failingTask = {
-        id: 'failing-task',
-        requiredResources: ['cleanup-resource'],
+        id: "failing-task",
+        requiredResources: ["cleanup-resource"],
         execute: spy(async () => {
           await AsyncTestUtils.delay(50);
-          throw new Error('Task failed');
+          throw new Error("Task failed");
         }),
       };
 
       const followupTask = {
-        id: 'followup-task',
-        requiredResources: ['cleanup-resource'],
+        id: "followup-task",
+        requiredResources: ["cleanup-resource"],
         execute: spy(async () => {
           await AsyncTestUtils.delay(10);
-          return 'followup-complete';
+          return "followup-complete";
         }),
       };
 
       // First task should fail
       await TestAssertions.assertThrowsAsync(
-        () => coordinationManager.submitTask('failing-task', failingTask),
+        () => coordinationManager.submitTask("failing-task", failingTask),
         Error,
-        'Task failed'
+        "Task failed",
       );
 
       // Resource should be cleaned up and available for next task
-      const result = await coordinationManager.submitTask('followup-task', followupTask);
-      assertEquals(result, 'followup-complete');
+      const result = await coordinationManager.submitTask(
+        "followup-task",
+        followupTask,
+      );
+      assertEquals(result, "followup-complete");
     });
   });
 
-  describe('Conflict Resolution', () => {
+  describe("Conflict Resolution", () => {
     beforeEach(async () => {
       await coordinationManager.initialize();
     });
 
-    it('should resolve priority conflicts correctly', async () => {
+    it("should resolve priority conflicts correctly", async () => {
       const conflictingTasks = [
         {
-          id: 'low-priority-conflict',
-          priority: 'low',
-          requiredResources: ['conflict-resource'],
+          id: "low-priority-conflict",
+          priority: "low",
+          requiredResources: ["conflict-resource"],
           execute: spy(async () => {
             await AsyncTestUtils.delay(100);
-            return 'low-priority';
+            return "low-priority";
           }),
         },
         {
-          id: 'high-priority-conflict',
-          priority: 'critical',
-          requiredResources: ['conflict-resource'],
+          id: "high-priority-conflict",
+          priority: "critical",
+          requiredResources: ["conflict-resource"],
           execute: spy(async () => {
             await AsyncTestUtils.delay(50);
-            return 'high-priority';
+            return "high-priority";
           }),
         },
       ];
 
-      const promises = conflictingTasks.map(task => 
-        coordinationManager.submitTask(task.id, task)
+      const promises = conflictingTasks.map((task) =>
+        coordinationManager.submitTask(task.id, task),
       );
 
       const results = await Promise.all(promises);
-      
+
       // Both should complete, high priority first
       assertEquals(results.length, 2);
-      assertEquals(results.includes('high-priority'), true);
-      assertEquals(results.includes('low-priority'), true);
+      assertEquals(results.includes("high-priority"), true);
+      assertEquals(results.includes("low-priority"), true);
     });
 
-    it('should handle timestamp-based conflict resolution', async () => {
+    it("should handle timestamp-based conflict resolution", async () => {
       const timestampResolver = new ConflictResolver({
         enableConflictDetection: true,
-        resolutionStrategy: 'timestamp',
+        resolutionStrategy: "timestamp",
       });
 
       const timestampManager = new CoordinationManager({
@@ -585,34 +643,40 @@ describe('Coordination System - Comprehensive Tests', () => {
       await timestampManager.initialize();
 
       const firstTask = {
-        id: 'first-timestamp',
-        requiredResources: ['timestamp-resource'],
-        execute: spy(async () => 'first'),
+        id: "first-timestamp",
+        requiredResources: ["timestamp-resource"],
+        execute: spy(async () => "first"),
       };
 
       const secondTask = {
-        id: 'second-timestamp',
-        requiredResources: ['timestamp-resource'],
-        execute: spy(async () => 'second'),
+        id: "second-timestamp",
+        requiredResources: ["timestamp-resource"],
+        execute: spy(async () => "second"),
       };
 
       // Submit with slight delay to ensure different timestamps
-      const firstPromise = timestampManager.submitTask('first-timestamp', firstTask);
+      const firstPromise = timestampManager.submitTask(
+        "first-timestamp",
+        firstTask,
+      );
       await AsyncTestUtils.delay(5);
-      const secondPromise = timestampManager.submitTask('second-timestamp', secondTask);
+      const secondPromise = timestampManager.submitTask(
+        "second-timestamp",
+        secondTask,
+      );
 
       const results = await Promise.all([firstPromise, secondPromise]);
-      
+
       // First submitted should win
-      assertEquals(results[0], 'first');
-      assertEquals(results[1], 'second');
+      assertEquals(results[0], "first");
+      assertEquals(results[1], "second");
     });
 
-    it('should handle conflict escalation', async () => {
+    it("should handle conflict escalation", async () => {
       const escalationTasks = Array.from({ length: 5 }, (_, i) => ({
         id: `escalation-${i}`,
-        priority: 'medium',
-        requiredResources: ['escalation-resource'],
+        priority: "medium",
+        requiredResources: ["escalation-resource"],
         maxWaitTime: 200,
         execute: spy(async () => {
           await AsyncTestUtils.delay(100);
@@ -622,63 +686,63 @@ describe('Coordination System - Comprehensive Tests', () => {
 
       const promises = escalationTasks.map((task, i) => {
         // Stagger submissions to create queue
-        return AsyncTestUtils.delay(i * 10).then(() => 
-          coordinationManager.submitTask(task.id, task)
+        return AsyncTestUtils.delay(i * 10).then(() =>
+          coordinationManager.submitTask(task.id, task),
         );
       });
 
       const results = await Promise.all(promises);
-      
+
       // All tasks should complete despite conflicts
       assertEquals(results.length, 5);
-      escalationTasks.forEach(task => {
+      escalationTasks.forEach((task) => {
         assertEquals(task.execute.calls.length, 1);
       });
     });
 
-    it('should detect and resolve nested conflicts', async () => {
+    it("should detect and resolve nested conflicts", async () => {
       const nestedConflictTasks = [
         {
-          id: 'nested-1',
-          requiredResources: ['resource-a', 'resource-b'],
+          id: "nested-1",
+          requiredResources: ["resource-a", "resource-b"],
           execute: spy(async () => {
             await AsyncTestUtils.delay(50);
-            return 'nested-1';
+            return "nested-1";
           }),
         },
         {
-          id: 'nested-2',
-          requiredResources: ['resource-b', 'resource-c'],
+          id: "nested-2",
+          requiredResources: ["resource-b", "resource-c"],
           execute: spy(async () => {
             await AsyncTestUtils.delay(50);
-            return 'nested-2';
+            return "nested-2";
           }),
         },
         {
-          id: 'nested-3',
-          requiredResources: ['resource-c', 'resource-a'],
+          id: "nested-3",
+          requiredResources: ["resource-c", "resource-a"],
           execute: spy(async () => {
             await AsyncTestUtils.delay(50);
-            return 'nested-3';
+            return "nested-3";
           }),
         },
       ];
 
-      const promises = nestedConflictTasks.map(task => 
-        coordinationManager.submitTask(task.id, task)
+      const promises = nestedConflictTasks.map((task) =>
+        coordinationManager.submitTask(task.id, task),
       );
 
       const results = await Promise.all(promises);
-      
+
       // Should resolve conflicts and complete all tasks
       assertEquals(results.length, 3);
-      nestedConflictTasks.forEach(task => {
+      nestedConflictTasks.forEach((task) => {
         assertEquals(task.execute.calls.length, 1);
       });
     });
   });
 
-  describe('Advanced Scheduling Features', () => {
+  describe("Advanced Scheduling Features", () => {
     let advancedScheduler: AdvancedScheduler;
     let workStealingScheduler: WorkStealingScheduler;
 
@@ -696,19 +760,19 @@ describe('Coordination System - Comprehensive Tests', () => {
       });
     });
 
-    it('should support work stealing between queues', async () => {
+    it("should support work stealing between queues", async () => {
       await workStealingScheduler.initialize();
 
       // Create tasks for multiple agents/workers
       const agentTasks = {
-        'agent-1': Array.from({ length: 10 }, (_, i) => ({
+        "agent-1": Array.from({ length: 10 }, (_, i) => ({
           id: `agent1-task-${i}`,
           execute: spy(async () => {
             await AsyncTestUtils.delay(20);
             return `agent1-${i}`;
           }),
         })),
-        'agent-2': Array.from({ length: 2 }, (_, i) => ({
+        "agent-2": Array.from({ length: 2 }, (_, i) => ({
           id: `agent2-task-${i}`,
           execute: spy(async () => {
             await AsyncTestUtils.delay(20);
@@ -719,86 +783,95 @@ describe('Coordination System - Comprehensive Tests', () => {
 
       // Submit tasks to different agent queues
       const promises: Promise<any>[] = [];
-      
+
       for (const [agentId, tasks] of Object.entries(agentTasks)) {
         for (const task of tasks) {
-          promises.push(workStealingScheduler.submitTask(agentId, task.id, task));
+          promises.push(
+            workStealingScheduler.submitTask(agentId, task.id, task),
+          );
         }
       }
 
       const results = await Promise.all(promises);
-      
+
       // All tasks should complete
       assertEquals(results.length, 12);
-      
+
       // Work stealing should have balanced the load
-      const agent1Results = results.filter(r => r.startsWith('agent1'));
-      const agent2Results = results.filter(r => r.startsWith('agent2'));
-      
+      const agent1Results = results.filter((r) => r.startsWith("agent1"));
+      const agent2Results = results.filter((r) => r.startsWith("agent2"));
+
       assertEquals(agent1Results.length, 10);
       assertEquals(agent2Results.length, 2);
     });
 
-    it('should implement priority aging', async () => {
+    it("should implement priority aging", async () => {
       await advancedScheduler.initialize();
 
       const oldLowPriorityTask = {
-        id: 'old-low',
-        priority: 'low',
+        id: "old-low",
+        priority: "low",
         submittedAt: Date.now() - 60000, // 1 minute ago
-        execute: spy(async () => 'old-low-priority'),
+        execute: spy(async () => "old-low-priority"),
       };
 
       const newHighPriorityTask = {
-        id: 'new-high',
-        priority: 'high',
+        id: "new-high",
+        priority: "high",
         submittedAt: Date.now(),
-        execute: spy(async () => 'new-high-priority'),
+        execute: spy(async () => "new-high-priority"),
       };
 
       // Submit in order that would normally favor high priority
       const promises = [
-        advancedScheduler.submitTask('old-low', oldLowPriorityTask),
-        advancedScheduler.submitTask('new-high', newHighPriorityTask),
+        advancedScheduler.submitTask("old-low", oldLowPriorityTask),
+        advancedScheduler.submitTask("new-high", newHighPriorityTask),
       ];
 
       const results = await Promise.all(promises);
-      
+
       // Priority aging should eventually elevate old low priority task
       assertEquals(results.length, 2);
       assertEquals(oldLowPriorityTask.execute.calls.length, 1);
       assertEquals(newHighPriorityTask.execute.calls.length, 1);
     });
 
-    it('should support dynamic priority adjustment', async () => {
+    it("should support dynamic priority adjustment", async () => {
       await advancedScheduler.initialize();
 
       const adjustableTask = {
-        id: 'adjustable',
-        priority: 'low',
+        id: "adjustable",
+        priority: "low",
         execute: spy(async () => {
           await AsyncTestUtils.delay(100);
-          return 'adjustable-complete';
+          return "adjustable-complete";
         }),
       };
 
       // Submit task
-      const taskPromise = advancedScheduler.submitTask('adjustable', adjustableTask);
-      
+      const taskPromise = advancedScheduler.submitTask(
+        "adjustable",
+        adjustableTask,
+      );
+
       // Adjust priority after submission
       await AsyncTestUtils.delay(10);
-      await advancedScheduler.adjustTaskPriority('adjustable', 'critical');
+      await advancedScheduler.adjustTaskPriority("adjustable", "critical");
 
       const result = await taskPromise;
-      assertEquals(result, 'adjustable-complete');
+      assertEquals(result, "adjustable-complete");
     });
 
-    it('should handle load balancing across multiple schedulers', async () => {
-      const schedulers = Array.from({ length: 3 }, () => new AdvancedScheduler({
-        enableLoadBalancing: true,
-      }));
+    it("should handle load balancing across multiple schedulers", async () => {
+      const schedulers = Array.from(
+        { length: 3 },
+        () =>
+          new AdvancedScheduler({
+            enableLoadBalancing: true,
+          }),
+      );
 
-      await Promise.all(schedulers.map(s => s.initialize()));
+      await Promise.all(schedulers.map((s) => s.initialize()));
 
       // Create uneven task distribution
       const tasks = Array.from({ length: 30 }, (_, i) => ({
@@ -810,63 +883,65 @@ describe('Coordination System - Comprehensive Tests', () => {
       }));
 
       // Submit all tasks to first scheduler
-      const promises = tasks.map(task => 
-        schedulers[0].submitTask(task.id, task)
+      const promises = tasks.map((task) =>
+        schedulers[0].submitTask(task.id, task),
       );
 
       const results = await Promise.all(promises);
-      
+
       // Load balancing should distribute tasks across schedulers
       assertEquals(results.length, 30);
-      tasks.forEach(task => {
+      tasks.forEach((task) => {
         assertEquals(task.execute.calls.length, 1);
       });
     });
   });
 
-  describe('Performance and Scalability', () => {
+  describe("Performance and Scalability", () => {
     beforeEach(async () => {
       await coordinationManager.initialize();
     });
 
-    it('should handle high task submission throughput', async () => {
+    it("should handle high task submission throughput", async () => {
       const { stats } = await PerformanceTestUtils.benchmark(
         async () => {
           const taskId = `perf-task-${Date.now()}-${Math.random()}`;
           return coordinationManager.submitTask(taskId, {
-            execute: async () => 'quick-task',
+            execute: async () => "quick-task",
           });
         },
-        { iterations: 200, concurrency: 10 }
+        { iterations: 200, concurrency: 10 },
       );
 
       TestAssertions.assertInRange(stats.mean, 0, 50); // Should be fast
-      console.log(`Task submission performance: ${stats.mean.toFixed(2)}ms average`);
+      console.log(
+        `Task submission performance: ${stats.mean.toFixed(2)}ms average`,
+      );
     });
 
-    it('should scale with large numbers of tasks', async () => {
+    it("should scale with large numbers of tasks", async () => {
       const largeBatch = Array.from({ length: 1000 }, (_, i) => ({
         id: `scale-task-${i}`,
         execute: spy(async () => `result-${i}`),
       }));
 
       const startTime = Date.now();
-      
-      const promises = largeBatch.map(task => 
-        coordinationManager.submitTask(task.id, task)
+
+      const promises = largeBatch.map((task) =>
+        coordinationManager.submitTask(task.id, task),
       );
 
       const results = await Promise.all(promises);
-      
+
       const duration = Date.now() - startTime;
-      
+
       assertEquals(results.length, 1000);
       TestAssertions.assertInRange(duration, 0, 10000); // Should complete within 10 seconds
-      
+
       console.log(`Large batch (1000 tasks) completed in ${duration}ms`);
     });
 
-    it('should maintain performance under memory pressure', async () => {
+    it("should maintain performance under memory pressure", async () => {
       const { leaked } = await MemoryTestUtils.checkMemoryLeak(async () => {
         // Submit many tasks with varying resource requirements
         const tasks = Array.from({ length: 500 }, (_, i) => ({
@@ -880,8 +955,8 @@ describe('Coordination System - Comprehensive Tests', () => {
           }),
         }));
 
-        const promises = tasks.map(task => 
-          coordinationManager.submitTask(task.id, task)
+        const promises = tasks.map((task) =>
+          coordinationManager.submitTask(task.id, task),
         );
 
         await Promise.all(promises);
@@ -890,36 +965,42 @@ describe('Coordination System - Comprehensive Tests', () => {
       assertEquals(leaked, false);
     });
 
-    it('should handle load testing scenario', async () => {
+    it("should handle load testing scenario", async () => {
       const results = await PerformanceTestUtils.loadTest(
         async () => {
           const taskId = `load-task-${Date.now()}-${Math.random()}`;
           return coordinationManager.submitTask(taskId, {
-            execute: async () => 'load-test-result',
+            execute: async () => "load-test-result",
           });
         },
         {
           duration: 5000, // 5 seconds
           maxConcurrency: 20,
           requestsPerSecond: 50,
-        }
+        },
       );
 
-      TestAssertions.assertInRange(results.successfulRequests / results.totalRequests, 0.95, 1.0);
+      TestAssertions.assertInRange(
+        results.successfulRequests / results.totalRequests,
+        0.95,
+        1.0,
+      );
       TestAssertions.assertInRange(results.averageResponseTime, 0, 100);
-      
-      console.log(`Load test: ${results.successfulRequests}/${results.totalRequests} successful`);
+
+      console.log(
+        `Load test: ${results.successfulRequests}/${results.totalRequests} successful`,
+      );
     });
   });
 
-  describe('Error Handling and Recovery', () => {
+  describe("Error Handling and Recovery", () => {
     beforeEach(async () => {
       await coordinationManager.initialize();
     });
 
-    it('should handle task execution failures gracefully', async () => {
+    it("should handle task execution failures gracefully", async () => {
       const errorScenarios = generateErrorScenarios();
-      
+
       for (const scenario of errorScenarios) {
         const failingTask = {
           id: `error-task-${scenario.name}`,
@@ -931,7 +1012,10 @@ describe('Coordination System - Comprehensive Tests', () => {
         if (scenario.recoverable) {
           // Should retry recoverable errors
           try {
-            await coordinationManager.submitTask(`error-task-${scenario.name}`, failingTask);
+            await coordinationManager.submitTask(
+              `error-task-${scenario.name}`,
+              failingTask,
+            );
           } catch (error) {
             // May still fail after retries
             assertExists(error);
@@ -939,63 +1023,74 @@ describe('Coordination System - Comprehensive Tests', () => {
         } else {
           // Should fail fast for non-recoverable errors
           await TestAssertions.assertThrowsAsync(
-            () => coordinationManager.submitTask(`error-task-${scenario.name}`, failingTask),
+            () =>
+              coordinationManager.submitTask(
+                `error-task-${scenario.name}`,
+                failingTask,
+              ),
             Error,
-            scenario.error.message
+            scenario.error.message,
           );
         }
       }
     });
 
-    it('should recover from scheduler failures', async () => {
+    it("should recover from scheduler failures", async () => {
       // Simulate scheduler failure
       const originalSubmit = scheduler.submit.bind(scheduler);
       let failureCount = 0;
-      
+
       scheduler.submit = spy(async (...args) => {
         failureCount++;
         if (failureCount <= 2) {
-          throw new Error('Scheduler temporarily unavailable');
+          throw new Error("Scheduler temporarily unavailable");
         }
         return originalSubmit(...args);
       });
 
       const resilientTask = {
-        id: 'resilient-task',
-        execute: spy(async () => 'recovered'),
+        id: "resilient-task",
+        execute: spy(async () => "recovered"),
       };
 
       // Should eventually succeed after scheduler recovers
-      const result = await coordinationManager.submitTask('resilient-task', resilientTask);
-      assertEquals(result, 'recovered');
+      const result = await coordinationManager.submitTask(
+        "resilient-task",
+        resilientTask,
+      );
+      assertEquals(result, "recovered");
       assertEquals(failureCount, 3);
     });
 
-    it('should handle resource manager failures', async () => {
+    it("should handle resource manager failures", async () => {
       // Simulate resource manager failure
-      const originalAcquire = resourceManager.acquireResources.bind(resourceManager);
+      const originalAcquire =
+        resourceManager.acquireResources.bind(resourceManager);
       let attempts = 0;
-      
+
       resourceManager.acquireResources = spy(async (...args) => {
         attempts++;
         if (attempts <= 1) {
-          throw new Error('Resource manager failure');
+          throw new Error("Resource manager failure");
         }
         return originalAcquire(...args);
       });
 
       const resourceTask = {
-        id: 'resource-task',
-        requiredResources: ['test-resource'],
-        execute: spy(async () => 'resource-task-complete'),
+        id: "resource-task",
+        requiredResources: ["test-resource"],
+        execute: spy(async () => "resource-task-complete"),
       };
 
       // Should recover from resource manager failure
-      const result = await coordinationManager.submitTask('resource-task', resourceTask);
-      assertEquals(result, 'resource-task-complete');
+      const result = await coordinationManager.submitTask(
+        "resource-task",
+        resourceTask,
+      );
+      assertEquals(result, "resource-task-complete");
     });
 
-    it('should handle partial system failures', async () => {
+    it("should handle partial system failures", async () => {
       // Create a scenario where some components fail
       const partiallyFailingTasks = Array.from({ length: 10 }, (_, i) => ({
         id: `partial-${i}`,
@@ -1008,25 +1103,25 @@ describe('Coordination System - Comprehensive Tests', () => {
       }));
 
       const results = await Promise.allSettled(
-        partiallyFailingTasks.map(task => 
-          coordinationManager.submitTask(task.id, task)
-        )
+        partiallyFailingTasks.map((task) =>
+          coordinationManager.submitTask(task.id, task),
+        ),
       );
 
-      const successes = results.filter(r => r.status === 'fulfilled');
-      const failures = results.filter(r => r.status === 'rejected');
-      
+      const successes = results.filter((r) => r.status === "fulfilled");
+      const failures = results.filter((r) => r.status === "rejected");
+
       // Should have partial success
       assertEquals(successes.length, 7); // 7 out of 10 should succeed
       assertEquals(failures.length, 3);
-      
+
       // System should remain functional
       const healthStatus = await coordinationManager.getHealthStatus();
       assertEquals(healthStatus.healthy, true);
     });
 
-    it('should implement circuit breaker pattern', async () => {
-      const circuitBreaker = new CircuitBreaker('test-circuit', {
+    it("should implement circuit breaker pattern", async () => {
+      const circuitBreaker = new CircuitBreaker("test-circuit", {
         threshold: 3,
         timeout: 1000,
         resetTimeout: 2000,
@@ -1036,9 +1131,9 @@ describe('Coordination System - Comprehensive Tests', () => {
       const flakyService = async () => {
         failureCount++;
         if (failureCount <= 5) {
-          throw new Error('Service failure');
+          throw new Error("Service failure");
         }
-        return 'service-success';
+        return "service-success";
       };
 
       // Trigger circuit breaker opening
@@ -1051,13 +1146,13 @@ describe('Coordination System - Comprehensive Tests', () => {
       }
 
       // Circuit should be open now
-      assertEquals(circuitBreaker.getState().state, 'open');
+      assertEquals(circuitBreaker.getState().state, "open");
 
       // Should fail fast while open
       await TestAssertions.assertThrowsAsync(
         () => circuitBreaker.execute(flakyService),
         Error,
-        'Circuit breaker test-circuit is open'
+        "Circuit breaker test-circuit is open",
       );
 
       // Wait for reset timeout
@@ -1065,16 +1160,16 @@ describe('Coordination System - Comprehensive Tests', () => {
 
       // Should succeed after circuit resets
       const result = await circuitBreaker.execute(flakyService);
-      assertEquals(result, 'service-success');
+      assertEquals(result, "service-success");
     });
   });
 
-  describe('Monitoring and Metrics', () => {
+  describe("Monitoring and Metrics", () => {
     beforeEach(async () => {
       await coordinationManager.initialize();
     });
 
-    it('should track execution metrics', async () => {
+    it("should track execution metrics", async () => {
       const tasks = Array.from({ length: 10 }, (_, i) => ({
         id: `metric-task-${i}`,
         execute: spy(async () => {
@@ -1084,25 +1179,25 @@ describe('Coordination System - Comprehensive Tests', () => {
       }));
 
       await Promise.all(
-        tasks.map(task => coordinationManager.submitTask(task.id, task))
+        tasks.map((task) => coordinationManager.submitTask(task.id, task)),
       );
 
       const metrics = await coordinationManager.getMetrics();
-      
+
       assertExists(metrics);
-      assertEquals(typeof metrics.totalTasksSubmitted, 'number');
-      assertEquals(typeof metrics.totalTasksCompleted, 'number');
-      assertEquals(typeof metrics.averageExecutionTime, 'number');
-      assertEquals(typeof metrics.currentActiveTasks, 'number');
-      
+      assertEquals(typeof metrics.totalTasksSubmitted, "number");
+      assertEquals(typeof metrics.totalTasksCompleted, "number");
+      assertEquals(typeof metrics.averageExecutionTime, "number");
+      assertEquals(typeof metrics.currentActiveTasks, "number");
+
       assertEquals(metrics.totalTasksCompleted, 10);
       TestAssertions.assertInRange(metrics.averageExecutionTime, 10, 100);
     });
 
-    it('should track resource utilization metrics', async () => {
+    it("should track resource utilization metrics", async () => {
       const resourceIntensiveTasks = Array.from({ length: 5 }, (_, i) => ({
         id: `resource-metric-${i}`,
-        requiredResources: [`cpu-${i % 2}`, 'memory'],
+        requiredResources: [`cpu-${i % 2}`, "memory"],
         estimatedMemoryUsage: 1024 * 1024 * (i + 1), // Variable memory usage
         execute: spy(async () => {
           await AsyncTestUtils.delay(50);
@@ -1111,33 +1206,33 @@ describe('Coordination System - Comprehensive Tests', () => {
       }));
 
       await Promise.all(
-        resourceIntensiveTasks.map(task => 
-          coordinationManager.submitTask(task.id, task)
-        )
+        resourceIntensiveTasks.map((task) =>
+          coordinationManager.submitTask(task.id, task),
+        ),
       );
 
       const resourceMetrics = await resourceManager.getMetrics();
-      
+
       assertExists(resourceMetrics);
-      assertEquals(typeof resourceMetrics.peakMemoryUsage, 'number');
-      assertEquals(typeof resourceMetrics.averageMemoryUsage, 'number');
-      assertEquals(typeof resourceMetrics.resourceUtilization, 'object');
+      assertEquals(typeof resourceMetrics.peakMemoryUsage, "number");
+      assertEquals(typeof resourceMetrics.averageMemoryUsage, "number");
+      assertEquals(typeof resourceMetrics.resourceUtilization, "object");
     });
 
-    it('should provide health status information', async () => {
+    it("should provide health status information", async () => {
       const healthStatus = await coordinationManager.getHealthStatus();
-      
+
       assertExists(healthStatus);
-      assertEquals(typeof healthStatus.healthy, 'boolean');
-      assertEquals(typeof healthStatus.components, 'object');
-      
+      assertEquals(typeof healthStatus.healthy, "boolean");
+      assertEquals(typeof healthStatus.components, "object");
+
       // Check individual component health
-      assertEquals(typeof healthStatus.components.scheduler, 'object');
-      assertEquals(typeof healthStatus.components.resourceManager, 'object');
-      assertEquals(typeof healthStatus.components.conflictResolver, 'object');
+      assertEquals(typeof healthStatus.components.scheduler, "object");
+      assertEquals(typeof healthStatus.components.resourceManager, "object");
+      assertEquals(typeof healthStatus.components.conflictResolver, "object");
     });
 
-    it('should detect performance degradation', async () => {
+    it("should detect performance degradation", async () => {
       // Create a scenario that causes performance degradation
       const slowTasks = Array.from({ length: 20 }, (_, i) => ({
         id: `slow-task-${i}`,
@@ -1148,20 +1243,21 @@ describe('Coordination System - Comprehensive Tests', () => {
       }));
 
       const startTime = Date.now();
-      
+
       await Promise.all(
-        slowTasks.map(task => coordinationManager.submitTask(task.id, task))
+        slowTasks.map((task) => coordinationManager.submitTask(task.id, task)),
       );
 
       const endTime = Date.now();
       const totalDuration = endTime - startTime;
 
-      const performanceMetrics = await coordinationManager.getPerformanceMetrics();
-      
+      const performanceMetrics =
+        await coordinationManager.getPerformanceMetrics();
+
       assertExists(performanceMetrics);
-      assertEquals(typeof performanceMetrics.throughput, 'number');
-      assertEquals(typeof performanceMetrics.latency, 'object');
-      
+      assertEquals(typeof performanceMetrics.throughput, "number");
+      assertEquals(typeof performanceMetrics.latency, "object");
+
       // Should detect degradation in throughput
       TestAssertions.assertInRange(performanceMetrics.throughput, 0.01, 1.0); // tasks per ms
     });

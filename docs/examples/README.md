@@ -35,26 +35,31 @@ claude-flow workflow execute ./examples/research-analysis-workflow.json
 ## Example Categories
 
 ### 🔬 Research and Analysis
+
 - [Academic Research Pipeline](./research/academic-pipeline.md)
 - [Market Analysis Workflow](./research/market-analysis.md)
 - [Competitive Intelligence](./research/competitive-intelligence.md)
 
 ### 💻 Software Development
+
 - [Code Review Automation](./development/code-review.md)
 - [Testing and QA Pipeline](./development/testing-pipeline.md)
 - [Documentation Generation](./development/docs-generation.md)
 
 ### 📊 Data Processing
+
 - [Data Analysis Pipeline](./data/analysis-pipeline.md)
 - [Report Generation](./data/report-generation.md)
 - [ETL Workflows](./data/etl-workflows.md)
 
 ### 🏢 Business Operations
+
 - [Customer Support Automation](./business/customer-support.md)
 - [Content Creation Pipeline](./business/content-creation.md)
 - [Process Optimization](./business/process-optimization.md)
 
 ### 🧪 Experimental Features
+
 - [Advanced Memory Usage](./experimental/advanced-memory.md)
 - [Custom Agent Types](./experimental/custom-agents.md)
 - [Plugin Development](./experimental/plugins.md)
@@ -71,7 +76,11 @@ Ready-to-use workflow templates for common scenarios:
   "description": "Comprehensive research followed by detailed analysis",
   "parameters": {
     "topic": { "type": "string", "required": true },
-    "depth": { "type": "string", "default": "standard", "enum": ["basic", "standard", "comprehensive"] }
+    "depth": {
+      "type": "string",
+      "default": "standard",
+      "enum": ["basic", "standard", "comprehensive"]
+    }
   },
   "tasks": [
     {
@@ -109,7 +118,11 @@ Ready-to-use workflow templates for common scenarios:
   "description": "End-to-end feature development pipeline",
   "parameters": {
     "feature": { "type": "string", "required": true },
-    "priority": { "type": "string", "default": "normal", "enum": ["low", "normal", "high", "urgent"] }
+    "priority": {
+      "type": "string",
+      "default": "normal",
+      "enum": ["low", "normal", "high", "urgent"]
+    }
   },
   "tasks": [
     {
@@ -151,8 +164,8 @@ Ready-to-use workflow templates for common scenarios:
 
 ```typescript
 // VSCode extension integration example
-import { workspace, window } from 'vscode';
-import { ClaudeFlow } from 'claude-flow';
+import { workspace, window } from "vscode";
+import { ClaudeFlow } from "claude-flow";
 
 export class ClaudeFlowExtension {
   private claudeFlow: ClaudeFlow;
@@ -160,19 +173,20 @@ export class ClaudeFlowExtension {
   async activate() {
     this.claudeFlow = new ClaudeFlow({
       terminal: {
-        type: 'vscode',
+        type: "vscode",
         integration: {
           workspaceIntegration: true,
-          showProgress: true
-        }
-      }
+          showProgress: true,
+        },
+      },
     });
 
     await this.claudeFlow.start();
-    
+
     // Register commands
-    vscode.commands.registerCommand('claude-flow.analyzeCode', 
-      () => this.analyzeCurrentFile());
+    vscode.commands.registerCommand("claude-flow.analyzeCode", () =>
+      this.analyzeCurrentFile(),
+    );
   }
 
   private async analyzeCurrentFile() {
@@ -180,19 +194,19 @@ export class ClaudeFlowExtension {
     if (!editor) return;
 
     const agent = await this.claudeFlow.spawnAgent({
-      type: 'analyst',
-      name: 'Code Analyzer'
+      type: "analyst",
+      name: "Code Analyzer",
     });
 
     const result = await this.claudeFlow.executeTask({
-      type: 'analysis',
-      description: 'Analyze code quality and suggest improvements',
+      type: "analysis",
+      description: "Analyze code quality and suggest improvements",
       input: {
         code: editor.document.getText(),
         language: editor.document.languageId,
-        file: editor.document.fileName
+        file: editor.document.fileName,
       },
-      assignTo: agent.id
+      assignTo: agent.id,
     });
 
     // Show results in VSCode
@@ -205,40 +219,40 @@ export class ClaudeFlowExtension {
 
 ```typescript
 // Express.js API integration
-import express from 'express';
-import { ClaudeFlow } from 'claude-flow';
+import express from "express";
+import { ClaudeFlow } from "claude-flow";
 
 const app = express();
 const claudeFlow = new ClaudeFlow();
 
-app.post('/api/analyze', async (req, res) => {
+app.post("/api/analyze", async (req, res) => {
   try {
     const { data, analysisType } = req.body;
 
     const task = await claudeFlow.createTask({
-      type: 'analysis',
+      type: "analysis",
       description: `Perform ${analysisType} analysis`,
       input: data,
-      priority: 'high'
+      priority: "high",
     });
 
     const result = await claudeFlow.waitForCompletion(task.id);
-    
+
     res.json({
       success: true,
       taskId: task.id,
-      result: result.data
+      result: result.data,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      error: error.message
+      error: error.message,
     });
   }
 });
 
 app.listen(3000, () => {
-  console.log('Claude-Flow API server running on port 3000');
+  console.log("Claude-Flow API server running on port 3000");
 });
 ```
 
@@ -287,33 +301,33 @@ app.listen(3000, () => {
 
 ```typescript
 // Efficient batch processing
-import { ClaudeFlow } from 'claude-flow';
+import { ClaudeFlow } from "claude-flow";
 
 async function processBatch(items: any[]) {
   const claudeFlow = new ClaudeFlow();
-  
+
   // Create batch task
   const batchTask = await claudeFlow.createBatch({
     template: {
-      type: 'analysis',
-      timeout: 300000
+      type: "analysis",
+      timeout: 300000,
     },
-    items: items.map(item => ({
+    items: items.map((item) => ({
       id: item.id,
-      data: item.data
+      data: item.data,
     })),
     batchConfig: {
       maxConcurrent: 8,
       aggregateResults: true,
-      failureHandling: 'continue'
-    }
+      failureHandling: "continue",
+    },
   });
 
   // Monitor progress
   const results = await claudeFlow.waitForBatch(batchTask.id, {
     onProgress: (progress) => {
       console.log(`Progress: ${progress.percentage}%`);
-    }
+    },
   });
 
   return results;
@@ -336,17 +350,17 @@ class MultiTenantClaudeFlow {
           namespaces: {
             enabled: true,
             defaultNamespace: tenantId,
-            strictIsolation: true
-          }
+            strictIsolation: true,
+          },
         },
         security: {
           isolation: {
             tenantId: tenantId,
-            resourceIsolation: true
-          }
-        }
+            resourceIsolation: true,
+          },
+        },
       });
-      
+
       await instance.start();
       this.instances.set(tenantId, instance);
     }
@@ -377,21 +391,24 @@ class DistributedClaudeFlow {
   async distributeTask(task: Task): Promise<TaskResult> {
     // Find best node for task
     const node = await this.selectOptimalNode(task);
-    
+
     // Execute on selected node
     return await node.executeTask(task);
   }
 
   private async selectOptimalNode(task: Task): Promise<ClaudeFlowNode> {
     const nodeMetrics = await Promise.all(
-      this.nodes.map(node => node.getMetrics())
+      this.nodes.map((node) => node.getMetrics()),
     );
 
     // Select node with lowest load and best capability match
-    return this.nodes.reduce((best, current, index) => {
-      const score = this.calculateNodeScore(task, nodeMetrics[index]);
-      return score > best.score ? { node: current, score } : best;
-    }, { node: this.nodes[0], score: 0 }).node;
+    return this.nodes.reduce(
+      (best, current, index) => {
+        const score = this.calculateNodeScore(task, nodeMetrics[index]);
+        return score > best.score ? { node: current, score } : best;
+      },
+      { node: this.nodes[0], score: 0 },
+    ).node;
   }
 }
 ```
@@ -402,33 +419,33 @@ class DistributedClaudeFlow {
 
 ```typescript
 // Testing Claude-Flow workflows
-import { describe, it, expect } from 'vitest';
-import { ClaudeFlow, MockAgent } from 'claude-flow/testing';
+import { describe, it, expect } from "vitest";
+import { ClaudeFlow, MockAgent } from "claude-flow/testing";
 
-describe('Research Workflow', () => {
+describe("Research Workflow", () => {
   let claudeFlow: ClaudeFlow;
 
   beforeEach(async () => {
     claudeFlow = new ClaudeFlow({
       testing: {
-        mode: 'mock',
-        mockResponses: true
-      }
+        mode: "mock",
+        mockResponses: true,
+      },
     });
 
     await claudeFlow.start();
   });
 
-  it('should complete research task successfully', async () => {
+  it("should complete research task successfully", async () => {
     const agent = await claudeFlow.spawnAgent({
-      type: 'researcher',
-      name: 'Test Researcher'
+      type: "researcher",
+      name: "Test Researcher",
     });
 
     const task = await claudeFlow.createTask({
-      type: 'research',
-      description: 'Test research task',
-      assignTo: agent.id
+      type: "research",
+      description: "Test research task",
+      assignTo: agent.id,
     });
 
     const result = await claudeFlow.waitForCompletion(task.id);
@@ -443,25 +460,25 @@ describe('Research Workflow', () => {
 
 ```typescript
 // End-to-end workflow testing
-describe('Full Workflow Integration', () => {
-  it('should execute complete analysis workflow', async () => {
+describe("Full Workflow Integration", () => {
+  it("should execute complete analysis workflow", async () => {
     const claudeFlow = new ClaudeFlow();
     await claudeFlow.start();
 
     // Execute workflow
     const workflow = await claudeFlow.executeWorkflow({
-      name: 'Test Analysis Workflow',
+      name: "Test Analysis Workflow",
       tasks: [
-        { type: 'research', description: 'Research phase' },
-        { type: 'analysis', description: 'Analysis phase' },
-        { type: 'report', description: 'Report generation' }
-      ]
+        { type: "research", description: "Research phase" },
+        { type: "analysis", description: "Analysis phase" },
+        { type: "report", description: "Report generation" },
+      ],
     });
 
     // Verify results
-    expect(workflow.status).toBe('completed');
+    expect(workflow.status).toBe("completed");
     expect(workflow.results).toHaveLength(3);
-    
+
     await claudeFlow.stop();
   });
 });
@@ -496,7 +513,11 @@ class RobustClaudeFlow {
   }
 
   private isRetryable(error: Error): boolean {
-    const retryableCodes = ['TIMEOUT', 'AGENT_UNAVAILABLE', 'RESOURCE_EXHAUSTED'];
+    const retryableCodes = [
+      "TIMEOUT",
+      "AGENT_UNAVAILABLE",
+      "RESOURCE_EXHAUSTED",
+    ];
     return retryableCodes.includes(error.code);
   }
 }
@@ -511,7 +532,7 @@ class ResourceManagedClaudeFlow {
 
   async acquireResource(type: string): Promise<Resource> {
     const poolKey = `${type}_pool`;
-    
+
     if (!this.resourcePool.has(poolKey)) {
       this.resourcePool.set(poolKey, await this.createResource(type));
     }

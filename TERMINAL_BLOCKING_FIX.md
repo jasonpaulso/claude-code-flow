@@ -1,6 +1,7 @@
 # Terminal Blocking Fix - Implementation Report
 
 ## Date: June 13, 2025
+
 ## Author: SPARC Orchestrator
 
 ## Summary
@@ -12,12 +13,14 @@ Successfully implemented comprehensive fixes for the terminal blocking issue in 
 ### 1. Enhanced `waitForObjectiveCompletion` Function (swarm.ts)
 
 **Before:**
+
 - Simple Promise with setInterval and setTimeout
 - No cleanup of timers
 - No signal handling
 - Could leave timers running
 
 **After:**
+
 ```typescript
 - Added proper cleanup function to clear all timers
 - Added SIGINT/SIGTERM signal handlers for graceful shutdown
@@ -30,6 +33,7 @@ Successfully implemented comprehensive fixes for the terminal blocking issue in 
 **Purpose:** Start swarm execution and exit immediately without waiting for completion
 
 **Implementation:**
+
 - Added to options parsing in both swarm.ts and swarm-new.ts
 - Added to help documentation
 - When used, saves coordinator state and exits with `Deno.exit(0)`
@@ -37,6 +41,7 @@ Successfully implemented comprehensive fixes for the terminal blocking issue in 
 ### 3. Explicit Process Exit
 
 **Changes:**
+
 - Added `Deno.exit(0)` after successful completion in foreground mode
 - Added `Deno.exit(1)` after errors
 - Added proper cleanup before exit with `coordinator.shutdown()`
@@ -45,6 +50,7 @@ Successfully implemented comprehensive fixes for the terminal blocking issue in 
 ### 4. Improved Background Mode
 
 **Enhancements:**
+
 - Background mode now properly exits after saving state
 - Added 'mode' field to coordinator.json to track execution mode
 - Clear separation between no-wait, background, and foreground modes
@@ -52,6 +58,7 @@ Successfully implemented comprehensive fixes for the terminal blocking issue in 
 ## Files Modified
 
 1. `/src/cli/commands/swarm.ts`
+
    - Enhanced waitForObjectiveCompletion with cleanup and signals
    - Added --no-wait flag support
    - Added explicit process exits
@@ -66,16 +73,19 @@ Successfully implemented comprehensive fixes for the terminal blocking issue in 
 ## Usage Examples
 
 ### Start and Exit Immediately
+
 ```bash
 claude-flow swarm "Build a REST API" --no-wait
 ```
 
 ### Run in Background
+
 ```bash
 claude-flow swarm "Research cloud architecture" --background
 ```
 
 ### Run in Foreground with Graceful Shutdown
+
 ```bash
 claude-flow swarm "Analyze data" --verbose
 # Press Ctrl+C for graceful shutdown
@@ -84,12 +94,14 @@ claude-flow swarm "Analyze data" --verbose
 ## Testing Recommendations
 
 1. **Test --no-wait flag:**
+
    ```bash
    time claude-flow swarm "Test task" --no-wait
    # Should exit in <2 seconds
    ```
 
 2. **Test graceful shutdown:**
+
    ```bash
    claude-flow swarm "Long running task" --timeout 5
    # Press Ctrl+C during execution

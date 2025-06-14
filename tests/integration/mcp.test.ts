@@ -2,16 +2,22 @@
  * Integration tests for MCP (Model Context Protocol) implementation
  */
 
-import { describe, it, beforeEach, afterEach, expect } from 'https://deno.land/std@0.208.0/testing/bdd.ts';
-import { delay } from 'https://deno.land/std@0.208.0/async/delay.ts';
+import {
+  describe,
+  it,
+  beforeEach,
+  afterEach,
+  expect,
+} from "https://deno.land/std@0.208.0/testing/bdd.ts";
+import { delay } from "https://deno.land/std@0.208.0/async/delay.ts";
 
-import { MCPServer } from '../../src/mcp/server.ts';
-import { StdioTransport } from '../../src/mcp/transports/stdio.ts';
-import { HttpTransport } from '../../src/mcp/transports/http.ts';
-import { SessionManager } from '../../src/mcp/session-manager.ts';
-import { AuthManager } from '../../src/mcp/auth.ts';
-import { LoadBalancer } from '../../src/mcp/load-balancer.ts';
-import { ToolRegistry } from '../../src/mcp/tools.ts';
+import { MCPServer } from "../../src/mcp/server.ts";
+import { StdioTransport } from "../../src/mcp/transports/stdio.ts";
+import { HttpTransport } from "../../src/mcp/transports/http.ts";
+import { SessionManager } from "../../src/mcp/session-manager.ts";
+import { AuthManager } from "../../src/mcp/auth.ts";
+import { LoadBalancer } from "../../src/mcp/load-balancer.ts";
+import { ToolRegistry } from "../../src/mcp/tools.ts";
 import {
   MCPConfig,
   MCPRequest,
@@ -19,9 +25,9 @@ import {
   MCPInitializeParams,
   MCPTool,
   MCPSession,
-} from '../../src/utils/types.ts';
-import { Logger } from '../../src/core/logger.ts';
-import { EventBus } from '../../src/core/event-bus.ts';
+} from "../../src/utils/types.ts";
+import { Logger } from "../../src/core/logger.ts";
+import { EventBus } from "../../src/core/event-bus.ts";
 
 // Mock orchestrator for testing
 class MockOrchestrator {
@@ -32,7 +38,7 @@ class MockOrchestrator {
 
   async spawnAgent(profile: any): Promise<string> {
     const sessionId = `session_${this.idCounter++}`;
-    this.agents.set(profile.id, { ...profile, sessionId, status: 'active' });
+    this.agents.set(profile.id, { ...profile, sessionId, status: "active" });
     return sessionId;
   }
 
@@ -43,7 +49,7 @@ class MockOrchestrator {
   async terminateAgent(agentId: string, options: any): Promise<void> {
     const agent = this.agents.get(agentId);
     if (agent) {
-      agent.status = 'terminated';
+      agent.status = "terminated";
       agent.terminationReason = options.reason;
     }
   }
@@ -60,18 +66,21 @@ class MockOrchestrator {
 
   async listTasks(filters: any): Promise<any[]> {
     let tasks = Array.from(this.tasks.values());
-    
+
     if (filters.status) {
-      tasks = tasks.filter(task => task.status === filters.status);
+      tasks = tasks.filter((task) => task.status === filters.status);
     }
     if (filters.agentId) {
-      tasks = tasks.filter(task => task.assignedAgent === filters.agentId);
+      tasks = tasks.filter((task) => task.assignedAgent === filters.agentId);
     }
     if (filters.type) {
-      tasks = tasks.filter(task => task.type === filters.type);
+      tasks = tasks.filter((task) => task.type === filters.type);
     }
-    
-    return tasks.slice(filters.offset || 0, (filters.offset || 0) + (filters.limit || 50));
+
+    return tasks.slice(
+      filters.offset || 0,
+      (filters.offset || 0) + (filters.limit || 50),
+    );
   }
 
   async getTask(taskId: string): Promise<any> {
@@ -81,7 +90,7 @@ class MockOrchestrator {
   async cancelTask(taskId: string, reason: string): Promise<void> {
     const task = this.tasks.get(taskId);
     if (task) {
-      task.status = 'cancelled';
+      task.status = "cancelled";
       task.cancellationReason = reason;
     }
   }
@@ -90,26 +99,29 @@ class MockOrchestrator {
     const task = this.tasks.get(taskId);
     if (task) {
       task.assignedAgent = agentId;
-      task.status = 'assigned';
+      task.status = "assigned";
     }
   }
 
   async queryMemory(query: any): Promise<any[]> {
     let entries = Array.from(this.memory.values());
-    
+
     if (query.agentId) {
-      entries = entries.filter(entry => entry.agentId === query.agentId);
+      entries = entries.filter((entry) => entry.agentId === query.agentId);
     }
     if (query.type) {
-      entries = entries.filter(entry => entry.type === query.type);
+      entries = entries.filter((entry) => entry.type === query.type);
     }
     if (query.search) {
-      entries = entries.filter(entry => 
-        entry.content.toLowerCase().includes(query.search.toLowerCase())
+      entries = entries.filter((entry) =>
+        entry.content.toLowerCase().includes(query.search.toLowerCase()),
       );
     }
-    
-    return entries.slice(query.offset || 0, (query.offset || 0) + (query.limit || 50));
+
+    return entries.slice(
+      query.offset || 0,
+      (query.offset || 0) + (query.limit || 50),
+    );
   }
 
   async storeMemory(entry: any): Promise<string> {
@@ -124,7 +136,7 @@ class MockOrchestrator {
 
   async getSystemStatus(): Promise<any> {
     return {
-      status: 'healthy',
+      status: "healthy",
       agents: this.agents.size,
       tasks: this.tasks.size,
       memory: this.memory.size,
@@ -145,10 +157,10 @@ class MockOrchestrator {
       healthy: true,
       deep,
       components: {
-        orchestrator: { status: 'healthy' },
-        agents: { status: 'healthy' },
-        tasks: { status: 'healthy' },
-        memory: { status: 'healthy' },
+        orchestrator: { status: "healthy" },
+        agents: { status: "healthy" },
+        tasks: { status: "healthy" },
+        memory: { status: "healthy" },
       },
     };
   }
@@ -158,30 +170,30 @@ class MockOrchestrator {
       command: command.command,
       args: command.args,
       exitCode: 0,
-      stdout: 'Mock command output',
-      stderr: '',
+      stdout: "Mock command output",
+      stderr: "",
       duration: 100,
     };
   }
 
   async listTerminals(includeIdle: boolean): Promise<any[]> {
     return [
-      { id: 'terminal_1', status: 'active', pid: 1234 },
-      { id: 'terminal_2', status: 'idle', pid: 5678 },
+      { id: "terminal_1", status: "active", pid: 1234 },
+      { id: "terminal_2", status: "idle", pid: 5678 },
     ];
   }
 
   async createTerminal(options: any): Promise<any> {
     return {
       id: `terminal_${this.idCounter++}`,
-      status: 'active',
+      status: "active",
       pid: Math.floor(Math.random() * 10000),
       ...options,
     };
   }
 }
 
-describe('MCP Integration Tests', () => {
+describe("MCP Integration Tests", () => {
   let server: MCPServer;
   let mockOrchestrator: MockOrchestrator;
   let logger: Logger;
@@ -191,26 +203,26 @@ describe('MCP Integration Tests', () => {
   beforeEach(async () => {
     logger = new Logger();
     await logger.configure({
-      level: 'debug',
-      format: 'text',
-      destination: 'console',
+      level: "debug",
+      format: "text",
+      destination: "console",
     });
 
     eventBus = new EventBus(logger);
     mockOrchestrator = new MockOrchestrator();
 
     config = {
-      transport: 'stdio',
-      host: 'localhost',
+      transport: "stdio",
+      host: "localhost",
       port: 3001,
       tlsEnabled: false,
       auth: {
         enabled: false,
-        method: 'token',
+        method: "token",
       },
       loadBalancer: {
         enabled: true,
-        strategy: 'round-robin',
+        strategy: "round-robin",
         maxRequestsPerSecond: 100,
         healthCheckInterval: 30000,
         circuitBreakerThreshold: 5,
@@ -219,7 +231,7 @@ describe('MCP Integration Tests', () => {
       maxSessions: 10,
       enableMetrics: true,
       corsEnabled: true,
-      corsOrigins: ['*'],
+      corsOrigins: ["*"],
     };
 
     server = new MCPServer(config, eventBus, logger, mockOrchestrator);
@@ -231,37 +243,37 @@ describe('MCP Integration Tests', () => {
     }
   });
 
-  describe('Server Lifecycle', () => {
-    it('should start and stop successfully', async () => {
+  describe("Server Lifecycle", () => {
+    it("should start and stop successfully", async () => {
       await server.start();
-      
+
       const healthStatus = await server.getHealthStatus();
       expect(healthStatus.healthy).toBe(true);
-      
+
       await server.stop();
     });
 
-    it('should register built-in tools on start', async () => {
+    it("should register built-in tools on start", async () => {
       await server.start();
-      
+
       const metrics = server.getMetrics();
       expect(metrics.totalRequests).toBeGreaterThanOrEqual(0);
-      
+
       await server.stop();
     });
   });
 
-  describe('Tool Registry', () => {
-    it('should register and list tools correctly', async () => {
+  describe("Tool Registry", () => {
+    it("should register and list tools correctly", async () => {
       const testTool: MCPTool = {
-        name: 'test/tool',
-        description: 'A test tool',
+        name: "test/tool",
+        description: "A test tool",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {
-            message: { type: 'string' },
+            message: { type: "string" },
           },
-          required: ['message'],
+          required: ["message"],
         },
         handler: async (input: any) => {
           return { received: input.message };
@@ -270,154 +282,160 @@ describe('MCP Integration Tests', () => {
 
       server.registerTool(testTool);
       await server.start();
-      
+
       // Tools should be registered during start
       await server.stop();
     });
   });
 
-  describe('Session Management', () => {
-    it('should create and manage sessions', async () => {
+  describe("Session Management", () => {
+    it("should create and manage sessions", async () => {
       const sessionManager = new SessionManager(config, logger);
-      
-      const session = sessionManager.createSession('stdio');
+
+      const session = sessionManager.createSession("stdio");
       expect(session.id).toBeDefined();
-      expect(session.transport).toBe('stdio');
+      expect(session.transport).toBe("stdio");
       expect(session.isInitialized).toBe(false);
-      
+
       const initParams: MCPInitializeParams = {
         protocolVersion: { major: 2024, minor: 11, patch: 5 },
         capabilities: { tools: { listChanged: true } },
-        clientInfo: { name: 'test-client', version: '1.0.0' },
+        clientInfo: { name: "test-client", version: "1.0.0" },
       };
-      
+
       sessionManager.initializeSession(session.id, initParams);
-      
+
       const updatedSession = sessionManager.getSession(session.id);
       expect(updatedSession?.isInitialized).toBe(true);
-      expect(updatedSession?.clientInfo.name).toBe('test-client');
-      
+      expect(updatedSession?.clientInfo.name).toBe("test-client");
+
       sessionManager.removeSession(session.id);
       expect(sessionManager.getSession(session.id)).toBeUndefined();
     });
 
-    it('should handle session expiration', async () => {
+    it("should handle session expiration", async () => {
       const shortTimeoutConfig = { ...config, sessionTimeout: 100 };
       const sessionManager = new SessionManager(shortTimeoutConfig, logger);
-      
-      const session = sessionManager.createSession('stdio');
-      
+
+      const session = sessionManager.createSession("stdio");
+
       // Wait for session to expire
       await delay(150);
-      
+
       sessionManager.cleanupExpiredSessions();
       expect(sessionManager.getSession(session.id)).toBeUndefined();
     });
   });
 
-  describe('Authentication', () => {
-    it('should authenticate with token', async () => {
+  describe("Authentication", () => {
+    it("should authenticate with token", async () => {
       const authConfig = {
         enabled: true,
-        method: 'token' as const,
-        tokens: ['test-token-123'],
+        method: "token" as const,
+        tokens: ["test-token-123"],
       };
-      
+
       const authManager = new AuthManager(authConfig, logger);
-      
-      const result = await authManager.authenticate('test-token-123');
+
+      const result = await authManager.authenticate("test-token-123");
       expect(result.success).toBe(true);
-      expect(result.user).toBe('token-user');
-      
-      const invalidResult = await authManager.authenticate('invalid-token');
+      expect(result.user).toBe("token-user");
+
+      const invalidResult = await authManager.authenticate("invalid-token");
       expect(invalidResult.success).toBe(false);
     });
 
-    it('should authenticate with basic auth', async () => {
+    it("should authenticate with basic auth", async () => {
       const authConfig = {
         enabled: true,
-        method: 'basic' as const,
+        method: "basic" as const,
         users: [
-          { username: 'testuser', password: 'testpass', permissions: ['*'] },
+          { username: "testuser", password: "testpass", permissions: ["*"] },
         ],
       };
-      
+
       const authManager = new AuthManager(authConfig, logger);
-      
+
       const result = await authManager.authenticate({
-        username: 'testuser',
-        password: 'testpass',
+        username: "testuser",
+        password: "testpass",
       });
       expect(result.success).toBe(true);
-      expect(result.user).toBe('testuser');
-      
+      expect(result.user).toBe("testuser");
+
       const invalidResult = await authManager.authenticate({
-        username: 'testuser',
-        password: 'wrongpass',
+        username: "testuser",
+        password: "wrongpass",
       });
       expect(invalidResult.success).toBe(false);
     });
   });
 
-  describe('Load Balancer', () => {
-    it('should enforce rate limits', async () => {
+  describe("Load Balancer", () => {
+    it("should enforce rate limits", async () => {
       const lbConfig = {
         enabled: true,
-        strategy: 'round-robin' as const,
+        strategy: "round-robin" as const,
         maxRequestsPerSecond: 2,
         healthCheckInterval: 30000,
         circuitBreakerThreshold: 5,
       };
-      
+
       const loadBalancer = new LoadBalancer(lbConfig, logger);
       const sessionManager = new SessionManager(config, logger);
-      const session = sessionManager.createSession('stdio');
-      
+      const session = sessionManager.createSession("stdio");
+
       const request: MCPRequest = {
-        jsonrpc: '2.0',
+        jsonrpc: "2.0",
         id: 1,
-        method: 'test',
+        method: "test",
         params: {},
       };
-      
+
       // First two requests should be allowed
-      expect(await loadBalancer.shouldAllowRequest(session, request)).toBe(true);
-      expect(await loadBalancer.shouldAllowRequest(session, request)).toBe(true);
-      
+      expect(await loadBalancer.shouldAllowRequest(session, request)).toBe(
+        true,
+      );
+      expect(await loadBalancer.shouldAllowRequest(session, request)).toBe(
+        true,
+      );
+
       // Third request should be rate limited
-      expect(await loadBalancer.shouldAllowRequest(session, request)).toBe(false);
+      expect(await loadBalancer.shouldAllowRequest(session, request)).toBe(
+        false,
+      );
     });
 
-    it('should track metrics', async () => {
+    it("should track metrics", async () => {
       const lbConfig = {
         enabled: true,
-        strategy: 'round-robin' as const,
+        strategy: "round-robin" as const,
         maxRequestsPerSecond: 100,
         healthCheckInterval: 30000,
         circuitBreakerThreshold: 5,
       };
-      
+
       const loadBalancer = new LoadBalancer(lbConfig, logger);
       const sessionManager = new SessionManager(config, logger);
-      const session = sessionManager.createSession('stdio');
-      
+      const session = sessionManager.createSession("stdio");
+
       const request: MCPRequest = {
-        jsonrpc: '2.0',
+        jsonrpc: "2.0",
         id: 1,
-        method: 'test',
+        method: "test",
         params: {},
       };
-      
+
       const requestMetrics = loadBalancer.recordRequestStart(session, request);
       loadBalancer.recordRequestEnd(requestMetrics);
-      
+
       const metrics = loadBalancer.getMetrics();
       expect(metrics.totalRequests).toBe(1);
       expect(metrics.successfulRequests).toBe(1);
     });
   });
 
-  describe('Claude-Flow Tools', () => {
+  describe("Claude-Flow Tools", () => {
     beforeEach(async () => {
       await server.start();
     });
@@ -426,138 +444,142 @@ describe('MCP Integration Tests', () => {
       await server.stop();
     });
 
-    it('should spawn an agent', async () => {
+    it("should spawn an agent", async () => {
       // This would require a more complex setup with actual tool execution
       // For now, we verify the tools are registered
       const healthStatus = await server.getHealthStatus();
       expect(healthStatus.healthy).toBe(true);
     });
 
-    it('should list agents', async () => {
+    it("should list agents", async () => {
       const healthStatus = await server.getHealthStatus();
       expect(healthStatus.healthy).toBe(true);
     });
 
-    it('should create and manage tasks', async () => {
+    it("should create and manage tasks", async () => {
       const healthStatus = await server.getHealthStatus();
       expect(healthStatus.healthy).toBe(true);
     });
 
-    it('should query and store memory', async () => {
+    it("should query and store memory", async () => {
       const healthStatus = await server.getHealthStatus();
       expect(healthStatus.healthy).toBe(true);
     });
 
-    it('should execute terminal commands', async () => {
+    it("should execute terminal commands", async () => {
       const healthStatus = await server.getHealthStatus();
       expect(healthStatus.healthy).toBe(true);
     });
   });
 
-  describe('Error Handling', () => {
-    it('should handle tool execution errors gracefully', async () => {
+  describe("Error Handling", () => {
+    it("should handle tool execution errors gracefully", async () => {
       const errorTool: MCPTool = {
-        name: 'test/error',
-        description: 'A tool that throws errors',
+        name: "test/error",
+        description: "A tool that throws errors",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {},
         },
         handler: async () => {
-          throw new Error('Test error');
+          throw new Error("Test error");
         },
       };
 
       server.registerTool(errorTool);
       await server.start();
-      
+
       // Error handling would be tested through actual requests
       const healthStatus = await server.getHealthStatus();
       expect(healthStatus.healthy).toBe(true);
-      
+
       await server.stop();
     });
 
-    it('should handle invalid requests', async () => {
+    it("should handle invalid requests", async () => {
       await server.start();
-      
+
       // Invalid request handling would be tested through transports
       const healthStatus = await server.getHealthStatus();
       expect(healthStatus.healthy).toBe(true);
-      
+
       await server.stop();
     });
   });
 
-  describe('Protocol Compliance', () => {
-    it('should handle initialization correctly', async () => {
+  describe("Protocol Compliance", () => {
+    it("should handle initialization correctly", async () => {
       await server.start();
-      
+
       // Protocol compliance would be tested through actual JSON-RPC messages
       const healthStatus = await server.getHealthStatus();
       expect(healthStatus.healthy).toBe(true);
-      
+
       await server.stop();
     });
 
-    it('should handle notifications', async () => {
+    it("should handle notifications", async () => {
       await server.start();
-      
+
       // Notification handling would be tested through transports
       const healthStatus = await server.getHealthStatus();
       expect(healthStatus.healthy).toBe(true);
-      
+
       await server.stop();
     });
 
-    it('should format responses correctly', async () => {
+    it("should format responses correctly", async () => {
       await server.start();
-      
+
       // Response formatting is tested through actual requests
       const healthStatus = await server.getHealthStatus();
       expect(healthStatus.healthy).toBe(true);
-      
+
       await server.stop();
     });
   });
 
-  describe('Metrics and Monitoring', () => {
-    it('should track server metrics', async () => {
+  describe("Metrics and Monitoring", () => {
+    it("should track server metrics", async () => {
       await server.start();
-      
+
       const metrics = server.getMetrics();
       expect(metrics).toBeDefined();
       expect(metrics.totalRequests).toBeGreaterThanOrEqual(0);
       expect(metrics.activeSessions).toBeGreaterThanOrEqual(0);
-      
+
       await server.stop();
     });
 
-    it('should provide health status', async () => {
+    it("should provide health status", async () => {
       await server.start();
-      
+
       const healthStatus = await server.getHealthStatus();
       expect(healthStatus.healthy).toBe(true);
       expect(healthStatus.metrics).toBeDefined();
-      
+
       await server.stop();
     });
 
-    it('should track session metrics', async () => {
+    it("should track session metrics", async () => {
       await server.start();
-      
+
       const sessions = server.getSessions();
       expect(Array.isArray(sessions)).toBe(true);
-      
+
       await server.stop();
     });
   });
 });
 
 // Helper function to create test requests
-function createTestRequest(method: string, params?: any, id: string | number = 1): MCPRequest {
+function createTestRequest(
+  method: string,
+  params?: any,
+  id: string | number = 1,
+): MCPRequest {
   return {
-    jsonrpc: '2.0',
+    jsonrpc: "2.0",
     id,
     method,
     params,
@@ -565,9 +587,13 @@ function createTestRequest(method: string, params?: any, id: string | number = 1
 }
 
 // Helper function to create test responses
-function createTestResponse(result?: any, error?: any, id: string | number = 1): MCPResponse {
+function createTestResponse(
+  result?: any,
+  error?: any,
+  id: string | number = 1,
+): MCPResponse {
   return {
-    jsonrpc: '2.0',
+    jsonrpc: "2.0",
     id,
     result,
     error,
@@ -576,5 +602,5 @@ function createTestResponse(result?: any, error?: any, id: string | number = 1):
 
 // Helper function to delay execution
 async function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }

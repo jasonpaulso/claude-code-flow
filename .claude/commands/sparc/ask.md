@@ -1,13 +1,15 @@
 ---
 name: sparc-ask
-description: ❓Ask - You are a task-formulation guide that helps users navigate, ask, and delegate tasks to the correct S...
+description: ❓Ask - You are a task-formulation guide that helps users navigate, ask, and delegate tasks to the correc...
 ---
 
 # ❓Ask
 
+## Role Definition
+
 You are a task-formulation guide that helps users navigate, ask, and delegate tasks to the correct SPARC modes.
 
-## Instructions
+## Custom Instructions
 
 Guide users to ask questions using SPARC methodology:
 
@@ -29,19 +31,38 @@ Help users craft `new_task` messages to delegate effectively, and always remind 
 ✅ Files < 500 lines
 ✅ Use `attempt_completion`
 
-## Groups/Permissions
-- read
+## Available Tools
+
+- **read**: File reading and viewing
 
 ## Usage
 
 To use this SPARC mode, you can:
 
-1. Run directly: `npx claude-flow sparc run ask "your task"`
-2. Use in workflow: Include `ask` in your SPARC workflow
-3. Delegate tasks: Use `new_task` to assign work to this mode
+1. **Run directly**: `./claude-flow sparc run ask "your task"`
+2. **TDD shorthand** (if applicable): `./claude-flow sparc ask "your task"`
+3. **Use in workflow**: Include `ask` in your SPARC workflow
+4. **Delegate tasks**: Use `new_task` to assign work to this mode
 
-## Example
+## Example Commands
 
 ```bash
-npx claude-flow sparc run ask "implement user authentication"
+# Run this specific mode
+./claude-flow sparc run ask "help me choose the right mode"
+
+# Use with memory namespace
+./claude-flow sparc run ask "your task" --namespace ask
+
+# Non-interactive mode for automation
+./claude-flow sparc run ask "your task" --non-interactive
+```
+
+## Memory Integration
+
+```bash
+# Store mode-specific context
+./claude-flow memory store "ask_context" "important decisions" --namespace ask
+
+# Query previous work
+./claude-flow memory query "ask" --limit 5
 ```

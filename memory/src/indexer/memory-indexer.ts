@@ -3,8 +3,14 @@
  * Fast indexing with vector search support
  */
 
-import { MemoryItem, MemoryQuery, MemoryBackend, VectorSearchResult, IndexConfig } from '../types';
-import { EventEmitter } from 'events';
+import { EventEmitter } from "events";
+import {
+  IndexConfig,
+  MemoryBackend,
+  MemoryItem,
+  MemoryQuery,
+  VectorSearchResult,
+} from "../types";
 
 interface Index {
   byCategory: Map<string, Set<string>>;
@@ -32,19 +38,19 @@ export class MemoryIndexer extends EventEmitter {
     super();
     this.config = config;
     this.backend = config.backend;
-    
+
     this.index = {
       byCategory: new Map(),
       byTag: new Map(),
       byNamespace: new Map(),
-      byTimestamp: []
+      byTimestamp: [],
     };
 
     if (config.enableVectorSearch) {
       this.index.vectors = {
         dimensions: config.vectorDimensions || 384,
         vectors: new Map(),
-        metadata: new Map()
+        metadata: new Map(),
       };
     }
   }
@@ -61,13 +67,13 @@ export class MemoryIndexer extends EventEmitter {
       );
     }
 
-    this.emit('initialized');
+    this.emit("initialized");
   }
 
   /**
    * Index a memory item
    */
-  async index(item: MemoryItem): Promise<void> {
+  async indexItem(item: MemoryItem): Promise<void> {
     const id = `${item.category}:${item.key}`;
 
     // Update category index
@@ -87,7 +93,7 @@ export class MemoryIndexer extends EventEmitter {
     }
 
     // Update namespace index
-    const namespace = item.metadata?.namespace || 'default';
+    const namespace = item.metadata?.namespace || "default";
     if (!this.index.byNamespace.has(namespace)) {
       this.index.byNamespace.set(namespace, new Set());
     }
@@ -106,7 +112,7 @@ export class MemoryIndexer extends EventEmitter {
       );
       this.index.vectors.metadata.set(id, {
         category: item.category,
-        key: item.key
+        key: item.key,
       });
     }
 
@@ -115,7 +121,7 @@ export class MemoryIndexer extends EventEmitter {
       this.updateQueue.add(id);
     }
 
-    this.emit('indexed', item);
+    this.emit("indexed", item);
   }
 
   /**
@@ -151,7 +157,7 @@ export class MemoryIndexer extends EventEmitter {
 
     // Remove from timestamp index
     this.index.byTimestamp = this.index.byTimestamp.filter(
-      entry => entry.id !== id
+      (entry) => entry.id !== id
     );
 
     // Remove from vector index
@@ -160,7 +166,7 @@ export class MemoryIndexer extends EventEmitter {
       this.index.vectors.metadata.delete(id);
     }
 
-    this.emit('removed', { category, key });
+    this.emit("removed", { category, key });
   }
 
   /**
@@ -177,8 +183,11 @@ export class MemoryIndexer extends EventEmitter {
     // Calculate similarity scores
     for (const [id, vector] of this.index.vectors.vectors) {
       const score = this.cosineSimilarity(queryVector, vector);
-      
-      if (query.vectorSearch.threshold && score < query.vectorSearch.threshold) {
+
+      if (
+        query.vectorSearch.threshold &&
+        score < query.vectorSearch.threshold
+      ) {
         continue;
       }
 
@@ -187,7 +196,7 @@ export class MemoryIndexer extends EventEmitter {
         results.push({
           item: null as any, // Will be populated below
           score,
-          distance: 1 - score
+          distance: 1 - score,
         });
 
         // Store metadata for retrieval
@@ -233,7 +242,7 @@ export class MemoryIndexer extends EventEmitter {
           } else {
             // Intersection
             candidates = new Set(
-              [...candidates].filter(id => categoryIds.has(id))
+              [...candidates].filter((id) => categoryIds.has(id))
             );
           }
         }
@@ -257,7 +266,7 @@ export class MemoryIndexer extends EventEmitter {
           initialized = true;
         } else {
           candidates = new Set(
-            [...candidates].filter(id => tagCandidates.has(id))
+            [...candidates].filter((id) => tagCandidates.has(id))
           );
         }
       }
@@ -272,7 +281,7 @@ export class MemoryIndexer extends EventEmitter {
           initialized = true;
         } else {
           candidates = new Set(
-            [...candidates].filter(id => namespaceIds.has(id))
+            [...candidates].filter((id) => namespaceIds.has(id))
           );
         }
       }
@@ -307,7 +316,7 @@ export class MemoryIndexer extends EventEmitter {
       namespaces: this.index.byNamespace.size,
       timestamps: this.index.byTimestamp.length,
       vectors: this.index.vectors ? this.index.vectors.vectors.size : 0,
-      updateQueueSize: this.updateQueue.size
+      updateQueueSize: this.updateQueue.size,
     };
   }
 
@@ -316,7 +325,7 @@ export class MemoryIndexer extends EventEmitter {
    */
   async close(): Promise<void> {
     if (this.updateInterval) {
-      clearInterval(this.updateInterval);
+      clearInterval(this.updateInterval as NodeJS.Timeout);
     }
 
     // Process any remaining updates
@@ -324,7 +333,7 @@ export class MemoryIndexer extends EventEmitter {
       await this.processUpdateQueue();
     }
 
-    this.emit('closed');
+    this.emit("closed");
   }
 
   /**
@@ -332,14 +341,14 @@ export class MemoryIndexer extends EventEmitter {
    */
   private async rebuildIndex(): Promise<void> {
     this.isIndexing = true;
-    this.emit('rebuild-start');
+    this.emit("rebuild-start");
 
     // Clear existing indexes
     this.index.byCategory.clear();
     this.index.byTag.clear();
     this.index.byNamespace.clear();
     this.index.byTimestamp = [];
-    
+
     if (this.index.vectors) {
       this.index.vectors.vectors.clear();
       this.index.vectors.metadata.clear();
@@ -350,11 +359,11 @@ export class MemoryIndexer extends EventEmitter {
 
     // Index each item
     for (const item of items) {
-      await this.index(item);
+      await this.indexItem(item);
     }
 
     this.isIndexing = false;
-    this.emit('rebuild-complete', { itemCount: items.length });
+    this.emit("rebuild-complete", { itemCount: items.length });
   }
 
   /**
@@ -374,10 +383,10 @@ export class MemoryIndexer extends EventEmitter {
       const batch = updates.slice(i, i + batchSize);
       await Promise.all(
         batch.map(async (id) => {
-          const [category, key] = id.split(':');
+          const [category, key] = id.split(":");
           const item = await this.backend.get(category, key);
           if (item) {
-            await this.index(item);
+            await this.indexItem(item);
           }
         })
       );
@@ -390,7 +399,7 @@ export class MemoryIndexer extends EventEmitter {
   private updateTimestampIndex(id: string, timestamp: number): void {
     // Remove existing entry
     this.index.byTimestamp = this.index.byTimestamp.filter(
-      entry => entry.id !== id
+      (entry) => entry.id !== id
     );
 
     // Add new entry
@@ -411,7 +420,7 @@ export class MemoryIndexer extends EventEmitter {
    */
   private cosineSimilarity(a: Float32Array, b: Float32Array): number {
     if (a.length !== b.length) {
-      throw new Error('Vectors must have same dimensions');
+      throw new Error("Vectors must have same dimensions");
     }
 
     let dotProduct = 0;
@@ -453,21 +462,21 @@ export class MemoryIndexer extends EventEmitter {
   async generateEmbedding(text: string): Promise<number[]> {
     // This is a placeholder - in production, you would use a real embedding model
     // like OpenAI's text-embedding-ada-002 or a local model
-    
+
     const dimensions = this.index.vectors?.dimensions || 384;
     const embedding = new Array(dimensions);
-    
+
     // Simple hash-based pseudo-embedding for demonstration
     let hash = 0;
     for (let i = 0; i < text.length; i++) {
-      hash = ((hash << 5) - hash) + text.charCodeAt(i);
+      hash = (hash << 5) - hash + text.charCodeAt(i);
       hash = hash & hash;
     }
-    
+
     for (let i = 0; i < dimensions; i++) {
       embedding[i] = Math.sin(hash * (i + 1)) * 0.5 + 0.5;
     }
-    
+
     return embedding;
   }
 }

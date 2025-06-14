@@ -2,10 +2,10 @@
  * Authentication and authorization for MCP
  */
 
-import { MCPAuthConfig, MCPSession } from '../utils/types.ts';
-import { ILogger } from '../core/logger.ts';
-import { MCPError } from '../utils/errors.ts';
-import { createHash, timingSafeEqual } from 'node:crypto';
+import { MCPAuthConfig, MCPSession } from "../utils/types.ts";
+import { ILogger } from "../core/logger.ts";
+import { MCPError } from "../utils/errors.ts";
+import { createHash, timingSafeEqual } from "node:crypto";
 
 export interface IAuthManager {
   authenticate(credentials: unknown): Promise<AuthResult>;
@@ -36,12 +36,15 @@ export interface TokenValidation {
  */
 export class AuthManager implements IAuthManager {
   private revokedTokens = new Set<string>();
-  private tokenStore = new Map<string, {
-    user: string;
-    permissions: string[];
-    createdAt: Date;
-    expiresAt: Date;
-  }>();
+  private tokenStore = new Map<
+    string,
+    {
+      user: string;
+      permissions: string[];
+      createdAt: Date;
+      expiresAt: Date;
+    }
+  >();
 
   constructor(
     private config: MCPAuthConfig,
@@ -59,23 +62,23 @@ export class AuthManager implements IAuthManager {
     if (!this.config.enabled) {
       return {
         success: true,
-        user: 'anonymous',
-        permissions: ['*'],
+        user: "anonymous",
+        permissions: ["*"],
       };
     }
 
-    this.logger.debug('Authenticating credentials', {
+    this.logger.debug("Authenticating credentials", {
       method: this.config.method,
       hasCredentials: !!credentials,
     });
 
     try {
       switch (this.config.method) {
-        case 'token':
+        case "token":
           return await this.authenticateToken(credentials);
-        case 'basic':
+        case "basic":
           return await this.authenticateBasic(credentials);
-        case 'oauth':
+        case "oauth":
           return await this.authenticateOAuth(credentials);
         default:
           return {
@@ -84,10 +87,10 @@ export class AuthManager implements IAuthManager {
           };
       }
     } catch (error) {
-      this.logger.error('Authentication error', error);
+      this.logger.error("Authentication error", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Authentication failed',
+        error: error instanceof Error ? error.message : "Authentication failed",
       };
     }
   }
@@ -98,9 +101,9 @@ export class AuthManager implements IAuthManager {
     }
 
     const permissions = session.authData?.permissions || [];
-    
+
     // Check for wildcard permission
-    if (permissions.includes('*')) {
+    if (permissions.includes("*")) {
       return true;
     }
 
@@ -111,12 +114,12 @@ export class AuthManager implements IAuthManager {
 
     // Check for prefix-based permissions (e.g., "tools.*" matches "tools.list")
     for (const perm of permissions) {
-      if (perm.endsWith('*') && permission.startsWith(perm.slice(0, -1))) {
+      if (perm.endsWith("*") && permission.startsWith(perm.slice(0, -1))) {
         return true;
       }
     }
 
-    this.logger.warn('Authorization denied', {
+    this.logger.warn("Authorization denied", {
       sessionId: session.id,
       user: session.authData?.user,
       permission,
@@ -130,7 +133,7 @@ export class AuthManager implements IAuthManager {
     if (this.revokedTokens.has(token)) {
       return {
         valid: false,
-        error: 'Token has been revoked',
+        error: "Token has been revoked",
       };
     }
 
@@ -138,7 +141,7 @@ export class AuthManager implements IAuthManager {
     if (!tokenData) {
       return {
         valid: false,
-        error: 'Invalid token',
+        error: "Invalid token",
       };
     }
 
@@ -146,7 +149,7 @@ export class AuthManager implements IAuthManager {
       this.tokenStore.delete(token);
       return {
         valid: false,
-        error: 'Token has expired',
+        error: "Token has expired",
       };
     }
 
@@ -161,7 +164,9 @@ export class AuthManager implements IAuthManager {
   async generateToken(userId: string, permissions: string[]): Promise<string> {
     const token = this.createSecureToken();
     const now = new Date();
-    const expiresAt = new Date(now.getTime() + (this.config.sessionTimeout || 3600000));
+    const expiresAt = new Date(
+      now.getTime() + (this.config.sessionTimeout || 3600000),
+    );
 
     this.tokenStore.set(token, {
       user: userId,
@@ -170,7 +175,7 @@ export class AuthManager implements IAuthManager {
       expiresAt,
     });
 
-    this.logger.info('Token generated', {
+    this.logger.info("Token generated", {
       userId,
       permissions,
       expiresAt,
@@ -182,7 +187,7 @@ export class AuthManager implements IAuthManager {
   async revokeToken(token: string): Promise<void> {
     this.revokedTokens.add(token);
     this.tokenStore.delete(token);
-    this.logger.info('Token revoked', { token: token.substring(0, 8) + '...' });
+    this.logger.info("Token revoked", { token: token.substring(0, 8) + "..." });
   }
 
   private async authenticateToken(credentials: unknown): Promise<AuthResult> {
@@ -190,7 +195,7 @@ export class AuthManager implements IAuthManager {
     if (!token) {
       return {
         success: false,
-        error: 'Token not provided',
+        error: "Token not provided",
       };
     }
 
@@ -214,8 +219,8 @@ export class AuthManager implements IAuthManager {
       if (isValid) {
         return {
           success: true,
-          user: 'token-user',
-          permissions: ['*'], // Static tokens get all permissions
+          user: "token-user",
+          permissions: ["*"], // Static tokens get all permissions
           token,
         };
       }
@@ -223,7 +228,7 @@ export class AuthManager implements IAuthManager {
 
     return {
       success: false,
-      error: 'Invalid token',
+      error: "Invalid token",
     };
   }
 
@@ -232,14 +237,14 @@ export class AuthManager implements IAuthManager {
     if (!username || !password) {
       return {
         success: false,
-        error: 'Username and password required',
+        error: "Username and password required",
       };
     }
 
     if (!this.config.users || this.config.users.length === 0) {
       return {
         success: false,
-        error: 'No users configured',
+        error: "No users configured",
       };
     }
 
@@ -247,7 +252,7 @@ export class AuthManager implements IAuthManager {
     if (!user) {
       return {
         success: false,
-        error: 'Invalid username or password',
+        error: "Invalid username or password",
       };
     }
 
@@ -256,7 +261,7 @@ export class AuthManager implements IAuthManager {
     if (!isValidPassword) {
       return {
         success: false,
-        error: 'Invalid username or password',
+        error: "Invalid username or password",
       };
     }
 
@@ -277,27 +282,27 @@ export class AuthManager implements IAuthManager {
     // 1. Validating JWT tokens
     // 2. Checking token expiration
     // 3. Extracting user info and permissions from token claims
-    
-    this.logger.warn('OAuth authentication not yet implemented');
+
+    this.logger.warn("OAuth authentication not yet implemented");
     return {
       success: false,
-      error: 'OAuth authentication not implemented',
+      error: "OAuth authentication not implemented",
     };
   }
 
   private extractToken(credentials: unknown): string | null {
-    if (typeof credentials === 'string') {
+    if (typeof credentials === "string") {
       return credentials;
     }
 
-    if (typeof credentials === 'object' && credentials !== null) {
+    if (typeof credentials === "object" && credentials !== null) {
       const creds = credentials as Record<string, unknown>;
-      
-      if (typeof creds.token === 'string') {
+
+      if (typeof creds.token === "string") {
         return creds.token;
       }
-      
-      if (typeof creds.authorization === 'string') {
+
+      if (typeof creds.authorization === "string") {
         const match = creds.authorization.match(/^Bearer\s+(.+)$/i);
         return match ? match[1] : null;
       }
@@ -306,23 +311,29 @@ export class AuthManager implements IAuthManager {
     return null;
   }
 
-  private extractBasicAuth(credentials: unknown): { username?: string; password?: string } {
-    if (typeof credentials === 'object' && credentials !== null) {
+  private extractBasicAuth(credentials: unknown): {
+    username?: string;
+    password?: string;
+  } {
+    if (typeof credentials === "object" && credentials !== null) {
       const creds = credentials as Record<string, unknown>;
-      
-      if (typeof creds.username === 'string' && typeof creds.password === 'string') {
+
+      if (
+        typeof creds.username === "string" &&
+        typeof creds.password === "string"
+      ) {
         return {
           username: creds.username,
           password: creds.password,
         };
       }
 
-      if (typeof creds.authorization === 'string') {
+      if (typeof creds.authorization === "string") {
         const match = creds.authorization.match(/^Basic\s+(.+)$/i);
         if (match) {
           try {
             const decoded = atob(match[1]);
-            const colonIndex = decoded.indexOf(':');
+            const colonIndex = decoded.indexOf(":");
             if (colonIndex >= 0) {
               return {
                 username: decoded.substring(0, colonIndex),
@@ -339,28 +350,31 @@ export class AuthManager implements IAuthManager {
     return {};
   }
 
-  private verifyPassword(providedPassword: string, storedPassword: string): boolean {
+  private verifyPassword(
+    providedPassword: string,
+    storedPassword: string,
+  ): boolean {
     // For now, using simple hash comparison
     // In production, use proper password hashing like bcrypt
     const hashedProvided = this.hashPassword(providedPassword);
     const hashedStored = this.hashPassword(storedPassword);
-    
+
     return this.timingSafeEqual(hashedProvided, hashedStored);
   }
 
   private hashPassword(password: string): string {
-    return createHash('sha256').update(password).digest('hex');
+    return createHash("sha256").update(password).digest("hex");
   }
 
   private timingSafeEqual(a: string, b: string): boolean {
     const encoder = new TextEncoder();
     const bufferA = encoder.encode(a);
     const bufferB = encoder.encode(b);
-    
+
     if (bufferA.length !== bufferB.length) {
       return false;
     }
-    
+
     return timingSafeEqual(bufferA, bufferB);
   }
 
@@ -369,11 +383,11 @@ export class AuthManager implements IAuthManager {
     const timestamp = Date.now().toString(36);
     const random1 = Math.random().toString(36).substring(2, 15);
     const random2 = Math.random().toString(36).substring(2, 15);
-    const hash = createHash('sha256')
+    const hash = createHash("sha256")
       .update(`${timestamp}${random1}${random2}`)
-      .digest('hex')
+      .digest("hex")
       .substring(0, 32);
-    
+
     return `mcp_${timestamp}_${hash}`;
   }
 
@@ -389,7 +403,7 @@ export class AuthManager implements IAuthManager {
     }
 
     if (cleaned > 0) {
-      this.logger.debug('Cleaned up expired tokens', { count: cleaned });
+      this.logger.debug("Cleaned up expired tokens", { count: cleaned });
     }
   }
 }
@@ -399,40 +413,40 @@ export class AuthManager implements IAuthManager {
  */
 export const Permissions = {
   // System operations
-  SYSTEM_INFO: 'system.info',
-  SYSTEM_HEALTH: 'system.health',
-  SYSTEM_METRICS: 'system.metrics',
+  SYSTEM_INFO: "system.info",
+  SYSTEM_HEALTH: "system.health",
+  SYSTEM_METRICS: "system.metrics",
 
   // Tool operations
-  TOOLS_LIST: 'tools.list',
-  TOOLS_INVOKE: 'tools.invoke',
-  TOOLS_DESCRIBE: 'tools.describe',
+  TOOLS_LIST: "tools.list",
+  TOOLS_INVOKE: "tools.invoke",
+  TOOLS_DESCRIBE: "tools.describe",
 
   // Agent operations
-  AGENTS_LIST: 'agents.list',
-  AGENTS_SPAWN: 'agents.spawn',
-  AGENTS_TERMINATE: 'agents.terminate',
-  AGENTS_INFO: 'agents.info',
+  AGENTS_LIST: "agents.list",
+  AGENTS_SPAWN: "agents.spawn",
+  AGENTS_TERMINATE: "agents.terminate",
+  AGENTS_INFO: "agents.info",
 
   // Task operations
-  TASKS_LIST: 'tasks.list',
-  TASKS_CREATE: 'tasks.create',
-  TASKS_CANCEL: 'tasks.cancel',
-  TASKS_STATUS: 'tasks.status',
+  TASKS_LIST: "tasks.list",
+  TASKS_CREATE: "tasks.create",
+  TASKS_CANCEL: "tasks.cancel",
+  TASKS_STATUS: "tasks.status",
 
   // Memory operations
-  MEMORY_READ: 'memory.read',
-  MEMORY_WRITE: 'memory.write',
-  MEMORY_QUERY: 'memory.query',
-  MEMORY_DELETE: 'memory.delete',
+  MEMORY_READ: "memory.read",
+  MEMORY_WRITE: "memory.write",
+  MEMORY_QUERY: "memory.query",
+  MEMORY_DELETE: "memory.delete",
 
   // Administrative operations
-  ADMIN_CONFIG: 'admin.config',
-  ADMIN_LOGS: 'admin.logs',
-  ADMIN_SESSIONS: 'admin.sessions',
+  ADMIN_CONFIG: "admin.config",
+  ADMIN_LOGS: "admin.logs",
+  ADMIN_SESSIONS: "admin.sessions",
 
   // Wildcard permission
-  ALL: '*',
+  ALL: "*",
 } as const;
 
-export type Permission = typeof Permissions[keyof typeof Permissions];
+export type Permission = (typeof Permissions)[keyof typeof Permissions];

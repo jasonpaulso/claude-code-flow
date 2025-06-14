@@ -3,9 +3,14 @@
  * Handles distributed memory synchronization across nodes
  */
 
-import { EventEmitter } from 'events';
-import { MemoryItem, MemoryBackend, ReplicationConfig, ReplicationNode } from '../types';
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosInstance } from "axios";
+import { EventEmitter } from "events";
+import {
+  MemoryBackend,
+  MemoryItem,
+  ReplicationConfig,
+  ReplicationNode,
+} from "../types";
 
 interface ReplicationStats {
   totalReplicated: number;
@@ -18,7 +23,7 @@ interface ReplicationStats {
 interface NodeStatus {
   id: string;
   url: string;
-  status: 'online' | 'offline' | 'syncing';
+  status: "online" | "offline" | "syncing";
   lastSeen: number;
   lastError?: string;
   itemsReplicated: number;
@@ -26,7 +31,7 @@ interface NodeStatus {
 }
 
 interface ReplicationMessage {
-  type: 'store' | 'delete' | 'batch' | 'sync';
+  type: "store" | "delete" | "batch" | "sync";
   sourceNodeId: string;
   timestamp: number;
   data: any;
@@ -52,17 +57,17 @@ export class ReplicationManager extends EventEmitter {
     config: ReplicationConfig;
   }) {
     super();
-    
+
     this.localNodeId = options.localNodeId;
     this.backend = options.backend;
     this.config = options.config;
-    
+
     this.stats = {
       totalReplicated: 0,
       failedReplications: 0,
       lastSyncTime: 0,
       nodesStatus: this.nodeStatus,
-      queueSize: 0
+      queueSize: 0,
     };
 
     // Initialize nodes
@@ -90,7 +95,7 @@ export class ReplicationManager extends EventEmitter {
     // Perform initial health check
     await this.performHealthChecks();
 
-    this.emit('initialized');
+    this.emit("initialized");
   }
 
   /**
@@ -98,13 +103,13 @@ export class ReplicationManager extends EventEmitter {
    */
   async replicate(item: MemoryItem): Promise<void> {
     const message: ReplicationMessage = {
-      type: 'store',
+      type: "store",
       sourceNodeId: this.localNodeId,
       timestamp: Date.now(),
-      data: item
+      data: item,
     };
 
-    if (this.config.mode === 'master-slave') {
+    if (this.config.mode === "master-slave") {
       await this.replicateMasterSlave(message);
     } else {
       await this.replicatePeerToPeer(message);
@@ -116,13 +121,13 @@ export class ReplicationManager extends EventEmitter {
    */
   async replicateDeletion(category: string, key: string): Promise<void> {
     const message: ReplicationMessage = {
-      type: 'delete',
+      type: "delete",
       sourceNodeId: this.localNodeId,
       timestamp: Date.now(),
-      data: { category, key }
+      data: { category, key },
     };
 
-    if (this.config.mode === 'master-slave') {
+    if (this.config.mode === "master-slave") {
       await this.replicateMasterSlave(message);
     } else {
       await this.replicatePeerToPeer(message);
@@ -140,7 +145,7 @@ export class ReplicationManager extends EventEmitter {
 
     const status = this.nodeStatus.get(nodeId);
     if (status) {
-      status.status = 'syncing';
+      status.status = "syncing";
     }
 
     try {
@@ -150,25 +155,25 @@ export class ReplicationManager extends EventEmitter {
         throw new Error(`No client for node ${nodeId}`);
       }
 
-      const response = await client.get('/memory/sync-state');
+      const response = await client.get("/memory/sync-state");
       const remoteState = response.data;
 
       // Compare and sync differences
       await this.reconcileWithRemote(nodeId, remoteState);
 
       if (status) {
-        status.status = 'online';
+        status.status = "online";
         status.lastSeen = Date.now();
       }
 
-      this.emit('sync-complete', { nodeId });
+      this.emit("sync-complete", { nodeId });
     } catch (error: any) {
       if (status) {
-        status.status = 'offline';
+        status.status = "offline";
         status.lastError = error.message;
       }
 
-      this.emit('sync-failed', { nodeId, error: error.message });
+      this.emit("sync-failed", { nodeId, error: error.message });
       throw error;
     }
   }
@@ -186,11 +191,11 @@ export class ReplicationManager extends EventEmitter {
    */
   async close(): Promise<void> {
     if (this.syncInterval) {
-      clearInterval(this.syncInterval);
+      clearInterval(this.syncInterval as NodeJS.Timeout);
     }
 
     if (this.healthCheckInterval) {
-      clearInterval(this.healthCheckInterval);
+      clearInterval(this.healthCheckInterval as NodeJS.Timeout);
     }
 
     // Process remaining queue
@@ -198,7 +203,7 @@ export class ReplicationManager extends EventEmitter {
       await this.processSyncQueue();
     }
 
-    this.emit('closed');
+    this.emit("closed");
   }
 
   /**
@@ -209,28 +214,28 @@ export class ReplicationManager extends EventEmitter {
       baseURL: node.url,
       timeout: 30000,
       headers: {
-        'X-Node-ID': this.localNodeId,
-        'Content-Type': 'application/json'
-      }
+        "X-Node-ID": this.localNodeId,
+        "Content-Type": "application/json",
+      },
     });
 
     // Add retry logic
     client.interceptors.response.use(
-      response => response,
-      async error => {
+      (response) => response,
+      async (error) => {
         const config = error.config;
-        
+
         if (!config || !config.retry) {
           config.retry = 0;
         }
 
         if (config.retry < (this.config.retryAttempts || 3)) {
           config.retry++;
-          
-          await new Promise(resolve => 
+
+          await new Promise((resolve) =>
             setTimeout(resolve, this.config.retryDelay || 1000)
           );
-          
+
           return client(config);
         }
 
@@ -244,32 +249,34 @@ export class ReplicationManager extends EventEmitter {
     this.nodeStatus.set(node.id, {
       id: node.id,
       url: node.url,
-      status: 'offline',
+      status: "offline",
       lastSeen: 0,
       itemsReplicated: 0,
-      itemsFailed: 0
+      itemsFailed: 0,
     });
   }
 
   /**
    * Replicate in master-slave mode
    */
-  private async replicateMasterSlave(message: ReplicationMessage): Promise<void> {
+  private async replicateMasterSlave(
+    message: ReplicationMessage
+  ): Promise<void> {
     const localNode = Array.from(this.nodes.values()).find(
-      n => n.id === this.localNodeId
+      (n) => n.id === this.localNodeId
     );
 
-    if (localNode?.role === 'master') {
+    if (localNode?.role === "master") {
       // Master replicates to all slaves
       const slaves = Array.from(this.nodes.values()).filter(
-        n => n.role === 'slave'
+        (n) => n.role === "slave"
       );
 
       await this.replicateToNodes(slaves, message);
     } else {
       // Slave sends to master
       const master = Array.from(this.nodes.values()).find(
-        n => n.role === 'master'
+        (n) => n.role === "master"
       );
 
       if (master) {
@@ -281,10 +288,12 @@ export class ReplicationManager extends EventEmitter {
   /**
    * Replicate in peer-to-peer mode
    */
-  private async replicatePeerToPeer(message: ReplicationMessage): Promise<void> {
+  private async replicatePeerToPeer(
+    message: ReplicationMessage
+  ): Promise<void> {
     // Replicate to all peers
     const peers = Array.from(this.nodes.values()).filter(
-      n => n.id !== this.localNodeId
+      (n) => n.id !== this.localNodeId
     );
 
     await this.replicateToNodes(peers, message);
@@ -294,7 +303,7 @@ export class ReplicationManager extends EventEmitter {
    * Replicate message to specific nodes
    */
   private async replicateToNodes(
-    nodes: ReplicationNode[], 
+    nodes: ReplicationNode[],
     message: ReplicationMessage
   ): Promise<void> {
     // Queue message if sync interval is set
@@ -305,7 +314,7 @@ export class ReplicationManager extends EventEmitter {
 
     // Otherwise, replicate immediately
     await Promise.allSettled(
-      nodes.map(node => this.sendToNode(node.id, message))
+      nodes.map((node) => this.sendToNode(node.id, message))
     );
   }
 
@@ -313,7 +322,7 @@ export class ReplicationManager extends EventEmitter {
    * Send message to a specific node
    */
   private async sendToNode(
-    nodeId: string, 
+    nodeId: string,
     message: ReplicationMessage
   ): Promise<void> {
     const client = this.nodeClients.get(nodeId);
@@ -324,20 +333,20 @@ export class ReplicationManager extends EventEmitter {
     }
 
     try {
-      await client.post('/memory/replicate', message);
-      
+      await client.post("/memory/replicate", message);
+
       status.itemsReplicated++;
       this.stats.totalReplicated++;
-      
-      this.emit('replicated', { nodeId, message });
+
+      this.emit("replicated", { nodeId, message });
     } catch (error: any) {
       status.itemsFailed++;
       this.stats.failedReplications++;
-      
-      this.emit('replication-failed', { 
-        nodeId, 
-        message, 
-        error: error.message 
+
+      this.emit("replication-failed", {
+        nodeId,
+        message,
+        error: error.message,
       });
     }
   }
@@ -355,17 +364,17 @@ export class ReplicationManager extends EventEmitter {
 
     // Group messages by node
     const messagesByNode = new Map<string, ReplicationMessage[]>();
-    
+
     while (this.replicationQueue.length > 0) {
       const message = this.replicationQueue.shift()!;
-      
+
       for (const node of this.nodes.values()) {
         if (node.id === this.localNodeId) continue;
-        
+
         if (!messagesByNode.has(node.id)) {
           messagesByNode.set(node.id, []);
         }
-        
+
         messagesByNode.get(node.id)!.push(message);
       }
     }
@@ -384,14 +393,14 @@ export class ReplicationManager extends EventEmitter {
    * Send batch of messages to a node
    */
   private async sendBatchToNode(
-    nodeId: string, 
+    nodeId: string,
     messages: ReplicationMessage[]
   ): Promise<void> {
     const batchMessage: ReplicationMessage = {
-      type: 'batch',
+      type: "batch",
       sourceNodeId: this.localNodeId,
       timestamp: Date.now(),
-      data: messages
+      data: messages,
     };
 
     await this.sendToNode(nodeId, batchMessage);
@@ -402,7 +411,7 @@ export class ReplicationManager extends EventEmitter {
    */
   private async performHealthChecks(): Promise<void> {
     await Promise.allSettled(
-      Array.from(this.nodes.values()).map(node => 
+      Array.from(this.nodes.values()).map((node) =>
         this.checkNodeHealth(node.id)
       )
     );
@@ -420,17 +429,17 @@ export class ReplicationManager extends EventEmitter {
     if (!client || !status) return;
 
     try {
-      const response = await client.get('/memory/health', {
-        timeout: 5000
+      const response = await client.get("/memory/health", {
+        timeout: 5000,
       });
 
       if (response.status === 200) {
-        status.status = 'online';
+        status.status = "online";
         status.lastSeen = Date.now();
         status.lastError = undefined;
       }
     } catch (error: any) {
-      status.status = 'offline';
+      status.status = "offline";
       status.lastError = error.message;
     }
   }
@@ -439,38 +448,42 @@ export class ReplicationManager extends EventEmitter {
    * Reconcile local state with remote node
    */
   private async reconcileWithRemote(
-    nodeId: string, 
+    nodeId: string,
     remoteState: any
   ): Promise<void> {
     // This is a simplified reconciliation
     // In production, you'd want more sophisticated conflict resolution
-    
+
     const localItems = await this.backend.query({});
     const localMap = new Map(
-      localItems.map(item => [`${item.category}:${item.key}`, item])
+      localItems.map((item) => [`${item.category}:${item.key}`, item])
     );
 
     const remoteMap = new Map(
-      remoteState.items.map((item: MemoryItem) => 
-        [`${item.category}:${item.key}`, item]
-      )
+      remoteState.items.map((item: MemoryItem) => [
+        `${item.category}:${item.key}`,
+        item,
+      ])
     );
 
     // Find items to pull from remote
     const toPull: MemoryItem[] = [];
     for (const [key, remoteItem] of remoteMap) {
-      const localItem = localMap.get(key);
-      
-      if (!localItem || this.shouldPullRemote(localItem, remoteItem)) {
-        toPull.push(remoteItem);
+      const localItem = localMap.get(key as string) as MemoryItem;
+
+      if (
+        !localItem ||
+        this.shouldPullRemote(localItem, remoteItem as MemoryItem)
+      ) {
+        toPull.push(remoteItem as MemoryItem);
       }
     }
 
     // Find items to push to remote
     const toPush: MemoryItem[] = [];
     for (const [key, localItem] of localMap) {
-      const remoteItem = remoteMap.get(key);
-      
+      const remoteItem = remoteMap.get(key as string) as MemoryItem;
+
       if (!remoteItem || this.shouldPushLocal(localItem, remoteItem)) {
         toPush.push(localItem);
       }
@@ -484,7 +497,7 @@ export class ReplicationManager extends EventEmitter {
     if (toPush.length > 0) {
       const client = this.nodeClients.get(nodeId);
       if (client) {
-        await client.post('/memory/batch-store', { items: toPush });
+        await client.post("/memory/batch-store", { items: toPush });
       }
     }
   }
@@ -495,15 +508,15 @@ export class ReplicationManager extends EventEmitter {
   private shouldPullRemote(local: MemoryItem, remote: MemoryItem): boolean {
     // Use configured conflict resolution strategy
     switch (this.config.conflictResolution) {
-      case 'last-write-wins':
+      case "last-write-wins":
         const localTime = local.metadata?.timestamp || 0;
         const remoteTime = remote.metadata?.timestamp || 0;
         return remoteTime > localTime;
-        
-      case 'vector-clock':
+
+      case "vector-clock":
         // Simplified vector clock comparison
         return this.compareVectorClocks(local, remote) < 0;
-        
+
       default:
         return false;
     }
@@ -520,9 +533,9 @@ export class ReplicationManager extends EventEmitter {
    * Compare vector clocks (simplified)
    */
   private compareVectorClocks(item1: MemoryItem, item2: MemoryItem): number {
-    const v1 = item1.metadata?.version || '0';
-    const v2 = item2.metadata?.version || '0';
-    
+    const v1 = item1.metadata?.version || "0";
+    const v2 = item2.metadata?.version || "0";
+
     if (v1 < v2) return -1;
     if (v1 > v2) return 1;
     return 0;

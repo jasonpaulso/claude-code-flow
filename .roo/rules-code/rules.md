@@ -21,8 +21,6 @@ Step | Action
 4 Refinement | Implement with TDD, debugging, security checks, and optimization loops; refactor for maintainability.
 5 Completion | Integrate, document, test, and verify against acceptance criteria; ensure code quality standards are met.
 
-
-
 ⸻
 
 3 · Must Block (non‑negotiable)
@@ -71,6 +69,7 @@ spec‑pseudocode · architect · code · tdd · debug · security‑review · d
 ⸻
 
 7 · Response Protocol
+
 1. analysis: In ≤ 50 words outline the coding approach.
 2. Execute one tool call that advances the implementation.
 3. Wait for user confirmation or new data before the next tool.
@@ -83,8 +82,8 @@ spec‑pseudocode · architect · code · tdd · debug · security‑review · d
 XML‑style invocation template
 
 <tool_name>
-  <parameter1_name>value1</parameter1_name>
-  <parameter2_name>value2</parameter2_name>
+<parameter1_name>value1</parameter1_name>
+<parameter2_name>value2</parameter2_name>
 </tool_name>
 
 ## Tool Error Prevention Guidelines
@@ -100,10 +99,11 @@ XML‑style invocation template
 Minimal example with all required parameters:
 
 <write_to_file>
-  <path>src/utils/auth.js</path>
-  <content>// new code here</content>
-  <line_count>1</line_count>
+<path>src/utils/auth.js</path>
+<content>// new code here</content>
+<line_count>1</line_count>
 </write_to_file>
+
 <!-- expect: attempt_completion after tests pass -->
 
 (Full tool schemas appear further below and must be respected.)
@@ -115,22 +115,26 @@ Minimal example with all required parameters:
 ## Primary Tools and Error Prevention
 
 • **For code modifications**: Always prefer apply_diff as the default tool for precise changes to maintain formatting and context.
-  - ALWAYS include complete SEARCH and REPLACE blocks
-  - ALWAYS verify the search text exists in the file first using read_file
-  - NEVER use incomplete diff blocks
+
+- ALWAYS include complete SEARCH and REPLACE blocks
+- ALWAYS verify the search text exists in the file first using read_file
+- NEVER use incomplete diff blocks
 
 • **For new implementations**: Use write_to_file with complete, well-structured code following language conventions.
-  - ALWAYS include the line_count parameter
-  - VERIFY file doesn't already exist before creating it
+
+- ALWAYS include the line_count parameter
+- VERIFY file doesn't already exist before creating it
 
 • **For documentation**: Use insert_content to add comments, JSDoc, or documentation at specific locations.
-  - ALWAYS include valid start_line and content in operations array
-  - VERIFY the file exists before attempting to insert content
+
+- ALWAYS include valid start_line and content in operations array
+- VERIFY the file exists before attempting to insert content
 
 • **For simple text replacements**: Use search_and_replace only as a fallback when apply_diff is too complex.
-  - ALWAYS include both search and replace parameters
-  - NEVER use search_and_replace with empty search parameter
-  - VERIFY the search text exists in the file first
+
+- ALWAYS include both search and replace parameters
+- NEVER use search_and_replace with empty search parameter
+- VERIFY the search text exists in the file first
 
 • **For debugging**: Combine read_file with execute_command to validate behavior before making changes.
 • **For refactoring**: Use apply_diff with comprehensive diffs that maintain code integrity and preserve functionality.
@@ -158,30 +162,33 @@ Minimal example with all required parameters:
 ## Tool Error Prevention
 
 • **Before using any tool**:
-  - Verify all required parameters are included
-  - Check file existence before modifying files
-  - Validate search text exists before using apply_diff or search_and_replace
-  - Include line_count parameter when using write_to_file
-  - Ensure operations arrays are properly formatted JSON
+
+- Verify all required parameters are included
+- Check file existence before modifying files
+- Validate search text exists before using apply_diff or search_and_replace
+- Include line_count parameter when using write_to_file
+- Ensure operations arrays are properly formatted JSON
 
 • **Common tool errors to avoid**:
-  - Missing required parameters (search, replace, path, content)
-  - Incomplete diff blocks in apply_diff
-  - Invalid JSON in operations arrays
-  - Missing line_count in write_to_file
-  - Attempting to modify non-existent files
-  - Using search_and_replace without both search and replace values
+
+- Missing required parameters (search, replace, path, content)
+- Incomplete diff blocks in apply_diff
+- Invalid JSON in operations arrays
+- Missing line_count in write_to_file
+- Attempting to modify non-existent files
+- Using search_and_replace without both search and replace values
 
 • **Recovery process**:
-  - If a tool call fails, explain the error in plain English and suggest next steps (retry, alternative command, or request clarification)
-  - If required context is missing, ask the user for it before proceeding
-  - When uncertain, use ask_followup_question to resolve ambiguity
-  - After recovery, restate the updated plan in ≤ 30 words, then continue
-  - Implement progressive error handling - try simplest solution first, then escalate
-  - Document error patterns for future prevention
-  - For critical operations, verify success with explicit checks after execution
-  - When debugging code issues, isolate the problem area before attempting fixes
-  - Provide clear error messages that explain both what happened and how to fix it
+
+- If a tool call fails, explain the error in plain English and suggest next steps (retry, alternative command, or request clarification)
+- If required context is missing, ask the user for it before proceeding
+- When uncertain, use ask_followup_question to resolve ambiguity
+- After recovery, restate the updated plan in ≤ 30 words, then continue
+- Implement progressive error handling - try simplest solution first, then escalate
+- Document error patterns for future prevention
+- For critical operations, verify success with explicit checks after execution
+- When debugging code issues, isolate the problem area before attempting fixes
+- Provide clear error messages that explain both what happened and how to fix it
 
 ⸻
 
@@ -212,6 +219,7 @@ Create a new_task named audit‑prompt to let Roo Code self‑critique this prom
 ⸻
 
 15 · Execution Guidelines
+
 1. Analyze available information before coding; understand requirements and existing patterns.
 2. Select the most effective tool (prefer apply_diff for code changes).
 3. Iterate – one tool per message, guided by results and progressive refinement.
@@ -231,95 +239,84 @@ Always validate each tool run to prevent errors and ensure accuracy. When in dou
 
 <details><summary>File Operations</summary>
 
-
 <read_file>
-  <path>File path here</path>
+<path>File path here</path>
 </read_file>
 
 <write_to_file>
-  <path>File path here</path>
-  <content>Your file content here</content>
-  <line_count>Total number of lines</line_count>
+<path>File path here</path>
+<content>Your file content here</content>
+<line_count>Total number of lines</line_count>
 </write_to_file>
 
 <list_files>
-  <path>Directory path here</path>
-  <recursive>true/false</recursive>
+<path>Directory path here</path>
+<recursive>true/false</recursive>
 </list_files>
 
 </details>
 
-
 <details><summary>Code Editing</summary>
 
-
 <apply_diff>
-  <path>File path here</path>
-  <diff>
-    <<<<<<< SEARCH
-    Original code
-    =======
-    Updated code
-    >>>>>>> REPLACE
-  </diff>
-  <start_line>Start</start_line>
-  <end_line>End_line</end_line>
+<path>File path here</path>
+<diff>
+<<<<<<< SEARCH
+Original code
+=======
+Updated code >>>>>>> REPLACE
+</diff>
+<start_line>Start</start_line>
+<end_line>End_line</end_line>
 </apply_diff>
 
 <insert_content>
-  <path>File path here</path>
-  <operations>
-    [{"start_line":10,"content":"New code"}]
-  </operations>
+<path>File path here</path>
+<operations>
+[{"start_line":10,"content":"New code"}]
+</operations>
 </insert_content>
 
 <search_and_replace>
-  <path>File path here</path>
-  <operations>
-    [{"search":"old_text","replace":"new_text","use_regex":true}]
-  </operations>
+<path>File path here</path>
+<operations>
+[{"search":"old_text","replace":"new_text","use_regex":true}]
+</operations>
 </search_and_replace>
 
 </details>
 
-
 <details><summary>Project Management</summary>
 
-
 <execute_command>
-  <command>Your command here</command>
+<command>Your command here</command>
 </execute_command>
 
 <attempt_completion>
-  <result>Final output</result>
-  <command>Optional CLI command</command>
+<result>Final output</result>
+<command>Optional CLI command</command>
 </attempt_completion>
 
 <ask_followup_question>
-  <question>Clarification needed</question>
+<question>Clarification needed</question>
 </ask_followup_question>
 
 </details>
 
-
 <details><summary>MCP Integration</summary>
 
-
 <use_mcp_tool>
-  <server_name>Server</server_name>
-  <tool_name>Tool</tool_name>
-  <arguments>{"param":"value"}</arguments>
+<server_name>Server</server_name>
+<tool_name>Tool</tool_name>
+<arguments>{"param":"value"}</arguments>
 </use_mcp_tool>
 
 <access_mcp_resource>
-  <server_name>Server</server_name>
-  <uri>resource://path</uri>
+<server_name>Server</server_name>
+<uri>resource://path</uri>
 </access_mcp_resource>
 
 </details>
-
-
-
 
 ⸻
 

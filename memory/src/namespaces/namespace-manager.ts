@@ -3,9 +3,14 @@
  * Provides session isolation and access control for memory items
  */
 
-import { EventEmitter } from 'events';
-import { MemoryBackend, MemoryNamespace, NamespacePermissions } from '../types';
-import { v4 as uuidv4 } from 'uuid';
+import { EventEmitter } from "events";
+import { v4 as uuidv4 } from "uuid";
+import {
+  MemoryBackend,
+  MemoryItem,
+  MemoryNamespace,
+  NamespacePermissions,
+} from "../types";
 
 interface NamespaceSession {
   id: string;
@@ -36,15 +41,15 @@ export class NamespaceManager extends EventEmitter {
   async initialize(): Promise<void> {
     // Create default namespace
     await this.createNamespace({
-      id: 'default',
-      name: 'Default Namespace',
-      description: 'Default namespace for unscoped memory items',
+      id: "default",
+      name: "Default Namespace",
+      description: "Default namespace for unscoped memory items",
       permissions: {
-        read: ['*'],
-        write: ['*'],
-        delete: ['*'],
-        admin: ['system']
-      }
+        read: ["*"],
+        write: ["*"],
+        delete: ["*"],
+        admin: ["system"],
+      },
     });
 
     // Load existing namespaces from backend
@@ -53,24 +58,26 @@ export class NamespaceManager extends EventEmitter {
     // Start session cleanup interval
     setInterval(() => this.cleanupExpiredSessions(), 60000); // Every minute
 
-    this.emit('initialized');
+    this.emit("initialized");
   }
 
   /**
    * Create a new namespace
    */
-  async createNamespace(namespace: Partial<MemoryNamespace>): Promise<MemoryNamespace> {
+  async createNamespace(
+    namespace: Partial<MemoryNamespace>
+  ): Promise<MemoryNamespace> {
     const fullNamespace: MemoryNamespace = {
       id: namespace.id || uuidv4(),
-      name: namespace.name || 'Unnamed Namespace',
+      name: namespace.name || "Unnamed Namespace",
       description: namespace.description,
       permissions: namespace.permissions || {
         read: [],
         write: [],
         delete: [],
-        admin: []
+        admin: [],
       },
-      metadata: namespace.metadata || {}
+      metadata: namespace.metadata || {},
     };
 
     // Validate namespace doesn't already exist
@@ -82,7 +89,7 @@ export class NamespaceManager extends EventEmitter {
     this.namespaces.set(fullNamespace.id, fullNamespace);
     await this.persistNamespaces();
 
-    this.emit('namespace-created', fullNamespace);
+    this.emit("namespace-created", fullNamespace);
     return fullNamespace;
   }
 
@@ -104,7 +111,7 @@ export class NamespaceManager extends EventEmitter {
    * Update namespace
    */
   async updateNamespace(
-    id: string, 
+    id: string,
     updates: Partial<MemoryNamespace>
   ): Promise<MemoryNamespace> {
     const namespace = this.namespaces.get(id);
@@ -115,13 +122,13 @@ export class NamespaceManager extends EventEmitter {
     const updated = {
       ...namespace,
       ...updates,
-      id: namespace.id // Prevent ID changes
+      id: namespace.id, // Prevent ID changes
     };
 
     this.namespaces.set(id, updated);
     await this.persistNamespaces();
 
-    this.emit('namespace-updated', updated);
+    this.emit("namespace-updated", updated);
     return updated;
   }
 
@@ -129,8 +136,8 @@ export class NamespaceManager extends EventEmitter {
    * Delete namespace
    */
   async deleteNamespace(id: string): Promise<boolean> {
-    if (id === 'default') {
-      throw new Error('Cannot delete default namespace');
+    if (id === "default") {
+      throw new Error("Cannot delete default namespace");
     }
 
     const namespace = this.namespaces.get(id);
@@ -155,7 +162,7 @@ export class NamespaceManager extends EventEmitter {
       }
     }
 
-    this.emit('namespace-deleted', { id });
+    this.emit("namespace-deleted", { id });
     return true;
   }
 
@@ -163,8 +170,8 @@ export class NamespaceManager extends EventEmitter {
    * Create session for a namespace
    */
   createSession(
-    namespaceId: string, 
-    userId: string, 
+    namespaceId: string,
+    userId: string,
     permissions?: string[],
     ttl?: number
   ): string {
@@ -175,9 +182,9 @@ export class NamespaceManager extends EventEmitter {
 
     // Validate permissions
     const validPermissions = this.validatePermissions(
-      namespace, 
-      userId, 
-      permissions || ['read']
+      namespace,
+      userId,
+      permissions || ["read"]
     );
 
     const session: NamespaceSession = {
@@ -186,7 +193,7 @@ export class NamespaceManager extends EventEmitter {
       userId,
       permissions: validPermissions,
       createdAt: Date.now(),
-      expiresAt: ttl ? Date.now() + ttl : undefined
+      expiresAt: ttl ? Date.now() + ttl : undefined,
     };
 
     this.sessions.set(session.id, session);
@@ -197,7 +204,7 @@ export class NamespaceManager extends EventEmitter {
     }
     this.userSessions.get(userId)!.add(session.id);
 
-    this.emit('session-created', session);
+    this.emit("session-created", session);
     return session.id;
   }
 
@@ -205,8 +212,8 @@ export class NamespaceManager extends EventEmitter {
    * Validate session and check permissions
    */
   validateSession(
-    sessionId: string, 
-    requiredPermission: 'read' | 'write' | 'delete' | 'admin'
+    sessionId: string,
+    requiredPermission: "read" | "write" | "delete" | "admin"
   ): boolean {
     const session = this.sessions.get(sessionId);
     if (!session) {
@@ -220,8 +227,10 @@ export class NamespaceManager extends EventEmitter {
     }
 
     // Check permission
-    return session.permissions.includes(requiredPermission) || 
-           session.permissions.includes('*');
+    return (
+      session.permissions.includes(requiredPermission) ||
+      session.permissions.includes("*")
+    );
   }
 
   /**
@@ -251,7 +260,7 @@ export class NamespaceManager extends EventEmitter {
       }
     }
 
-    this.emit('session-revoked', { sessionId });
+    this.emit("session-revoked", { sessionId });
     return true;
   }
 
@@ -280,7 +289,7 @@ export class NamespaceManager extends EventEmitter {
    */
   getStats(): NamespaceStats {
     const itemsByNamespace = new Map<string, number>();
-    
+
     // This would be more efficient with a dedicated query in production
     for (const namespace of this.namespaces.keys()) {
       itemsByNamespace.set(namespace, 0); // Placeholder
@@ -289,7 +298,7 @@ export class NamespaceManager extends EventEmitter {
     return {
       totalNamespaces: this.namespaces.size,
       activeSessions: this.sessions.size,
-      itemsByNamespace
+      itemsByNamespace,
     };
   }
 
@@ -297,8 +306,8 @@ export class NamespaceManager extends EventEmitter {
    * Clone namespace with all its items
    */
   async cloneNamespace(
-    sourceId: string, 
-    targetId: string, 
+    sourceId: string,
+    targetId: string,
     targetName: string
   ): Promise<MemoryNamespace> {
     const source = this.namespaces.get(sourceId);
@@ -311,12 +320,12 @@ export class NamespaceManager extends EventEmitter {
       id: targetId,
       name: targetName,
       description: `Cloned from ${source.name}`,
-      permissions: { ...source.permissions },
+      permissions: { ...source.permissions } as NamespacePermissions,
       metadata: {
         ...source.metadata,
         clonedFrom: sourceId,
-        clonedAt: Date.now()
-      }
+        clonedAt: Date.now(),
+      },
     });
 
     // Copy all items
@@ -328,13 +337,13 @@ export class NamespaceManager extends EventEmitter {
         metadata: {
           ...item.metadata,
           namespace: targetId,
-          clonedFrom: item.id
-        }
+          clonedFrom: item.id,
+        },
       };
       await this.backend.store(clonedItem);
     }
 
-    this.emit('namespace-cloned', { source: sourceId, target: targetId });
+    this.emit("namespace-cloned", { source: sourceId, target: targetId });
     return target;
   }
 
@@ -342,9 +351,9 @@ export class NamespaceManager extends EventEmitter {
    * Merge namespaces
    */
   async mergeNamespaces(
-    sourceIds: string[], 
+    sourceIds: string[],
     targetId: string,
-    conflictResolution: 'skip' | 'overwrite' | 'rename' = 'skip'
+    conflictResolution: "skip" | "overwrite" | "rename" = "skip"
   ): Promise<number> {
     const target = this.namespaces.get(targetId);
     if (!target) {
@@ -360,7 +369,7 @@ export class NamespaceManager extends EventEmitter {
       if (!source) continue;
 
       const items = await this.backend.query({ namespace: sourceId });
-      
+
       for (const item of items) {
         const existingKey = `${item.category}:${item.key}`;
         const existing = await this.backend.get(item.category, item.key);
@@ -368,12 +377,12 @@ export class NamespaceManager extends EventEmitter {
         if (existing && existing.metadata?.namespace === targetId) {
           // Handle conflict
           switch (conflictResolution) {
-            case 'skip':
+            case "skip":
               continue;
-            case 'overwrite':
+            case "overwrite":
               // Will overwrite below
               break;
-            case 'rename':
+            case "rename":
               item.key = `${item.key}_${sourceId}`;
               break;
           }
@@ -386,19 +395,19 @@ export class NamespaceManager extends EventEmitter {
           metadata: {
             ...item.metadata,
             namespace: targetId,
-            mergedFrom: sourceId
-          }
+            mergedFrom: sourceId,
+          },
         };
 
-        await this.backend.store(mergedItem);
+        await this.backend.store(mergedItem as unknown as MemoryItem);
         mergedCount++;
       }
     }
 
-    this.emit('namespaces-merged', { 
-      sources: sourceIds, 
-      target: targetId, 
-      count: mergedCount 
+    this.emit("namespaces-merged", {
+      sources: sourceIds,
+      target: targetId,
+      count: mergedCount,
     });
 
     return mergedCount;
@@ -415,31 +424,42 @@ export class NamespaceManager extends EventEmitter {
     const validPermissions: string[] = [];
 
     for (const permission of requestedPermissions) {
-      if (permission === '*' && namespace.permissions?.admin?.includes(userId)) {
-        return ['*'];
+      if (
+        permission === "*" &&
+        namespace.permissions?.admin?.includes(userId)
+      ) {
+        return ["*"];
       }
 
-      if (permission === 'read' && 
-          (namespace.permissions?.read?.includes(userId) || 
-           namespace.permissions?.read?.includes('*'))) {
-        validPermissions.push('read');
+      if (
+        permission === "read" &&
+        (namespace.permissions?.read?.includes(userId) ||
+          namespace.permissions?.read?.includes("*"))
+      ) {
+        validPermissions.push("read");
       }
 
-      if (permission === 'write' && 
-          (namespace.permissions?.write?.includes(userId) || 
-           namespace.permissions?.write?.includes('*'))) {
-        validPermissions.push('write');
+      if (
+        permission === "write" &&
+        (namespace.permissions?.write?.includes(userId) ||
+          namespace.permissions?.write?.includes("*"))
+      ) {
+        validPermissions.push("write");
       }
 
-      if (permission === 'delete' && 
-          (namespace.permissions?.delete?.includes(userId) || 
-           namespace.permissions?.delete?.includes('*'))) {
-        validPermissions.push('delete');
+      if (
+        permission === "delete" &&
+        (namespace.permissions?.delete?.includes(userId) ||
+          namespace.permissions?.delete?.includes("*"))
+      ) {
+        validPermissions.push("delete");
       }
 
-      if (permission === 'admin' && 
-          namespace.permissions?.admin?.includes(userId)) {
-        validPermissions.push('admin');
+      if (
+        permission === "admin" &&
+        namespace.permissions?.admin?.includes(userId)
+      ) {
+        validPermissions.push("admin");
       }
     }
 
@@ -452,11 +472,11 @@ export class NamespaceManager extends EventEmitter {
   private async loadNamespaces(): Promise<void> {
     try {
       const namespaceItems = await this.backend.query({
-        categories: ['system-namespace']
+        categories: ["system-namespace"],
       });
 
       for (const item of namespaceItems) {
-        if (item.value && typeof item.value === 'object') {
+        if (item.value && typeof item.value === "object") {
           this.namespaces.set(item.key, item.value as MemoryNamespace);
         }
       }
@@ -472,12 +492,12 @@ export class NamespaceManager extends EventEmitter {
     for (const [id, namespace] of this.namespaces) {
       await this.backend.store({
         id: `namespace-${id}`,
-        category: 'system-namespace',
+        category: "system-namespace",
         key: id,
         value: namespace,
         metadata: {
-          timestamp: Date.now()
-        }
+          timestamp: Date.now(),
+        },
       });
     }
   }
@@ -500,7 +520,7 @@ export class NamespaceManager extends EventEmitter {
     }
 
     if (expiredSessions.length > 0) {
-      this.emit('sessions-cleaned', { count: expiredSessions.length });
+      this.emit("sessions-cleaned", { count: expiredSessions.length });
     }
   }
 }

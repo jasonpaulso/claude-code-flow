@@ -2,9 +2,14 @@
  * Load balancer and rate limiting for MCP
  */
 
-import { MCPLoadBalancerConfig, MCPRequest, MCPResponse, MCPSession } from '../utils/types.ts';
-import { ILogger } from '../core/logger.ts';
-import { MCPError } from '../utils/errors.ts';
+import {
+  MCPLoadBalancerConfig,
+  MCPRequest,
+  MCPResponse,
+  MCPSession,
+} from "../utils/types.ts";
+import { ILogger } from "../core/logger.ts";
+import { MCPError } from "../utils/errors.ts";
 
 export interface RequestMetrics {
   requestId: string;
@@ -28,9 +33,16 @@ export interface LoadBalancerMetrics {
 }
 
 export interface ILoadBalancer {
-  shouldAllowRequest(session: MCPSession, request: MCPRequest): Promise<boolean>;
+  shouldAllowRequest(
+    session: MCPSession,
+    request: MCPRequest,
+  ): Promise<boolean>;
   recordRequestStart(session: MCPSession, request: MCPRequest): RequestMetrics;
-  recordRequestEnd(metrics: RequestMetrics, response?: MCPResponse, error?: Error): void;
+  recordRequestEnd(
+    metrics: RequestMetrics,
+    response?: MCPResponse,
+    error?: Error,
+  ): void;
   getMetrics(): LoadBalancerMetrics;
   resetMetrics(): void;
   isCircuitBreakerOpen(): boolean;
@@ -40,9 +52,9 @@ export interface ILoadBalancer {
  * Circuit breaker state
  */
 enum CircuitBreakerState {
-  CLOSED = 'closed',
-  OPEN = 'open',
-  HALF_OPEN = 'half_open',
+  CLOSED = "closed",
+  OPEN = "open",
+  HALF_OPEN = "half_open",
 }
 
 /**
@@ -144,7 +156,10 @@ class CircuitBreaker {
 
     if (this.state === CircuitBreakerState.HALF_OPEN) {
       this.state = CircuitBreakerState.OPEN;
-    } else if (this.state === CircuitBreakerState.CLOSED && this.failureCount >= this.failureThreshold) {
+    } else if (
+      this.state === CircuitBreakerState.CLOSED &&
+      this.failureCount >= this.failureThreshold
+    ) {
       this.state = CircuitBreakerState.OPEN;
     }
   }
@@ -205,14 +220,17 @@ export class LoadBalancer implements ILoadBalancer {
     }, 300000); // Every 5 minutes
   }
 
-  async shouldAllowRequest(session: MCPSession, request: MCPRequest): Promise<boolean> {
+  async shouldAllowRequest(
+    session: MCPSession,
+    request: MCPRequest,
+  ): Promise<boolean> {
     if (!this.config.enabled) {
       return true;
     }
 
     // Check circuit breaker
     if (!this.circuitBreaker.canExecute()) {
-      this.logger.warn('Request rejected by circuit breaker', {
+      this.logger.warn("Request rejected by circuit breaker", {
         sessionId: session.id,
         method: request.method,
         circuitState: this.circuitBreaker.getState(),
@@ -223,7 +241,7 @@ export class LoadBalancer implements ILoadBalancer {
 
     // Check global rate limit
     if (!this.rateLimiter.tryConsume()) {
-      this.logger.warn('Request rejected by global rate limiter', {
+      this.logger.warn("Request rejected by global rate limiter", {
         sessionId: session.id,
         method: request.method,
         remainingTokens: this.rateLimiter.getTokens(),
@@ -235,7 +253,7 @@ export class LoadBalancer implements ILoadBalancer {
     // Check per-session rate limit
     const sessionRateLimiter = this.getSessionRateLimiter(session.id);
     if (!sessionRateLimiter.tryConsume()) {
-      this.logger.warn('Request rejected by session rate limiter', {
+      this.logger.warn("Request rejected by session rate limiter", {
         sessionId: session.id,
         method: request.method,
         remainingTokens: sessionRateLimiter.getTokens(),
@@ -258,7 +276,7 @@ export class LoadBalancer implements ILoadBalancer {
     this.metrics.totalRequests++;
     this.updateRequestsPerSecond();
 
-    this.logger.debug('Request started', {
+    this.logger.debug("Request started", {
       requestId: requestMetrics.requestId,
       sessionId: session.id,
       method: request.method,
@@ -267,7 +285,11 @@ export class LoadBalancer implements ILoadBalancer {
     return requestMetrics;
   }
 
-  recordRequestEnd(metrics: RequestMetrics, response?: MCPResponse, error?: Error): void {
+  recordRequestEnd(
+    metrics: RequestMetrics,
+    response?: MCPResponse,
+    error?: Error,
+  ): void {
     metrics.endTime = Date.now();
     const duration = metrics.endTime - metrics.startTime;
 
@@ -295,7 +317,7 @@ export class LoadBalancer implements ILoadBalancer {
     // Update average response time
     this.metrics.averageResponseTime = this.calculateAverageResponseTime();
 
-    this.logger.debug('Request completed', {
+    this.logger.debug("Request completed", {
       requestId: metrics.requestId,
       sessionId: metrics.sessionId,
       method: metrics.method,
@@ -321,8 +343,8 @@ export class LoadBalancer implements ILoadBalancer {
       lastReset: new Date(),
     };
     this.requestTimes = [];
-    
-    this.logger.info('Load balancer metrics reset');
+
+    this.logger.info("Load balancer metrics reset");
   }
 
   isCircuitBreakerOpen(): boolean {
@@ -331,7 +353,11 @@ export class LoadBalancer implements ILoadBalancer {
 
   getDetailedMetrics(): {
     loadBalancer: LoadBalancerMetrics;
-    circuitBreaker: { state: string; failureCount: number; successCount: number };
+    circuitBreaker: {
+      state: string;
+      failureCount: number;
+      successCount: number;
+    };
     rateLimiter: { tokens: number; maxTokens: number };
     sessions: number;
   } {
@@ -348,10 +374,13 @@ export class LoadBalancer implements ILoadBalancer {
 
   private getSessionRateLimiter(sessionId: string): RateLimiter {
     let rateLimiter = this.sessionRateLimiters.get(sessionId);
-    
+
     if (!rateLimiter) {
       // Create a per-session rate limiter (more restrictive than global)
-      const sessionLimit = Math.max(1, Math.floor(this.config.maxRequestsPerSecond / 10));
+      const sessionLimit = Math.max(
+        1,
+        Math.floor(this.config.maxRequestsPerSecond / 10),
+      );
       rateLimiter = new RateLimiter(sessionLimit, sessionLimit);
       this.sessionRateLimiters.set(sessionId, rateLimiter);
     }
@@ -370,7 +399,7 @@ export class LoadBalancer implements ILoadBalancer {
 
   private updateRequestsPerSecond(): void {
     const now = Math.floor(Date.now() / 1000);
-    
+
     if (now !== this.lastSecondTimestamp) {
       this.metrics.requestsPerSecond = this.requestsInLastSecond;
       this.requestsInLastSecond = 1;
@@ -394,7 +423,7 @@ export class LoadBalancer implements ILoadBalancer {
     }
 
     if (cleaned > 0) {
-      this.logger.debug('Cleaned up session rate limiters', { count: cleaned });
+      this.logger.debug("Cleaned up session rate limiters", { count: cleaned });
     }
   }
 }
@@ -410,7 +439,7 @@ export class RequestQueue {
     reject: (error: Error) => void;
     timestamp: number;
   }> = [];
-  
+
   private processing = false;
   private maxQueueSize: number;
   private requestTimeout: number;
@@ -435,7 +464,7 @@ export class RequestQueue {
     processor: (session: MCPSession, request: MCPRequest) => Promise<T>,
   ): Promise<T> {
     if (this.queue.length >= this.maxQueueSize) {
-      throw new MCPError('Request queue is full');
+      throw new MCPError("Request queue is full");
     }
 
     return new Promise<T>((resolve, reject) => {
@@ -467,7 +496,7 @@ export class RequestQueue {
 
       // Check if request has expired
       if (Date.now() - item.timestamp > this.requestTimeout) {
-        item.reject(new MCPError('Request timeout'));
+        item.reject(new MCPError("Request timeout"));
         continue;
       }
 
@@ -488,7 +517,7 @@ export class RequestQueue {
 
     this.queue = this.queue.filter((item) => {
       if (now - item.timestamp > this.requestTimeout) {
-        item.reject(new MCPError('Request timeout'));
+        item.reject(new MCPError("Request timeout"));
         cleaned++;
         return false;
       }
@@ -496,7 +525,9 @@ export class RequestQueue {
     });
 
     if (cleaned > 0) {
-      this.logger.warn('Cleaned up expired requests from queue', { count: cleaned });
+      this.logger.warn("Cleaned up expired requests from queue", {
+        count: cleaned,
+      });
     }
   }
 

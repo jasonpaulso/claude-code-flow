@@ -13,14 +13,14 @@ export const TEST_CONFIG = {
 
   // Test directories
   directories: {
-    unit: './tests/unit',
-    integration: './tests/integration',
-    e2e: './tests/e2e',
-    performance: './tests/performance',
-    fixtures: './tests/fixtures',
-    mocks: './tests/mocks',
-    coverage: './test-results/coverage',
-    reports: './test-results',
+    unit: "./tests/unit",
+    integration: "./tests/integration",
+    e2e: "./tests/e2e",
+    performance: "./tests/performance",
+    fixtures: "./tests/fixtures",
+    mocks: "./tests/mocks",
+    coverage: "./test-results/coverage",
+    reports: "./test-results",
   },
 
   // Coverage thresholds - targeting >90% coverage
@@ -33,12 +33,12 @@ export const TEST_CONFIG = {
 
   // Test environment
   env: {
-    CLAUDE_FLOW_ENV: 'test',
-    CLAUDE_FLOW_LOG_LEVEL: 'silent',
-    CLAUDE_FLOW_DATA_DIR: './tests/data',
-    CLAUDE_FLOW_CONFIG_FILE: './tests/fixtures/test-config.json',
-    CLAUDE_FLOW_DISABLE_METRICS: 'true',
-    CLAUDE_FLOW_DISABLE_TELEMETRY: 'true',
+    CLAUDE_FLOW_ENV: "test",
+    CLAUDE_FLOW_LOG_LEVEL: "silent",
+    CLAUDE_FLOW_DATA_DIR: "./tests/data",
+    CLAUDE_FLOW_CONFIG_FILE: "./tests/fixtures/test-config.json",
+    CLAUDE_FLOW_DISABLE_METRICS: "true",
+    CLAUDE_FLOW_DISABLE_TELEMETRY: "true",
   },
 
   // Performance test settings
@@ -85,9 +85,9 @@ export async function cleanupTestEnv(): Promise<void> {
   // Remove test data directory
   const cleanupPaths = [
     TEST_CONFIG.env.CLAUDE_FLOW_DATA_DIR,
-    './tests/temp',
-    './tests/fixtures/temp',
-    './test-results/temp',
+    "./tests/temp",
+    "./tests/fixtures/temp",
+    "./test-results/temp",
   ];
 
   for (const path of cleanupPaths) {
@@ -104,7 +104,7 @@ export async function cleanupTestEnv(): Promise<void> {
  */
 function ensureTestDirectories(): void {
   const directories = Object.values(TEST_CONFIG.directories);
-  directories.forEach(dir => {
+  directories.forEach((dir) => {
     try {
       Deno.mkdirSync(dir, { recursive: true });
     } catch {
@@ -114,13 +114,13 @@ function ensureTestDirectories(): void {
 
   // Create additional test directories
   const additionalDirs = [
-    './tests/temp',
-    './tests/data',
-    './tests/fixtures/temp',
-    './test-results/temp',
+    "./tests/temp",
+    "./tests/data",
+    "./tests/fixtures/temp",
+    "./test-results/temp",
   ];
 
-  additionalDirs.forEach(dir => {
+  additionalDirs.forEach((dir) => {
     try {
       Deno.mkdirSync(dir, { recursive: true });
     } catch {
@@ -132,7 +132,9 @@ function ensureTestDirectories(): void {
 /**
  * Get test timeout for suite type
  */
-export function getTestTimeout(suiteType: keyof typeof TEST_CONFIG.timeout): number {
+export function getTestTimeout(
+  suiteType: keyof typeof TEST_CONFIG.timeout,
+): number {
   return TEST_CONFIG.timeout[suiteType];
 }
 
@@ -142,10 +144,14 @@ export function getTestTimeout(suiteType: keyof typeof TEST_CONFIG.timeout): num
 export function validateTestEnvironment(): boolean {
   // Check required environment variables
   const requiredEnvVars = Object.keys(TEST_CONFIG.env);
-  const missingVars = requiredEnvVars.filter(varName => !Deno.env.get(varName));
-  
+  const missingVars = requiredEnvVars.filter(
+    (varName) => !Deno.env.get(varName),
+  );
+
   if (missingVars.length > 0) {
-    console.error(`Missing test environment variables: ${missingVars.join(', ')}`);
+    console.error(
+      `Missing test environment variables: ${missingVars.join(", ")}`,
+    );
     return false;
   }
 

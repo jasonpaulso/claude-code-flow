@@ -2,10 +2,27 @@
  * Test utilities for Claude-Flow
  */
 
-import { assertEquals, assertExists, assertRejects, assertThrows } from 'https://deno.land/std@0.220.0/assert/mod.ts';
-import { describe, it, beforeEach, afterEach, beforeAll, afterAll } from 'https://deno.land/std@0.220.0/testing/bdd.ts';
-import { spy, stub, assertSpyCall, assertSpyCalls } from 'https://deno.land/std@0.220.0/testing/mock.ts';
-import { FakeTime } from 'https://deno.land/std@0.220.0/testing/time.ts';
+import {
+  assertEquals,
+  assertExists,
+  assertRejects,
+  assertThrows,
+} from "https://deno.land/std@0.220.0/assert/mod.ts";
+import {
+  describe,
+  it,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+} from "https://deno.land/std@0.220.0/testing/bdd.ts";
+import {
+  spy,
+  stub,
+  assertSpyCall,
+  assertSpyCalls,
+} from "https://deno.land/std@0.220.0/testing/mock.ts";
+import { FakeTime } from "https://deno.land/std@0.220.0/testing/time.ts";
 
 export {
   assertEquals,
@@ -64,7 +81,7 @@ export async function waitFor(
     await new Promise((resolve) => setTimeout(resolve, interval));
   }
 
-  throw new Error('Timeout waiting for condition');
+  throw new Error("Timeout waiting for condition");
 }
 
 /**
@@ -103,11 +120,11 @@ export function captureConsole(): {
   const originalInfo = console.info;
   const originalWarn = console.warn;
 
-  console.log = (...args: any[]) => output.push(args.join(' '));
-  console.error = (...args: any[]) => errors.push(args.join(' '));
-  console.debug = (...args: any[]) => output.push(args.join(' '));
-  console.info = (...args: any[]) => output.push(args.join(' '));
-  console.warn = (...args: any[]) => output.push(args.join(' '));
+  console.log = (...args: any[]) => output.push(args.join(" "));
+  console.error = (...args: any[]) => errors.push(args.join(" "));
+  console.debug = (...args: any[]) => output.push(args.join(" "));
+  console.info = (...args: any[]) => output.push(args.join(" "));
+  console.warn = (...args: any[]) => output.push(args.join(" "));
 
   return {
     getOutput: () => [...output],
@@ -131,11 +148,11 @@ export async function createTestFile(
 ): Promise<string> {
   const tempDir = await Deno.makeTempDir();
   const filePath = `${tempDir}/${path}`;
-  const dir = filePath.substring(0, filePath.lastIndexOf('/'));
-  
+  const dir = filePath.substring(0, filePath.lastIndexOf("/"));
+
   await Deno.mkdir(dir, { recursive: true });
   await Deno.writeTextFile(filePath, content);
-  
+
   return filePath;
 }
 
@@ -147,13 +164,13 @@ export async function runCommand(
   options: { stdin?: string; env?: Record<string, string> } = {},
 ): Promise<{ stdout: string; stderr: string; code: number }> {
   const cmdOptions: Deno.CommandOptions = {
-    args: ['run', '--allow-all', 'src/cli/index.ts', ...args],
-    stdout: 'piped',
-    stderr: 'piped',
+    args: ["run", "--allow-all", "src/cli/index.ts", ...args],
+    stdout: "piped",
+    stderr: "piped",
   };
 
   if (options.stdin) {
-    cmdOptions.stdin = 'piped';
+    cmdOptions.stdin = "piped";
   }
 
   if (options.env) {
@@ -171,7 +188,7 @@ export async function runCommand(
   }
 
   const output = await child.output();
-  
+
   return {
     stdout: new TextDecoder().decode(output.stdout),
     stderr: new TextDecoder().decode(output.stderr),
@@ -185,16 +202,16 @@ export async function runCommand(
 export class TestDataBuilder {
   static agentProfile(overrides = {}) {
     return {
-      id: 'agent-1',
-      name: 'Test Agent',
-      type: 'coordinator' as const,
-      capabilities: ['task-management', 'coordination'],
-      systemPrompt: 'You are a test agent',
+      id: "agent-1",
+      name: "Test Agent",
+      type: "coordinator" as const,
+      capabilities: ["task-management", "coordination"],
+      systemPrompt: "You are a test agent",
       maxConcurrentTasks: 5,
       priority: 10,
       environment: {},
-      workingDirectory: '/tmp',
-      shell: '/bin/bash',
+      workingDirectory: "/tmp",
+      shell: "/bin/bash",
       metadata: {},
       ...overrides,
     };
@@ -202,12 +219,12 @@ export class TestDataBuilder {
 
   static task(overrides = {}) {
     return {
-      id: 'task-1',
-      type: 'test',
-      description: 'Test task',
+      id: "task-1",
+      type: "test",
+      description: "Test task",
       priority: 50,
       dependencies: [],
-      status: 'pending' as const,
+      status: "pending" as const,
       input: { test: true },
       createdAt: new Date(),
       metadata: {},
@@ -225,26 +242,26 @@ export class TestDataBuilder {
         maintenanceInterval: 300000,
         metricsInterval: 60000,
         persistSessions: false,
-        dataDir: './tests/data',
+        dataDir: "./tests/data",
         sessionRetentionMs: 3600000,
         taskHistoryRetentionMs: 86400000,
         taskMaxRetries: 3,
       },
       terminal: {
-        type: 'native' as const,
+        type: "native" as const,
         poolSize: 5,
         recycleAfter: 10,
         healthCheckInterval: 60000,
         commandTimeout: 300000,
       },
       memory: {
-        backend: 'sqlite' as const,
+        backend: "sqlite" as const,
         cacheSizeMB: 10,
         syncInterval: 5000,
-        conflictResolution: 'last-write' as const,
+        conflictResolution: "last-write" as const,
         retentionDays: 1,
-        sqlitePath: ':memory:',
-        markdownDir: './tests/data/memory',
+        sqlitePath: ":memory:",
+        markdownDir: "./tests/data/memory",
       },
       coordination: {
         maxRetries: 3,
@@ -254,14 +271,14 @@ export class TestDataBuilder {
         messageTimeout: 30000,
       },
       mcp: {
-        transport: 'stdio' as const,
+        transport: "stdio" as const,
         port: 8081,
         tlsEnabled: false,
       },
       logging: {
-        level: 'error' as const,
-        format: 'json' as const,
-        destination: 'console' as const,
+        level: "error" as const,
+        format: "json" as const,
+        destination: "console" as const,
       },
       ...overrides,
     };
@@ -278,9 +295,11 @@ export function assertEventEmitted(
 ): void {
   const emitted = events.find((e) => e.event === eventName);
   assertExists(emitted, `Expected event '${eventName}' to be emitted`);
-  
+
   if (matcher && !matcher(emitted.data)) {
-    throw new Error(`Event '${eventName}' data did not match expected criteria`);
+    throw new Error(
+      `Event '${eventName}' data did not match expected criteria`,
+    );
   }
 }
 
@@ -289,5 +308,9 @@ export function assertNoEventEmitted(
   eventName: string,
 ): void {
   const emitted = events.find((e) => e.event === eventName);
-  assertEquals(emitted, undefined, `Expected event '${eventName}' not to be emitted`);
+  assertEquals(
+    emitted,
+    undefined,
+    `Expected event '${eventName}' not to be emitted`,
+  );
 }

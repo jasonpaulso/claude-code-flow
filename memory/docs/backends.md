@@ -19,35 +19,35 @@ The SQLite backend provides high-performance, ACID-compliant storage with advanc
 
 ```typescript
 const sqliteConfig = {
-  backend: 'sqlite',
+  backend: "sqlite",
   storage: {
-    path: './memory.db',
+    path: "./memory.db",
     options: {
       // SQLite-specific options
-      journalMode: 'WAL',           // WAL, DELETE, TRUNCATE, PERSIST, MEMORY, OFF
-      synchronous: 'NORMAL',        // OFF, NORMAL, FULL, EXTRA
-      cacheSize: 2000,              // Number of pages in cache
-      tempStore: 'MEMORY',          // MEMORY, FILE, DEFAULT
-      mmapSize: 268435456,          // Memory-mapped I/O size (256MB)
-      pageSize: 4096,               // Database page size
-      autoVacuum: 'INCREMENTAL',    // NONE, FULL, INCREMENTAL
-      foreignKeys: true,            // Enable foreign key constraints
-      
+      journalMode: "WAL", // WAL, DELETE, TRUNCATE, PERSIST, MEMORY, OFF
+      synchronous: "NORMAL", // OFF, NORMAL, FULL, EXTRA
+      cacheSize: 2000, // Number of pages in cache
+      tempStore: "MEMORY", // MEMORY, FILE, DEFAULT
+      mmapSize: 268435456, // Memory-mapped I/O size (256MB)
+      pageSize: 4096, // Database page size
+      autoVacuum: "INCREMENTAL", // NONE, FULL, INCREMENTAL
+      foreignKeys: true, // Enable foreign key constraints
+
       // Connection pool settings
-      maxConnections: 10,           // Maximum concurrent connections
-      idleTimeout: 60000,           // Idle connection timeout (ms)
-      busyTimeout: 30000,           // Busy timeout (ms)
-      
+      maxConnections: 10, // Maximum concurrent connections
+      idleTimeout: 60000, // Idle connection timeout (ms)
+      busyTimeout: 30000, // Busy timeout (ms)
+
       // Full-text search settings
-      ftsTokenizer: 'unicode61',    // Tokenizer for FTS5
-      ftsRankFunction: 'bm25',      // Ranking function
-      
+      ftsTokenizer: "unicode61", // Tokenizer for FTS5
+      ftsRankFunction: "bm25", // Ranking function
+
       // Performance tuning
-      enableWalCheckpoint: true,    // Automatic WAL checkpointing
+      enableWalCheckpoint: true, // Automatic WAL checkpointing
       walCheckpointInterval: 300000, // Checkpoint interval (5 minutes)
-      pragmaOptimize: true,         // Run PRAGMA optimize periodically
-    }
-  }
+      pragmaOptimize: true, // Run PRAGMA optimize periodically
+    },
+  },
 };
 ```
 
@@ -70,7 +70,7 @@ CREATE TABLE memory_items (
     created INTEGER NOT NULL, -- Unix timestamp
     updated INTEGER NOT NULL, -- Unix timestamp
     checksum TEXT NOT NULL,
-    
+
     -- Constraints
     CHECK (version > 0),
     CHECK (created > 0),
@@ -95,7 +95,7 @@ CREATE VIRTUAL TABLE memory_fts USING fts5(
     content,
     tags,
     category,
-    
+
     -- Configuration
     content='memory_items',
     content_rowid='rowid',
@@ -130,45 +130,45 @@ CREATE VIRTUAL TABLE IF NOT EXISTS memory_vectors USING vss0(
 
 ### Performance Characteristics
 
-| Operation | Time Complexity | Notes |
-|-----------|----------------|-------|
-| Store | O(log n) | Index updates |
-| Retrieve by ID | O(1) | Primary key lookup |
-| Query by category | O(log n) | Index scan |
-| Full-text search | O(k log n) | FTS5 with ranking |
-| Vector search | O(k log n) | With vss extension |
-| Batch operations | O(n log n) | Transaction batching |
+| Operation         | Time Complexity | Notes                |
+| ----------------- | --------------- | -------------------- |
+| Store             | O(log n)        | Index updates        |
+| Retrieve by ID    | O(1)            | Primary key lookup   |
+| Query by category | O(log n)        | Index scan           |
+| Full-text search  | O(k log n)      | FTS5 with ranking    |
+| Vector search     | O(k log n)      | With vss extension   |
+| Batch operations  | O(n log n)      | Transaction batching |
 
 ### Optimization Tips
 
 ```typescript
 // Enable performance monitoring
 const memory = new MemoryManager({
-  backend: 'sqlite',
+  backend: "sqlite",
   storage: {
-    path: './optimized.db',
+    path: "./optimized.db",
     options: {
       // Optimize for read-heavy workloads
-      journalMode: 'WAL',
-      synchronous: 'NORMAL',
+      journalMode: "WAL",
+      synchronous: "NORMAL",
       cacheSize: 10000, // Larger cache
       mmapSize: 1073741824, // 1GB memory mapping
-      
+
       // Connection pooling for concurrent access
       maxConnections: 20,
-      
+
       // Regular maintenance
       pragmaOptimize: true,
       enableWalCheckpoint: true,
-      walCheckpointInterval: 60000 // More frequent checkpoints
-    }
-  }
+      walCheckpointInterval: 60000, // More frequent checkpoints
+    },
+  },
 });
 
 // Monitor query performance
 const stats = await memory.getStatistics();
 if (stats.performance.averageQueryTime > 50) {
-  console.warn('Consider adding indexes or optimizing queries');
+  console.warn("Consider adding indexes or optimizing queries");
 }
 ```
 
@@ -189,41 +189,41 @@ The Markdown backend provides human-readable storage with git integration for ve
 
 ```typescript
 const markdownConfig = {
-  backend: 'markdown',
+  backend: "markdown",
   storage: {
-    path: './memory',
+    path: "./memory",
     options: {
       // Directory structure
-      useNamespaceDirectories: true,    // Create dirs for namespaces
-      useCategoryDirectories: true,     // Create dirs for categories
-      useTimeBasedDirectories: true,    // Create YYYY/MM dirs
-      
+      useNamespaceDirectories: true, // Create dirs for namespaces
+      useCategoryDirectories: true, // Create dirs for categories
+      useTimeBasedDirectories: true, // Create YYYY/MM dirs
+
       // File naming
-      fileNaming: 'timestamp',          // 'id', 'timestamp', 'slug'
-      slugify: true,                    // Create URL-friendly filenames
-      maxFilenameLength: 100,           // Truncate long filenames
-      
+      fileNaming: "timestamp", // 'id', 'timestamp', 'slug'
+      slugify: true, // Create URL-friendly filenames
+      maxFilenameLength: 100, // Truncate long filenames
+
       // Content formatting
-      frontmatterFormat: 'yaml',        // 'yaml', 'toml', 'json'
-      contentFormat: 'markdown',        // 'markdown', 'text', 'html'
-      includeTableOfContents: false,    // Generate TOC
-      
+      frontmatterFormat: "yaml", // 'yaml', 'toml', 'json'
+      contentFormat: "markdown", // 'markdown', 'text', 'html'
+      includeTableOfContents: false, // Generate TOC
+
       // Git integration
-      gitEnabled: true,                 // Enable git operations
-      gitAutoCommit: true,              // Auto-commit changes
-      gitCommitMessage: 'Update memory: {id}', // Commit message template
-      gitBranch: 'main',                // Target branch
-      
+      gitEnabled: true, // Enable git operations
+      gitAutoCommit: true, // Auto-commit changes
+      gitCommitMessage: "Update memory: {id}", // Commit message template
+      gitBranch: "main", // Target branch
+
       // Performance
-      cacheDirectory: './.cache',       // Cache parsed files
-      watchForChanges: true,            // Watch for external changes
-      rebuildIndexInterval: 300000,     // Rebuild index every 5 minutes
-      
+      cacheDirectory: "./.cache", // Cache parsed files
+      watchForChanges: true, // Watch for external changes
+      rebuildIndexInterval: 300000, // Rebuild index every 5 minutes
+
       // Cleanup
-      enableGarbageCollection: true,    // Remove orphaned files
+      enableGarbageCollection: true, // Remove orphaned files
       garbageCollectionInterval: 86400000, // Daily cleanup
-    }
-  }
+    },
+  },
 };
 ```
 
@@ -273,7 +273,7 @@ memory/
 
 Each memory item is stored as a Markdown file with YAML frontmatter:
 
-```markdown
+````markdown
 ---
 id: "item_1705329022456_7x8k9n2m"
 category: "implementation"
@@ -331,6 +331,7 @@ class AuthMiddleware {
   }
 }
 ```
+````
 
 ## Testing
 
@@ -350,7 +351,8 @@ class AuthMiddleware {
 - [ ] Add support for multiple JWT issuers
 - [ ] Implement token blacklisting
 - [ ] Add metrics and monitoring
-```
+
+````
 
 ### Git Integration
 
@@ -388,85 +390,85 @@ await backend.gitPull('origin', 'main');
 await backend.gitCreateBranch('feature/new-memory-structure');
 await backend.gitCheckout('feature/new-memory-structure');
 await backend.gitMerge('main');
-```
+````
 
 ### Performance Characteristics
 
-| Operation | Time Complexity | Notes |
-|-----------|----------------|-------|
-| Store | O(1) | File write + index update |
-| Retrieve by ID | O(1) | Direct file read |
-| Query by category | O(n) | Directory scan + filtering |
-| Full-text search | O(n) | Grep-like text search |
-| Vector search | O(n) | Linear search through embeddings |
-| Git operations | O(m) | Where m = number of changed files |
+| Operation         | Time Complexity | Notes                             |
+| ----------------- | --------------- | --------------------------------- |
+| Store             | O(1)            | File write + index update         |
+| Retrieve by ID    | O(1)            | Direct file read                  |
+| Query by category | O(n)            | Directory scan + filtering        |
+| Full-text search  | O(n)            | Grep-like text search             |
+| Vector search     | O(n)            | Linear search through embeddings  |
+| Git operations    | O(m)            | Where m = number of changed files |
 
 ### Optimization Tips
 
 ```typescript
 // Optimize for large datasets
 const optimizedMarkdown = new MemoryManager({
-  backend: 'markdown',
+  backend: "markdown",
   storage: {
-    path: './large-memory',
+    path: "./large-memory",
     options: {
       // Use time-based directories to avoid large flat structures
       useTimeBasedDirectories: true,
       useCategoryDirectories: true,
-      
+
       // Enable caching for better read performance
-      cacheDirectory: './.cache',
+      cacheDirectory: "./.cache",
       watchForChanges: false, // Disable if no external edits
-      
+
       // Optimize git operations
       gitAutoCommit: false, // Manual commits for batching
       enableGarbageCollection: true,
-      
+
       // Index optimization
       rebuildIndexInterval: 600000, // 10 minutes
-    }
+    },
   },
   cache: {
     enabled: true,
     maxSize: 100 * 1024 * 1024, // 100MB cache
-    strategy: 'lru'
-  }
+    strategy: "lru",
+  },
 });
 
 // Manual batching for better git performance
 const items = [
-  { category: 'task', content: 'Task 1' },
-  { category: 'task', content: 'Task 2' },
-  { category: 'task', content: 'Task 3' }
+  { category: "task", content: "Task 1" },
+  { category: "task", content: "Task 2" },
+  { category: "task", content: "Task 3" },
 ];
 
 await optimizedMarkdown.storeBatch(items);
-await optimizedMarkdown.getBackend().gitCommit('Batch update: 3 new tasks');
+await optimizedMarkdown.getBackend().gitCommit("Batch update: 3 new tasks");
 ```
 
 ## Backend Comparison
 
-| Feature | SQLite | Markdown |
-|---------|--------|----------|
-| **Performance** |
-| Read speed | Excellent | Good |
-| Write speed | Excellent | Good |
-| Query speed | Excellent | Fair |
-| Full-text search | Excellent (FTS5) | Good (grep) |
-| Vector search | Excellent (with ext) | Fair (linear) |
-| **Scalability** |
-| Max items | 281 TB | Filesystem limit |
-| Concurrent users | Excellent | Good |
-| **Features** |
-| ACID transactions | Yes | No |
-| Human readable | No | Yes |
-| Git integration | No | Yes |
-| Direct editing | No | Yes |
-| **Operational** |
-| Backup complexity | Medium | Simple |
-| Migration | Medium | Simple |
-| Debugging | Medium | Easy |
-| Monitoring | Good | Basic |
+| Feature           | SQLite               | Markdown         |
+| ----------------- | -------------------- | ---------------- |
+| **Performance**   |
+| Read speed        | Excellent            | Good             |
+| Write speed       | Excellent            | Good             |
+| Query speed       | Excellent            | Fair             |
+| Full-text search  | Excellent (FTS5)     | Good (grep)      |
+| Vector search     | Excellent (with ext) | Fair (linear)    |
+| **Scalability**   |
+| Max items         | 281 TB               | Filesystem limit |
+| Concurrent users  | Excellent            | Good             |
+| **Features**      |
+| ACID transactions | Yes                  | No               |
+| Human readable    | No                   | Yes              |
+| Git integration   | No                   | Yes              |
+| Direct editing    | No                   | Yes              |
+| **Operational**   |
+| Backup complexity | Medium               | Simple           |
+| Migration         | Medium               | Simple           |
+| Debugging         | Medium               | Easy             |
+| Monitoring        | Good                 | Basic            |
 
 ## Choosing a Backend
 
@@ -493,21 +495,21 @@ For some use cases, you might want to use both backends:
 ```typescript
 // Primary storage with SQLite for performance
 const primaryMemory = new MemoryManager({
-  backend: 'sqlite',
-  storage: { path: './primary.db' }
+  backend: "sqlite",
+  storage: { path: "./primary.db" },
 });
 
 // Secondary storage with Markdown for collaboration
 const secondaryMemory = new MemoryManager({
-  backend: 'markdown',
-  storage: { path: './docs' }
+  backend: "markdown",
+  storage: { path: "./docs" },
 });
 
 // Sync important items to both
 const importantItem = await primaryMemory.store({
-  category: 'architecture-decision',
-  content: 'Decision to use microservices architecture',
-  tags: ['architecture', 'decision', 'microservices']
+  category: "architecture-decision",
+  content: "Decision to use microservices architecture",
+  tags: ["architecture", "decision", "microservices"],
 });
 
 // Also store in markdown for documentation
@@ -538,9 +540,9 @@ class RedisBackend implements MemoryBackend {
 // Use custom backend
 const redisMemory = new MemoryManager({
   backend: new RedisBackend({
-    host: 'localhost',
+    host: "localhost",
     port: 6379,
-    password: 'secret'
-  })
+    password: "secret",
+  }),
 });
 ```

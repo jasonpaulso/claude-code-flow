@@ -23,18 +23,18 @@ npx claude-flow claude spawn <task> [options]
 
 #### Options
 
-| Option | Short | Description | Default |
-|--------|-------|-------------|---------|
-| `--tools` | `-t` | Comma-separated list of allowed tools | View,Edit,Replace,GlobTool,GrepTool,LS,Bash |
-| `--no-permissions` | | Use --dangerously-skip-permissions flag | false |
-| `--config` | `-c` | MCP config file path | |
-| `--mode` | `-m` | Development mode (full/backend-only/frontend-only/api-only) | full |
-| `--parallel` | | Enable parallel execution with BatchTool | false |
-| `--research` | | Enable web research with WebFetchTool | false |
-| `--coverage` | | Test coverage target percentage | 80 |
-| `--commit` | | Commit frequency (phase/feature/manual) | phase |
-| `--verbose` | `-v` | Enable verbose output | false |
-| `--dry-run` | `-d` | Show what would be executed without running | false |
+| Option             | Short | Description                                                 | Default                                     |
+| ------------------ | ----- | ----------------------------------------------------------- | ------------------------------------------- |
+| `--tools`          | `-t`  | Comma-separated list of allowed tools                       | View,Edit,Replace,GlobTool,GrepTool,LS,Bash |
+| `--no-permissions` |       | Use --dangerously-skip-permissions flag                     | false                                       |
+| `--config`         | `-c`  | MCP config file path                                        |                                             |
+| `--mode`           | `-m`  | Development mode (full/backend-only/frontend-only/api-only) | full                                        |
+| `--parallel`       |       | Enable parallel execution with BatchTool                    | false                                       |
+| `--research`       |       | Enable web research with WebFetchTool                       | false                                       |
+| `--coverage`       |       | Test coverage target percentage                             | 80                                          |
+| `--commit`         |       | Commit frequency (phase/feature/manual)                     | phase                                       |
+| `--verbose`        | `-v`  | Enable verbose output                                       | false                                       |
+| `--dry-run`        | `-d`  | Show what would be executed without running                 | false                                       |
 
 #### Examples
 
@@ -80,7 +80,7 @@ Execute multiple Claude instances based on a JSON workflow file.
       "config": ".roo/mcp.json"
     },
     {
-      "id": "task-2", 
+      "id": "task-2",
       "name": "Implementation Task",
       "description": "Implement authentication system",
       "tools": "View,Edit,Replace,GlobTool,GrepTool,LS,Bash",
@@ -93,18 +93,18 @@ Execute multiple Claude instances based on a JSON workflow file.
 
 #### Task Properties
 
-| Property | Type | Description | Required |
-|----------|------|-------------|----------|
-| `id` | string | Unique task identifier | Yes |
-| `name` | string | Task name for display | No |
-| `description` | string | Task description (used as Claude prompt) | Yes |
-| `tools` | string/array | Allowed tools (comma-separated string or array) | No |
-| `skipPermissions` | boolean | Use --dangerously-skip-permissions flag | No |
-| `dangerouslySkipPermissions` | boolean | Alternative to skipPermissions | No |
-| `config` | string | MCP config file path | No |
-| `mode` | string | Development mode | No |
-| `coverage` | number | Test coverage target | No |
-| `type` | string | Task type for categorization | No |
+| Property                     | Type         | Description                                     | Required |
+| ---------------------------- | ------------ | ----------------------------------------------- | -------- |
+| `id`                         | string       | Unique task identifier                          | Yes      |
+| `name`                       | string       | Task name for display                           | No       |
+| `description`                | string       | Task description (used as Claude prompt)        | Yes      |
+| `tools`                      | string/array | Allowed tools (comma-separated string or array) | No       |
+| `skipPermissions`            | boolean      | Use --dangerously-skip-permissions flag         | No       |
+| `dangerouslySkipPermissions` | boolean      | Alternative to skipPermissions                  | No       |
+| `config`                     | string       | MCP config file path                            | No       |
+| `mode`                       | string       | Development mode                                | No       |
+| `coverage`                   | number       | Test coverage target                            | No       |
+| `type`                       | string       | Task type for categorization                    | No       |
 
 #### Examples
 
@@ -120,14 +120,14 @@ npx claude-flow claude batch production-tasks.json
 
 When Claude instances are spawned, the following environment variables are set:
 
-| Variable | Description |
-|----------|-------------|
-| `CLAUDE_INSTANCE_ID` | Unique identifier for the Claude instance |
-| `CLAUDE_FLOW_MODE` | Development mode (full/backend-only/etc) |
-| `CLAUDE_FLOW_COVERAGE` | Test coverage target percentage |
-| `CLAUDE_FLOW_COMMIT` | Commit frequency setting |
-| `CLAUDE_TASK_ID` | Task ID (for batch execution) |
-| `CLAUDE_TASK_TYPE` | Task type (for batch execution) |
+| Variable               | Description                               |
+| ---------------------- | ----------------------------------------- |
+| `CLAUDE_INSTANCE_ID`   | Unique identifier for the Claude instance |
+| `CLAUDE_FLOW_MODE`     | Development mode (full/backend-only/etc)  |
+| `CLAUDE_FLOW_COVERAGE` | Test coverage target percentage           |
+| `CLAUDE_FLOW_COMMIT`   | Commit frequency setting                  |
+| `CLAUDE_TASK_ID`       | Task ID (for batch execution)             |
+| `CLAUDE_TASK_TYPE`     | Task type (for batch execution)           |
 
 ## Integration with Orchestration System
 
@@ -226,10 +226,12 @@ Use Claude spawning in CI/CD pipelines:
 ### Common Issues
 
 1. **"Raw mode not supported" error**
+
    - This occurs when running in non-interactive environments
    - Use `--no-permissions` flag to bypass interactive prompts
 
 2. **Tool not found errors**
+
    - Ensure tool names are spelled correctly
    - Check that required tools are installed in the environment
 

@@ -6,22 +6,23 @@
 
 const SWARM_MODE = {
   name: "swarm",
-  description: "Advanced multi-agent coordination with timeout-free execution for complex tasks",
+  description:
+    "Advanced multi-agent coordination with timeout-free execution for complex tasks",
   icon: "🐝",
   category: "coordination",
   difficulty: "expert",
   estimatedTime: "30-120+ minutes",
-  
+
   // Core capabilities
   capabilities: [
     "Multi-agent coordination",
-    "Timeout-free execution", 
+    "Timeout-free execution",
     "Distributed memory sharing",
     "Intelligent load balancing",
     "Background task processing",
     "Real-time monitoring",
     "Fault tolerance",
-    "Cross-agent collaboration"
+    "Cross-agent collaboration",
   ],
 
   // When to use this mode
@@ -31,7 +32,7 @@ const SWARM_MODE = {
     "Research projects needing multiple specialized agents",
     "Long-running optimization and refactoring tasks",
     "Comprehensive testing and quality assurance workflows",
-    "Documentation and analysis projects with multiple components"
+    "Documentation and analysis projects with multiple components",
   ],
 
   // Prerequisites
@@ -39,7 +40,7 @@ const SWARM_MODE = {
     "Claude-Flow initialized with --sparc flag",
     "Understanding of agent types and coordination strategies",
     "Basic familiarity with swarm concepts",
-    "Project structure suitable for parallel processing"
+    "Project structure suitable for parallel processing",
   ],
 
   // Swarm strategies available
@@ -48,39 +49,39 @@ const SWARM_MODE = {
       name: "Development",
       agents: ["developer", "tester", "reviewer", "documenter"],
       focus: "Code implementation with quality assurance",
-      parallel: true
+      parallel: true,
     },
     research: {
-      name: "Research", 
+      name: "Research",
       agents: ["researcher", "analyzer", "documenter"],
       focus: "Information gathering and analysis",
-      parallel: true
+      parallel: true,
     },
     analysis: {
       name: "Analysis",
       agents: ["analyzer", "researcher", "documenter"],
       focus: "Data analysis and insights generation",
-      parallel: false
+      parallel: false,
     },
     testing: {
       name: "Testing",
       agents: ["tester", "developer", "reviewer"],
       focus: "Comprehensive testing and quality assurance",
-      parallel: true
+      parallel: true,
     },
     optimization: {
       name: "Optimization",
       agents: ["analyzer", "developer", "monitor"],
       focus: "Performance optimization and monitoring",
-      parallel: false
+      parallel: false,
     },
     maintenance: {
       name: "Maintenance",
       agents: ["developer", "monitor", "tester"],
       focus: "System maintenance and updates",
-      parallel: false
-    }
-  }
+      parallel: false,
+    },
+  },
 };
 
 export const prompt = `

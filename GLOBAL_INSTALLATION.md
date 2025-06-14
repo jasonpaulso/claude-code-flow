@@ -268,11 +268,13 @@ npm install -g claude-flow@latest
 ## Best Practices
 
 1. **Version Management**: Pin specific versions in production
+
    ```bash
    npm install -g claude-flow@1.0.49
    ```
 
 2. **Team Consistency**: Use package.json for team projects
+
    ```json
    {
      "devDependencies": {

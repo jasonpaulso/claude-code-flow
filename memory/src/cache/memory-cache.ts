@@ -3,7 +3,7 @@
  * High-performance caching with LRU, LFU, and FIFO eviction strategies
  */
 
-import { MemoryItem, CacheConfig } from '../types';
+import { MemoryItem, CacheConfig } from "../types";
 
 interface CacheEntry {
   key: string;
@@ -41,12 +41,15 @@ export class MemoryCache {
       currentSize: 0,
       maxSize: config.maxSize,
       itemCount: 0,
-      hitRate: 0
+      hitRate: 0,
     };
 
     // Start TTL cleanup interval
     if (config.ttl > 0) {
-      setInterval(() => this.cleanupExpired(), Math.min(config.ttl / 10, 60000));
+      setInterval(
+        () => this.cleanupExpired(),
+        Math.min(config.ttl / 10, 60000),
+      );
     }
   }
 
@@ -72,10 +75,10 @@ export class MemoryCache {
 
     // Update access tracking
     this.updateAccess(key, entry);
-    
+
     this.stats.hits++;
     this.updateHitRate();
-    
+
     return entry.value;
   }
 
@@ -84,9 +87,12 @@ export class MemoryCache {
    */
   set(key: string, value: MemoryItem): void {
     const size = this.calculateSize(value);
-    
+
     // Check if we need to evict items
-    while (this.currentSize + size > this.config.maxSize && this.cache.size > 0) {
+    while (
+      this.currentSize + size > this.config.maxSize &&
+      this.cache.size > 0
+    ) {
       this.evict();
     }
 
@@ -102,7 +108,7 @@ export class MemoryCache {
       timestamp: Date.now(),
       frequency: 1,
       lastAccess: Date.now(),
-      size
+      size,
     };
 
     this.cache.set(key, entry);
@@ -111,9 +117,9 @@ export class MemoryCache {
     this.stats.currentSize = this.currentSize;
 
     // Update tracking based on strategy
-    if (this.config.strategy === 'lru') {
+    if (this.config.strategy === "lru") {
       this.accessOrder.push(key);
-    } else if (this.config.strategy === 'lfu') {
+    } else if (this.config.strategy === "lfu") {
       this.updateFrequency(key, 0, 1);
     }
   }
@@ -131,12 +137,12 @@ export class MemoryCache {
     this.stats.currentSize = this.currentSize;
 
     // Update tracking
-    if (this.config.strategy === 'lru') {
+    if (this.config.strategy === "lru") {
       const index = this.accessOrder.indexOf(key);
       if (index > -1) {
         this.accessOrder.splice(index, 1);
       }
-    } else if (this.config.strategy === 'lfu') {
+    } else if (this.config.strategy === "lfu") {
       const freqSet = this.frequencyMap.get(entry.frequency);
       if (freqSet) {
         freqSet.delete(key);
@@ -189,13 +195,13 @@ export class MemoryCache {
     let keyToEvict: string | undefined;
 
     switch (this.config.strategy) {
-      case 'lru':
+      case "lru":
         keyToEvict = this.evictLRU();
         break;
-      case 'lfu':
+      case "lfu":
         keyToEvict = this.evictLFU();
         break;
-      case 'fifo':
+      case "fifo":
         keyToEvict = this.evictFIFO();
         break;
     }
@@ -273,14 +279,14 @@ export class MemoryCache {
   private updateAccess(key: string, entry: CacheEntry): void {
     entry.lastAccess = Date.now();
 
-    if (this.config.strategy === 'lru') {
+    if (this.config.strategy === "lru") {
       // Move to end of access order
       const index = this.accessOrder.indexOf(key);
       if (index > -1) {
         this.accessOrder.splice(index, 1);
       }
       this.accessOrder.push(key);
-    } else if (this.config.strategy === 'lfu') {
+    } else if (this.config.strategy === "lfu") {
       // Update frequency
       const oldFreq = entry.frequency;
       entry.frequency++;
@@ -356,7 +362,9 @@ export class MemoryCache {
   /**
    * Warm up cache with preloaded data
    */
-  async warmup(items: Array<{ key: string; value: MemoryItem }>): Promise<void> {
+  async warmup(
+    items: Array<{ key: string; value: MemoryItem }>,
+  ): Promise<void> {
     for (const { key, value } of items) {
       this.set(key, value);
     }
@@ -367,7 +375,7 @@ export class MemoryCache {
    */
   snapshot(): Array<{ key: string; value: MemoryItem }> {
     const items: Array<{ key: string; value: MemoryItem }> = [];
-    
+
     for (const [key, entry] of this.cache) {
       if (!this.isExpired(entry)) {
         items.push({ key, value: entry.value });

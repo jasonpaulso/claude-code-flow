@@ -5,8 +5,8 @@
  * Comprehensive test suite for the MCP implementation
  */
 
-import { parseArgs } from 'https://deno.land/std@0.208.0/cli/parse_args.ts';
-import { join } from 'https://deno.land/std@0.208.0/path/mod.ts';
+import { parseArgs } from "https://deno.land/std@0.208.0/cli/parse_args.ts";
+import { join } from "https://deno.land/std@0.208.0/path/mod.ts";
 
 interface TestConfig {
   unit: boolean;
@@ -19,97 +19,98 @@ interface TestConfig {
 
 async function runTests(config: TestConfig): Promise<void> {
   const testFiles: string[] = [];
-  
+
   if (config.unit) {
-    console.log('🔍 Discovering unit tests...');
-    const unitTests = await discoverTests('tests/unit', config.filter);
+    console.log("🔍 Discovering unit tests...");
+    const unitTests = await discoverTests("tests/unit", config.filter);
     testFiles.push(...unitTests);
   }
-  
+
   if (config.integration) {
-    console.log('🔍 Discovering integration tests...');
-    const integrationTests = await discoverTests('tests/integration', config.filter);
+    console.log("🔍 Discovering integration tests...");
+    const integrationTests = await discoverTests(
+      "tests/integration",
+      config.filter,
+    );
     testFiles.push(...integrationTests);
   }
-  
+
   if (testFiles.length === 0) {
-    console.log('❌ No test files found');
+    console.log("❌ No test files found");
     Deno.exit(1);
   }
-  
+
   console.log(`📋 Found ${testFiles.length} test files:`);
   for (const file of testFiles) {
     console.log(`  - ${file}`);
   }
   console.log();
-  
+
   // Build Deno test command
-  const args = [
-    'test',
-    '--allow-all',
-    '--unstable',
-    ...testFiles,
-  ];
-  
+  const args = ["test", "--allow-all", "--unstable", ...testFiles];
+
   if (config.coverage) {
-    args.push('--coverage=coverage');
+    args.push("--coverage=coverage");
   }
-  
+
   if (config.watch) {
-    args.push('--watch');
+    args.push("--watch");
   }
-  
+
   if (config.verbose) {
-    args.push('--verbose');
+    args.push("--verbose");
   }
-  
-  console.log('🧪 Running tests...');
-  console.log(`Command: deno ${args.join(' ')}`);
+
+  console.log("🧪 Running tests...");
+  console.log(`Command: deno ${args.join(" ")}`);
   console.log();
-  
-  const process = new Deno.Command('deno', {
+
+  const process = new Deno.Command("deno", {
     args,
-    stdout: 'inherit',
-    stderr: 'inherit',
+    stdout: "inherit",
+    stderr: "inherit",
   });
-  
+
   const { code } = await process.output();
-  
+
   if (config.coverage && code === 0) {
-    console.log('\n📊 Generating coverage report...');
-    
-    const coverageProcess = new Deno.Command('deno', {
-      args: ['coverage', '--html', 'coverage'],
-      stdout: 'inherit',
-      stderr: 'inherit',
+    console.log("\n📊 Generating coverage report...");
+
+    const coverageProcess = new Deno.Command("deno", {
+      args: ["coverage", "--html", "coverage"],
+      stdout: "inherit",
+      stderr: "inherit",
     });
-    
+
     await coverageProcess.output();
-    console.log('Coverage report generated in coverage/html/');
+    console.log("Coverage report generated in coverage/html/");
   }
-  
+
   if (code !== 0) {
-    console.log('\n❌ Tests failed');
+    console.log("\n❌ Tests failed");
     Deno.exit(code);
   }
-  
-  console.log('\n✅ All tests passed!');
+
+  console.log("\n✅ All tests passed!");
 }
 
-async function discoverTests(baseDir: string, filter?: string): Promise<string[]> {
+async function discoverTests(
+  baseDir: string,
+  filter?: string,
+): Promise<string[]> {
   const testFiles: string[] = [];
-  
+
   try {
     for await (const entry of Deno.readDir(baseDir)) {
       if (entry.isDirectory) {
         const subDirTests = await discoverTests(
           join(baseDir, entry.name),
-          filter
+          filter,
         );
         testFiles.push(...subDirTests);
-      } else if (entry.name.endsWith('.test.ts')) {
+      } else if (entry.name.endsWith(".test.ts")) {
         const filePath = join(baseDir, entry.name);
-        
+
         if (!filter || filePath.includes(filter)) {
           testFiles.push(filePath);
         }
@@ -120,38 +121,38 @@ async function discoverTests(baseDir: string, filter?: string): Promise<string[]
       throw error;
     }
   }
-  
+
   return testFiles;
 }
 
 async function validateEnvironment(): Promise<void> {
-  console.log('🔧 Validating environment...');
-  
+  console.log("🔧 Validating environment...");
+
   // Check Deno version
-  const { code, stdout } = await new Deno.Command('deno', {
-    args: ['--version'],
-    stdout: 'piped',
+  const { code, stdout } = await new Deno.Command("deno", {
+    args: ["--version"],
+    stdout: "piped",
   }).output();
-  
+
   if (code !== 0) {
-    console.error('❌ Deno not found');
+    console.error("❌ Deno not found");
     Deno.exit(1);
   }
-  
+
   const versionOutput = new TextDecoder().decode(stdout);
-  console.log(`✅ ${versionOutput.split('\n')[0]}`);
-  
+  console.log(`✅ ${versionOutput.split("\n")[0]}`);
+
   // Check required files exist
   const requiredFiles = [
-    'src/mcp/server.ts',
-    'src/mcp/tools.ts',
-    'src/mcp/transports/stdio.ts',
-    'src/mcp/transports/http.ts',
-    'src/mcp/session-manager.ts',
-    'src/mcp/auth.ts',
-    'src/mcp/load-balancer.ts',
+    "src/mcp/server.ts",
+    "src/mcp/tools.ts",
+    "src/mcp/transports/stdio.ts",
+    "src/mcp/transports/http.ts",
+    "src/mcp/session-manager.ts",
+    "src/mcp/auth.ts",
+    "src/mcp/load-balancer.ts",
   ];
-  
+
   for (const file of requiredFiles) {
     try {
       await Deno.stat(file);
@@ -161,7 +162,7 @@ async function validateEnvironment(): Promise<void> {
       Deno.exit(1);
     }
   }
-  
+
   console.log();
 }
 
@@ -193,30 +194,28 @@ Examples:
 async function main(): Promise<void> {
   const args = parseArgs(Deno.args, {
     boolean: [
-      'unit',
-      'integration',
-      'all',
-      'coverage',
-      'watch',
-      'verbose',
-      'help',
-      'h',
+      "unit",
+      "integration",
+      "all",
+      "coverage",
+      "watch",
+      "verbose",
+      "help",
+      "h",
     ],
-    string: [
-      'filter',
-    ],
+    string: ["filter"],
     alias: {
-      h: 'help',
+      h: "help",
     },
   });
-  
+
   if (args.help || args.h) {
     printUsage();
     return;
   }
-  
+
   await validateEnvironment();
-  
+
   const config: TestConfig = {
     unit: args.unit || args.all || (!args.integration && !args.all),
     integration: args.integration || args.all,
@@ -225,23 +224,23 @@ async function main(): Promise<void> {
     filter: args.filter,
     verbose: args.verbose,
   };
-  
-  console.log('⚙️  Test Configuration:');
+
+  console.log("⚙️  Test Configuration:");
   console.log(`  Unit tests: ${config.unit}`);
   console.log(`  Integration tests: ${config.integration}`);
   console.log(`  Coverage: ${config.coverage}`);
   console.log(`  Watch mode: ${config.watch}`);
-  console.log(`  Filter: ${config.filter || 'none'}`);
+  console.log(`  Filter: ${config.filter || "none"}`);
   console.log(`  Verbose: ${config.verbose}`);
   console.log();
-  
+
   await runTests(config);
 }
 
 // Performance monitoring
 const startTime = performance.now();
 
-process.on?.('exit', () => {
+process.on?.("exit", () => {
   const duration = performance.now() - startTime;
   console.log(`\n⏱️  Total execution time: ${(duration / 1000).toFixed(2)}s`);
 });

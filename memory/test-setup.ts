@@ -2,25 +2,25 @@
  * Test setup for SPARC Memory Bank
  */
 
-import { beforeAll, afterAll } from 'vitest';
-import * as fs from 'fs/promises';
+import { beforeAll, afterAll } from "vitest";
+import * as fs from "fs/promises";
 
 // Global test setup
 beforeAll(async () => {
   // Ensure test directories exist
-  await fs.mkdir('/tmp', { recursive: true }).catch(() => {});
+  await fs.mkdir("/tmp", { recursive: true }).catch(() => {});
 });
 
 // Global test cleanup
 afterAll(async () => {
   // Clean up any remaining test files
   const testDirs = [
-    '/tmp/memory-test',
-    '/tmp/backend-test-sqlite',
-    '/tmp/backend-test-markdown',
-    '/tmp/indexer-test',
-    '/tmp/namespace-test',
-    '/tmp/replication-test'
+    "/tmp/memory-test",
+    "/tmp/backend-test-sqlite",
+    "/tmp/backend-test-markdown",
+    "/tmp/indexer-test",
+    "/tmp/namespace-test",
+    "/tmp/replication-test",
   ];
 
   for (const dir of testDirs) {

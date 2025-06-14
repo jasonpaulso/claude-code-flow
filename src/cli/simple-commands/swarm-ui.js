@@ -6,10 +6,10 @@
  */
 
 import process from "node:process";
-const blessed = require('blessed');
-const fs = require('fs').promises;
-const path = require('path');
-const { spawn } = require('child_process');
+const blessed = require("blessed");
+const fs = require("fs").promises;
+const path = require("path");
+const { spawn } = require("child_process");
 
 class SwarmUI {
   constructor() {
@@ -18,7 +18,7 @@ class SwarmUI {
       objectives: [],
       agents: [],
       tasks: [],
-      status: 'idle'
+      status: "idle",
     };
     this.selectedObjective = null;
     this.updateInterval = null;
@@ -30,13 +30,13 @@ class SwarmUI {
     // Create blessed screen
     this.screen = blessed.screen({
       smartCSR: true,
-      title: 'Claude Flow - Swarm Control Center'
+      title: "Claude Flow - Swarm Control Center",
     });
 
     this.createLayout();
     this.bindEvents();
     this.startMonitoring();
-    
+
     this.screen.render();
   }
 
@@ -46,16 +46,16 @@ class SwarmUI {
       parent: this.screen,
       top: 0,
       left: 0,
-      width: '100%',
-      height: '100%',
+      width: "100%",
+      height: "100%",
       border: {
-        type: 'line'
+        type: "line",
       },
       style: {
         border: {
-          fg: 'cyan'
-        }
-      }
+          fg: "cyan",
+        },
+      },
     });
 
     // Header
@@ -63,14 +63,14 @@ class SwarmUI {
       parent: mainBox,
       top: 0,
       left: 0,
-      width: '100%',
+      width: "100%",
       height: 3,
-      content: '{center}🐝 Claude Flow Swarm Control Center{/center}',
+      content: "{center}🐝 Claude Flow Swarm Control Center{/center}",
       tags: true,
       style: {
-        fg: 'white',
-        bg: 'blue'
-      }
+        fg: "white",
+        bg: "blue",
+      },
     });
 
     // Status bar
@@ -78,12 +78,12 @@ class SwarmUI {
       parent: mainBox,
       top: 2,
       left: 0,
-      width: '100%',
+      width: "100%",
       height: 1,
-      content: 'Status: Initializing...',
+      content: "Status: Initializing...",
       style: {
-        fg: 'yellow'
-      }
+        fg: "yellow",
+      },
     });
 
     // Left panel - Objectives and Agents
@@ -91,17 +91,17 @@ class SwarmUI {
       parent: mainBox,
       top: 3,
       left: 0,
-      width: '30%',
-      height: '70%',
+      width: "30%",
+      height: "70%",
       border: {
-        type: 'line'
+        type: "line",
       },
-      label: ' Objectives & Agents ',
+      label: " Objectives & Agents ",
       style: {
         border: {
-          fg: 'green'
-        }
-      }
+          fg: "green",
+        },
+      },
     });
 
     // Objectives list
@@ -109,61 +109,61 @@ class SwarmUI {
       parent: leftPanel,
       top: 0,
       left: 0,
-      width: '100%',
-      height: '50%',
-      label: ' Objectives ',
-      items: ['No objectives'],
+      width: "100%",
+      height: "50%",
+      label: " Objectives ",
+      items: ["No objectives"],
       keys: true,
       vi: true,
       mouse: true,
       style: {
         selected: {
-          bg: 'blue'
+          bg: "blue",
         },
         item: {
-          fg: 'white'
-        }
-      }
+          fg: "white",
+        },
+      },
     });
 
     // Agents list
     this.agentsList = blessed.list({
       parent: leftPanel,
-      top: '50%',
+      top: "50%",
       left: 0,
-      width: '100%',
-      height: '50%',
-      label: ' Agents ',
-      items: ['No agents'],
+      width: "100%",
+      height: "50%",
+      label: " Agents ",
+      items: ["No agents"],
       keys: true,
       vi: true,
       mouse: true,
       style: {
         selected: {
-          bg: 'green'
+          bg: "green",
         },
         item: {
-          fg: 'white'
-        }
-      }
+          fg: "white",
+        },
+      },
     });
 
     // Center panel - Tasks and Details
     const centerPanel = blessed.box({
       parent: mainBox,
       top: 3,
-      left: '30%',
-      width: '40%',
-      height: '70%',
+      left: "30%",
+      width: "40%",
+      height: "70%",
       border: {
-        type: 'line'
+        type: "line",
       },
-      label: ' Tasks & Details ',
+      label: " Tasks & Details ",
       style: {
         border: {
-          fg: 'yellow'
-        }
-      }
+          fg: "yellow",
+        },
+      },
     });
 
     // Tasks list
@@ -171,59 +171,59 @@ class SwarmUI {
       parent: centerPanel,
       top: 0,
       left: 0,
-      width: '100%',
-      height: '50%',
-      label: ' Tasks ',
-      items: ['No tasks'],
+      width: "100%",
+      height: "50%",
+      label: " Tasks ",
+      items: ["No tasks"],
       keys: true,
       vi: true,
       mouse: true,
       style: {
         selected: {
-          bg: 'yellow',
-          fg: 'black'
+          bg: "yellow",
+          fg: "black",
         },
         item: {
-          fg: 'white'
-        }
-      }
+          fg: "white",
+        },
+      },
     });
 
     // Task details
     this.taskDetails = blessed.box({
       parent: centerPanel,
-      top: '50%',
+      top: "50%",
       left: 0,
-      width: '100%',
-      height: '50%',
-      label: ' Task Details ',
-      content: 'Select a task to view details',
+      width: "100%",
+      height: "50%",
+      label: " Task Details ",
+      content: "Select a task to view details",
       scrollable: true,
       alwaysScroll: true,
       keys: true,
       vi: true,
       mouse: true,
       style: {
-        fg: 'white'
-      }
+        fg: "white",
+      },
     });
 
     // Right panel - Logs and Controls
     const rightPanel = blessed.box({
       parent: mainBox,
       top: 3,
-      left: '70%',
-      width: '30%',
-      height: '70%',
+      left: "70%",
+      width: "30%",
+      height: "70%",
       border: {
-        type: 'line'
+        type: "line",
       },
-      label: ' Logs & Controls ',
+      label: " Logs & Controls ",
       style: {
         border: {
-          fg: 'magenta'
-        }
-      }
+          fg: "magenta",
+        },
+      },
     });
 
     // Activity logs
@@ -231,26 +231,26 @@ class SwarmUI {
       parent: rightPanel,
       top: 0,
       left: 0,
-      width: '100%',
-      height: '60%',
-      label: ' Activity Log ',
+      width: "100%",
+      height: "60%",
+      label: " Activity Log ",
       tags: true,
       mouse: true,
       scrollable: true,
       alwaysScroll: true,
       style: {
-        fg: 'white'
-      }
+        fg: "white",
+      },
     });
 
     // Control buttons
     this.controlBox = blessed.box({
       parent: rightPanel,
-      top: '60%',
+      top: "60%",
       left: 0,
-      width: '100%',
-      height: '40%',
-      label: ' Controls '
+      width: "100%",
+      height: "40%",
+      label: " Controls ",
     });
 
     // Create objective button
@@ -258,17 +258,17 @@ class SwarmUI {
       parent: this.controlBox,
       top: 1,
       left: 1,
-      width: '90%',
+      width: "90%",
       height: 3,
-      content: 'Create Objective',
-      align: 'center',
+      content: "Create Objective",
+      align: "center",
       style: {
-        bg: 'blue',
-        fg: 'white',
+        bg: "blue",
+        fg: "white",
         focus: {
-          bg: 'red'
-        }
-      }
+          bg: "red",
+        },
+      },
     });
 
     // Stop swarm button
@@ -276,18 +276,18 @@ class SwarmUI {
       parent: this.controlBox,
       top: 5,
       left: 1,
-      width: '90%',
+      width: "90%",
       height: 3,
-      content: 'Stop Swarm',
-      align: 'center',
+      content: "Stop Swarm",
+      align: "center",
       style: {
-        bg: 'red',
-        fg: 'white',
+        bg: "red",
+        fg: "white",
         focus: {
-          bg: 'yellow',
-          fg: 'black'
-        }
-      }
+          bg: "yellow",
+          fg: "black",
+        },
+      },
     });
 
     // Bottom panel - Command input
@@ -295,37 +295,39 @@ class SwarmUI {
       parent: mainBox,
       bottom: 0,
       left: 0,
-      width: '100%',
+      width: "100%",
       height: 3,
-      label: ' Command Input (Press Enter to execute) ',
+      label: " Command Input (Press Enter to execute) ",
       keys: true,
       mouse: true,
       inputOnFocus: true,
       style: {
         border: {
-          fg: 'cyan'
+          fg: "cyan",
         },
-        fg: 'white'
-      }
+        fg: "white",
+      },
     });
   }
 
   bindEvents() {
     // Screen events
-    this.screen.key(['escape', 'q', 'C-c'], () => {
+    this.screen.key(["escape", "q", "C-c"], () => {
       this.cleanup();
       process.exit(0);
     });
 
     // Objective selection
-    this.objectivesList.on('select', (item, index) => {
+    this.objectivesList.on("select", (item, index) => {
       this.selectedObjective = this.swarmData.objectives[index];
       this.updateTasksList();
-      this.log(`Selected objective: ${this.selectedObjective?.description || 'Unknown'}`);
+      this.log(
+        `Selected objective: ${this.selectedObjective?.description || "Unknown"}`,
+      );
     });
 
     // Task selection
-    this.tasksList.on('select', (item, index) => {
+    this.tasksList.on("select", (item, index) => {
       const task = this.swarmData.tasks[index];
       if (task) {
         this.updateTaskDetails(task);
@@ -333,35 +335,35 @@ class SwarmUI {
     });
 
     // Create objective button
-    this.createButton.on('press', () => {
+    this.createButton.on("press", () => {
       this.promptCreateObjective();
     });
 
     // Stop swarm button
-    this.stopButton.on('press', () => {
+    this.stopButton.on("press", () => {
       this.stopSwarm();
     });
 
     // Command input
-    this.commandBox.on('submit', (value) => {
+    this.commandBox.on("submit", (value) => {
       this.executeCommand(value);
       this.commandBox.clearValue();
       this.screen.render();
     });
 
     // Focus management
-    this.screen.key(['tab'], () => {
+    this.screen.key(["tab"], () => {
       this.screen.focusNext();
     });
 
-    this.screen.key(['S-tab'], () => {
+    this.screen.key(["S-tab"], () => {
       this.screen.focusPrevious();
     });
   }
 
   async startMonitoring() {
-    this.log('Starting swarm monitoring...');
-    
+    this.log("Starting swarm monitoring...");
+
     // Update interval
     this.updateInterval = setInterval(() => {
       this.updateSwarmData();
@@ -374,8 +376,8 @@ class SwarmUI {
   async updateSwarmData() {
     try {
       // Load swarm data from file system
-      const swarmRunsDir = './swarm-runs';
-      
+      const swarmRunsDir = "./swarm-runs";
+
       try {
         const runs = await fs.readdir(swarmRunsDir);
         this.swarmData.objectives = [];
@@ -383,33 +385,33 @@ class SwarmUI {
         this.swarmData.tasks = [];
 
         for (const runDir of runs) {
-          const configPath = path.join(swarmRunsDir, runDir, 'config.json');
+          const configPath = path.join(swarmRunsDir, runDir, "config.json");
           try {
-            const configData = await fs.readFile(configPath, 'utf-8');
+            const configData = await fs.readFile(configPath, "utf-8");
             const config = JSON.parse(configData);
-            
+
             this.swarmData.objectives.push({
               id: config.swarmId,
               description: config.objective,
-              status: 'running',
-              startTime: config.startTime
+              status: "running",
+              startTime: config.startTime,
             });
 
             // Load agents
-            const agentsDir = path.join(swarmRunsDir, runDir, 'agents');
+            const agentsDir = path.join(swarmRunsDir, runDir, "agents");
             try {
               const agents = await fs.readdir(agentsDir);
               for (const agentDir of agents) {
-                const taskPath = path.join(agentsDir, agentDir, 'task.json');
+                const taskPath = path.join(agentsDir, agentDir, "task.json");
                 try {
-                  const taskData = await fs.readFile(taskPath, 'utf-8');
+                  const taskData = await fs.readFile(taskPath, "utf-8");
                   const task = JSON.parse(taskData);
-                  
+
                   this.swarmData.agents.push({
                     id: task.agentId,
                     swarmId: config.swarmId,
-                    status: task.status || 'active',
-                    task: task.task
+                    status: task.status || "active",
+                    task: task.task,
                   });
 
                   this.swarmData.tasks.push(task);
@@ -428,37 +430,46 @@ class SwarmUI {
         this.updateDisplay();
       } catch (e) {
         // No swarm runs directory
-        this.swarmData.status = 'idle';
+        this.swarmData.status = "idle";
       }
-
     } catch (error) {
-      this.log(`Error updating swarm data: ${error.message}`, 'error');
+      this.log(`Error updating swarm data: ${error.message}`, "error");
     }
   }
 
   updateDisplay() {
     // Update status
-    const activeObjectives = this.swarmData.objectives.filter(o => o.status === 'running').length;
-    const activeAgents = this.swarmData.agents.filter(a => a.status === 'active').length;
-    
+    const activeObjectives = this.swarmData.objectives.filter(
+      (o) => o.status === "running",
+    ).length;
+    const activeAgents = this.swarmData.agents.filter(
+      (a) => a.status === "active",
+    ).length;
+
     this.statusBox.setContent(
       `Status: ${this.swarmData.status} | ` +
-      `Objectives: ${activeObjectives} | ` +
-      `Agents: ${activeAgents} | ` +
-      `Tasks: ${this.swarmData.tasks.length}`
+        `Objectives: ${activeObjectives} | ` +
+        `Agents: ${activeAgents} | ` +
+        `Tasks: ${this.swarmData.tasks.length}`,
     );
 
     // Update objectives list
-    const objectiveItems = this.swarmData.objectives.map(obj => 
-      `${obj.status === 'running' ? '🟢' : '🔴'} ${obj.description.substring(0, 25)}...`
+    const objectiveItems = this.swarmData.objectives.map(
+      (obj) =>
+        `${obj.status === "running" ? "🟢" : "🔴"} ${obj.description.substring(0, 25)}...`,
     );
-    this.objectivesList.setItems(objectiveItems.length > 0 ? objectiveItems : ['No objectives']);
+    this.objectivesList.setItems(
+      objectiveItems.length > 0 ? objectiveItems : ["No objectives"],
+    );
 
     // Update agents list
-    const agentItems = this.swarmData.agents.map(agent => 
-      `${agent.status === 'active' ? '🤖' : '💤'} ${agent.id.substring(0, 15)}...`
+    const agentItems = this.swarmData.agents.map(
+      (agent) =>
+        `${agent.status === "active" ? "🤖" : "💤"} ${agent.id.substring(0, 15)}...`,
     );
-    this.agentsList.setItems(agentItems.length > 0 ? agentItems : ['No agents']);
+    this.agentsList.setItems(
+      agentItems.length > 0 ? agentItems : ["No agents"],
+    );
 
     // Update tasks list if objective is selected
     if (this.selectedObjective) {
@@ -471,22 +482,23 @@ class SwarmUI {
   updateTasksList() {
     if (!this.selectedObjective) return;
 
-    const objectiveTasks = this.swarmData.tasks.filter(task => 
-      task.swarmId === this.selectedObjective.id
+    const objectiveTasks = this.swarmData.tasks.filter(
+      (task) => task.swarmId === this.selectedObjective.id,
     );
 
-    const taskItems = objectiveTasks.map(task => {
-      const statusIcon = {
-        'active': '🔄',
-        'completed': '✅',
-        'failed': '❌',
-        'pending': '⏳'
-      }[task.status] || '❓';
-      
-      return `${statusIcon} ${task.task?.type || 'Unknown'}: ${task.task?.description?.substring(0, 20) || 'No description'}...`;
+    const taskItems = objectiveTasks.map((task) => {
+      const statusIcon =
+        {
+          active: "🔄",
+          completed: "✅",
+          failed: "❌",
+          pending: "⏳",
+        }[task.status] || "❓";
+
+      return `${statusIcon} ${task.task?.type || "Unknown"}: ${task.task?.description?.substring(0, 20) || "No description"}...`;
     });
 
-    this.tasksList.setItems(taskItems.length > 0 ? taskItems : ['No tasks']);
+    this.tasksList.setItems(taskItems.length > 0 ? taskItems : ["No tasks"]);
     this.screen.render();
   }
 
@@ -494,14 +506,14 @@ class SwarmUI {
     const details = [
       `Task ID: ${task.agentId}`,
       `Swarm ID: ${task.swarmId}`,
-      `Type: ${task.task?.type || 'Unknown'}`,
-      `Description: ${task.task?.description || 'No description'}`,
-      `Status: ${task.status || 'Unknown'}`,
-      `Start Time: ${task.startTime || 'Not started'}`,
-      '',
-      'Task Data:',
-      JSON.stringify(task.task, null, 2)
-    ].join('\\n');
+      `Type: ${task.task?.type || "Unknown"}`,
+      `Description: ${task.task?.description || "No description"}`,
+      `Status: ${task.status || "Unknown"}`,
+      `Start Time: ${task.startTime || "Not started"}`,
+      "",
+      "Task Data:",
+      JSON.stringify(task.task, null, 2),
+    ].join("\\n");
 
     this.taskDetails.setContent(details);
     this.screen.render();
@@ -511,23 +523,23 @@ class SwarmUI {
     // Create a prompt box
     const promptBox = blessed.prompt({
       parent: this.screen,
-      top: 'center',
-      left: 'center',
+      top: "center",
+      left: "center",
       width: 60,
       height: 10,
-      label: ' Create New Objective ',
-      content: 'Enter objective description:',
+      label: " Create New Objective ",
+      content: "Enter objective description:",
       border: {
-        type: 'line'
+        type: "line",
       },
       style: {
         border: {
-          fg: 'cyan'
-        }
-      }
+          fg: "cyan",
+        },
+      },
     });
 
-    promptBox.input('Enter objective:', '', (err, value) => {
+    promptBox.input("Enter objective:", "", (err, value) => {
       if (!err && value) {
         this.createObjective(value);
       }
@@ -541,80 +553,78 @@ class SwarmUI {
   async createObjective(description) {
     try {
       this.log(`Creating objective: ${description}`);
-      
+
       // Execute swarm command
-      const args = ['swarm', description, '--ui', '--monitor'];
-      const process = spawn('claude-flow', args, {
+      const args = ["swarm", description, "--ui", "--monitor"];
+      const process = spawn("claude-flow", args, {
         detached: true,
-        stdio: 'ignore'
+        stdio: "ignore",
       });
 
       process.unref();
-      
+
       this.log(`Launched swarm with PID: ${process.pid}`);
-      
+
       // Update data after a delay
       setTimeout(() => {
         this.updateSwarmData();
       }, 2000);
-
     } catch (error) {
-      this.log(`Error creating objective: ${error.message}`, 'error');
+      this.log(`Error creating objective: ${error.message}`, "error");
     }
   }
 
   async stopSwarm() {
-    this.log('Stopping all swarm operations...');
-    
+    this.log("Stopping all swarm operations...");
+
     try {
       // Kill all swarm processes (simplified)
-      const { exec } = require('child_process');
+      const { exec } = require("child_process");
       exec('pkill -f "claude-flow swarm"', (error) => {
         if (error) {
-          this.log(`Error stopping swarm: ${error.message}`, 'error');
+          this.log(`Error stopping swarm: ${error.message}`, "error");
         } else {
-          this.log('Swarm operations stopped');
+          this.log("Swarm operations stopped");
         }
       });
 
       // Update display
-      this.swarmData.status = 'stopped';
+      this.swarmData.status = "stopped";
       this.updateDisplay();
-
     } catch (error) {
-      this.log(`Error stopping swarm: ${error.message}`, 'error');
+      this.log(`Error stopping swarm: ${error.message}`, "error");
     }
   }
 
   async executeCommand(command) {
     this.log(`Executing command: ${command}`);
-    
+
     try {
-      const { exec } = require('child_process');
+      const { exec } = require("child_process");
       exec(command, (error, stdout, stderr) => {
         if (error) {
-          this.log(`Command error: ${error.message}`, 'error');
+          this.log(`Command error: ${error.message}`, "error");
         } else {
           if (stdout) this.log(`Output: ${stdout.trim()}`);
-          if (stderr) this.log(`Error: ${stderr.trim()}`, 'warn');
+          if (stderr) this.log(`Error: ${stderr.trim()}`, "warn");
         }
       });
     } catch (error) {
-      this.log(`Failed to execute command: ${error.message}`, 'error');
+      this.log(`Failed to execute command: ${error.message}`, "error");
     }
   }
 
-  log(message, level = 'info') {
+  log(message, level = "info") {
     const timestamp = new Date().toLocaleTimeString();
     const levelColors = {
-      info: 'white',
-      warn: 'yellow',
-      error: 'red',
-      success: 'green'
+      info: "white",
+      warn: "yellow",
+      error: "red",
+      success: "green",
     };
-    
-    const coloredMessage = `{${levelColors[level] || 'white'}-fg}[${timestamp}] ${message}{/}`;
-    
+
+    const coloredMessage = `{${levelColors[level] || "white"}-fg}[${timestamp}] ${message}{/}`;
+
     this.logBuffer.push(coloredMessage);
     if (this.logBuffer.length > this.maxLogLines) {
       this.logBuffer.shift();
@@ -636,23 +646,23 @@ class SwarmUI {
 // Main execution
 async function main() {
   const ui = new SwarmUI();
-  
+
   try {
     await ui.init();
   } catch (error) {
-    console.error('Failed to initialize Swarm UI:', error);
+    console.error("Failed to initialize Swarm UI:", error);
     process.exit(1);
   }
 }
 
 // Handle uncaught exceptions
-process.on('uncaughtException', (error) => {
-  console.error('Uncaught exception:', error);
+process.on("uncaughtException", (error) => {
+  console.error("Uncaught exception:", error);
   process.exit(1);
 });
 
-process.on('unhandledRejection', (error) => {
-  console.error('Unhandled rejection:', error);
+process.on("unhandledRejection", (error) => {
+  console.error("Unhandled rejection:", error);
   process.exit(1);
 });
 

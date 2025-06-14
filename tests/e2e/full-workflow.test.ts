@@ -12,17 +12,17 @@ import {
   assertExists,
   assertStringIncludes,
   spy,
-} from '../test.utils.ts';
-import { cleanupTestEnv, setupTestEnv } from '../test.config.ts';
-import { delay, generateId } from '../../src/utils/helpers.ts';
+} from "../test.utils.ts";
+import { cleanupTestEnv, setupTestEnv } from "../test.config.ts";
+import { delay, generateId } from "../../src/utils/helpers.ts";
 
-describe('E2E Full Workflow', () => {
+describe("E2E Full Workflow", () => {
   let testDir: string;
   let configPath: string;
 
   beforeEach(async () => {
     setupTestEnv();
-    testDir = await Deno.makeTempDir({ prefix: 'claude-flow-workflow-' });
+    testDir = await Deno.makeTempDir({ prefix: "claude-flow-workflow-" });
     configPath = `${testDir}/workflow-config.json`;
 
     // Create a test configuration
@@ -38,17 +38,17 @@ describe('E2E Full Workflow', () => {
         taskMaxRetries: 2,
       },
       terminal: {
-        type: 'native',
+        type: "native",
         poolSize: 3,
         recycleAfter: 10,
         healthCheckInterval: 5000,
         commandTimeout: 10000,
       },
       memory: {
-        backend: 'sqlite',
+        backend: "sqlite",
         cacheSizeMB: 50,
         syncInterval: 2000,
-        conflictResolution: 'last-write',
+        conflictResolution: "last-write",
         retentionDays: 7,
       },
       coordination: {
@@ -59,12 +59,12 @@ describe('E2E Full Workflow', () => {
         messageTimeout: 3000,
       },
       mcp: {
-        transport: 'stdio',
+        transport: "stdio",
       },
       logging: {
-        level: 'info',
-        format: 'text',
-        destination: 'console',
+        level: "info",
+        format: "text",
+        destination: "console",
       },
     };
 
@@ -80,16 +80,20 @@ describe('E2E Full Workflow', () => {
     await cleanupTestEnv();
   });
 
-  describe('research and implementation workflow', () => {
-    it('should execute complete research-to-implementation pipeline', async () => {
+  describe("research and implementation workflow", () => {
+    it("should execute complete research-to-implementation pipeline", async () => {
       // Step 1: Initialize configuration
       const configCommand = new Deno.Command(Deno.execPath(), {
         args: [
-          'run', '--allow-all', 'src/cli/index.ts',
-          'config', 'validate', configPath,
+          "run",
+          "--allow-all",
+          "src/cli/index.ts",
+          "config",
+          "validate",
+          configPath,
         ],
-        stdout: 'piped',
-        stderr: 'piped',
+        stdout: "piped",
+        stderr: "piped",
         cwd: Deno.cwd(),
       });
 
@@ -99,19 +103,22 @@ describe('E2E Full Workflow', () => {
       // Step 2: Start system in background
       const startCommand = new Deno.Command(Deno.execPath(), {
         args: [
-          'run', '--allow-all', 'src/cli/index.ts',
-          'start',
-          '--config', configPath,
-          '--daemon',
-          '--test-mode',
+          "run",
+          "--allow-all",
+          "src/cli/index.ts",
+          "start",
+          "--config",
+          configPath,
+          "--daemon",
+          "--test-mode",
         ],
-        stdout: 'piped',
-        stderr: 'piped',
+        stdout: "piped",
+        stderr: "piped",
         cwd: Deno.cwd(),
       });
 
       const startProcess = startCommand.spawn();
-      
+
       // Give system time to start
       await delay(2000);
 
@@ -119,22 +126,32 @@ describe('E2E Full Workflow', () => {
         // Step 3: Create research agent
         const researcherCommand = new Deno.Command(Deno.execPath(), {
           args: [
-            'run', '--allow-all', 'src/cli/index.ts',
-            'agent', 'spawn', 'researcher',
-            '--name', 'Research Specialist',
-            '--capabilities', 'web-search,analysis,documentation',
-            '--priority', '1',
-            '--max-tasks', '2',
-            '--config', configPath,
+            "run",
+            "--allow-all",
+            "src/cli/index.ts",
+            "agent",
+            "spawn",
+            "researcher",
+            "--name",
+            "Research Specialist",
+            "--capabilities",
+            "web-search,analysis,documentation",
+            "--priority",
+            "1",
+            "--max-tasks",
+            "2",
+            "--config",
+            configPath,
           ],
-          stdout: 'piped',
-          stderr: 'piped',
+          stdout: "piped",
+          stderr: "piped",
           cwd: Deno.cwd(),
         });
 
-        const { code: researcherCode, stdout: researcherOutput } = await researcherCommand.output();
+        const { code: researcherCode, stdout: researcherOutput } =
+          await researcherCommand.output();
         assertEquals(researcherCode, 0);
-        
+
         const researcherResult = new TextDecoder().decode(researcherOutput);
         const researcherMatch = researcherResult.match(/"id":\s*"([^"]+)"/);
         assertExists(researcherMatch);
@@ -143,22 +160,32 @@ describe('E2E Full Workflow', () => {
         // Step 4: Create implementer agent
         const implementerCommand = new Deno.Command(Deno.execPath(), {
           args: [
-            'run', '--allow-all', 'src/cli/index.ts',
-            'agent', 'spawn', 'implementer',
-            '--name', 'Implementation Specialist',
-            '--capabilities', 'coding,terminal,testing',
-            '--priority', '2',
-            '--max-tasks', '3',
-            '--config', configPath,
+            "run",
+            "--allow-all",
+            "src/cli/index.ts",
+            "agent",
+            "spawn",
+            "implementer",
+            "--name",
+            "Implementation Specialist",
+            "--capabilities",
+            "coding,terminal,testing",
+            "--priority",
+            "2",
+            "--max-tasks",
+            "3",
+            "--config",
+            configPath,
           ],
-          stdout: 'piped',
-          stderr: 'piped',
+          stdout: "piped",
+          stderr: "piped",
           cwd: Deno.cwd(),
         });
 
-        const { code: implementerCode, stdout: implementerOutput } = await implementerCommand.output();
+        const { code: implementerCode, stdout: implementerOutput } =
+          await implementerCommand.output();
         assertEquals(implementerCode, 0);
-        
+
         const implementerResult = new TextDecoder().decode(implementerOutput);
         const implementerMatch = implementerResult.match(/"id":\s*"([^"]+)"/);
         assertExists(implementerMatch);
@@ -167,26 +194,35 @@ describe('E2E Full Workflow', () => {
         // Step 5: Create research task
         const researchTaskCommand = new Deno.Command(Deno.execPath(), {
           args: [
-            'run', '--allow-all', 'src/cli/index.ts',
-            'task', 'create', 'research',
-            'Research best practices for Deno TypeScript applications',
-            '--priority', '10',
-            '--agent-id', researcherId,
-            '--metadata', JSON.stringify({
-              topic: 'Deno TypeScript best practices',
-              depth: 'comprehensive',
-              output_format: 'structured_report',
+            "run",
+            "--allow-all",
+            "src/cli/index.ts",
+            "task",
+            "create",
+            "research",
+            "Research best practices for Deno TypeScript applications",
+            "--priority",
+            "10",
+            "--agent-id",
+            researcherId,
+            "--metadata",
+            JSON.stringify({
+              topic: "Deno TypeScript best practices",
+              depth: "comprehensive",
+              output_format: "structured_report",
             }),
-            '--config', configPath,
+            "--config",
+            configPath,
           ],
-          stdout: 'piped',
-          stderr: 'piped',
+          stdout: "piped",
+          stderr: "piped",
           cwd: Deno.cwd(),
         });
 
-        const { code: researchTaskCode, stdout: researchTaskOutput } = await researchTaskCommand.output();
+        const { code: researchTaskCode, stdout: researchTaskOutput } =
+          await researchTaskCommand.output();
         assertEquals(researchTaskCode, 0);
-        
+
         const researchTaskResult = new TextDecoder().decode(researchTaskOutput);
         const researchTaskMatch = researchTaskResult.match(/"id":\s*"([^"]+)"/);
         assertExists(researchTaskMatch);
@@ -195,46 +231,65 @@ describe('E2E Full Workflow', () => {
         // Step 6: Create implementation task (depends on research)
         const implementTaskCommand = new Deno.Command(Deno.execPath(), {
           args: [
-            'run', '--allow-all', 'src/cli/index.ts',
-            'task', 'create', 'implementation',
-            'Implement Deno application based on research findings',
-            '--priority', '8',
-            '--dependencies', researchTaskId,
-            '--agent-id', implementerId,
-            '--metadata', JSON.stringify({
-              language: 'TypeScript',
-              framework: 'Deno',
+            "run",
+            "--allow-all",
+            "src/cli/index.ts",
+            "task",
+            "create",
+            "implementation",
+            "Implement Deno application based on research findings",
+            "--priority",
+            "8",
+            "--dependencies",
+            researchTaskId,
+            "--agent-id",
+            implementerId,
+            "--metadata",
+            JSON.stringify({
+              language: "TypeScript",
+              framework: "Deno",
               testing_required: true,
               research_task: researchTaskId,
             }),
-            '--config', configPath,
+            "--config",
+            configPath,
           ],
-          stdout: 'piped',
-          stderr: 'piped',
+          stdout: "piped",
+          stderr: "piped",
           cwd: Deno.cwd(),
         });
 
-        const { code: implementTaskCode, stdout: implementTaskOutput } = await implementTaskCommand.output();
+        const { code: implementTaskCode, stdout: implementTaskOutput } =
+          await implementTaskCommand.output();
         assertEquals(implementTaskCode, 0);
-        
-        const implementTaskResult = new TextDecoder().decode(implementTaskOutput);
-        const implementTaskMatch = implementTaskResult.match(/"id":\s*"([^"]+)"/);
+
+        const implementTaskResult = new TextDecoder().decode(
+          implementTaskOutput,
+        );
+        const implementTaskMatch =
+          implementTaskResult.match(/"id":\s*"([^"]+)"/);
         assertExists(implementTaskMatch);
         const implementTaskId = implementTaskMatch[1];
 
         // Step 7: Execute research task
         const executeResearchCommand = new Deno.Command(Deno.execPath(), {
           args: [
-            'run', '--allow-all', 'src/cli/index.ts',
-            'task', 'execute', researchTaskId,
-            '--config', configPath,
+            "run",
+            "--allow-all",
+            "src/cli/index.ts",
+            "task",
+            "execute",
+            researchTaskId,
+            "--config",
+            configPath,
           ],
-          stdout: 'piped',
-          stderr: 'piped',
+          stdout: "piped",
+          stderr: "piped",
           cwd: Deno.cwd(),
         });
 
-        const { code: executeResearchCode } = await executeResearchCommand.output();
+        const { code: executeResearchCode } =
+          await executeResearchCommand.output();
         assertEquals(executeResearchCode, 0);
 
         // Step 8: Wait for research task to complete, then execute implementation
@@ -242,48 +297,67 @@ describe('E2E Full Workflow', () => {
 
         const executeImplementCommand = new Deno.Command(Deno.execPath(), {
           args: [
-            'run', '--allow-all', 'src/cli/index.ts',
-            'task', 'execute', implementTaskId,
-            '--config', configPath,
+            "run",
+            "--allow-all",
+            "src/cli/index.ts",
+            "task",
+            "execute",
+            implementTaskId,
+            "--config",
+            configPath,
           ],
-          stdout: 'piped',
-          stderr: 'piped',
+          stdout: "piped",
+          stderr: "piped",
           cwd: Deno.cwd(),
         });
 
-        const { code: executeImplementCode } = await executeImplementCommand.output();
+        const { code: executeImplementCode } =
+          await executeImplementCommand.output();
         assertEquals(executeImplementCode, 0);
 
         // Step 9: Check task statuses
         const researchStatusCommand = new Deno.Command(Deno.execPath(), {
           args: [
-            'run', '--allow-all', 'src/cli/index.ts',
-            'task', 'status', researchTaskId,
-            '--config', configPath,
+            "run",
+            "--allow-all",
+            "src/cli/index.ts",
+            "task",
+            "status",
+            researchTaskId,
+            "--config",
+            configPath,
           ],
-          stdout: 'piped',
-          stderr: 'piped',
+          stdout: "piped",
+          stderr: "piped",
           cwd: Deno.cwd(),
         });
 
-        const { code: researchStatusCode, stdout: researchStatusOutput } = await researchStatusCommand.output();
+        const { code: researchStatusCode, stdout: researchStatusOutput } =
+          await researchStatusCommand.output();
         assertEquals(researchStatusCode, 0);
-        
+
         const researchStatus = new TextDecoder().decode(researchStatusOutput);
         assertStringIncludes(researchStatus, researchTaskId);
 
         // Step 10: Query memory for stored results
         const memoryQueryCommand = new Deno.Command(Deno.execPath(), {
           args: [
-            'run', '--allow-all', 'src/cli/index.ts',
-            'memory', 'query',
-            '--agent-id', researcherId,
-            '--type', 'insight',
-            '--limit', '5',
-            '--config', configPath,
+            "run",
+            "--allow-all",
+            "src/cli/index.ts",
+            "memory",
+            "query",
+            "--agent-id",
+            researcherId,
+            "--type",
+            "insight",
+            "--limit",
+            "5",
+            "--config",
+            configPath,
           ],
-          stdout: 'piped',
-          stderr: 'piped',
+          stdout: "piped",
+          stderr: "piped",
           cwd: Deno.cwd(),
         });
 
@@ -293,30 +367,38 @@ describe('E2E Full Workflow', () => {
         // Step 11: Check system status
         const statusCommand = new Deno.Command(Deno.execPath(), {
           args: [
-            'run', '--allow-all', 'src/cli/index.ts',
-            'status',
-            '--config', configPath,
+            "run",
+            "--allow-all",
+            "src/cli/index.ts",
+            "status",
+            "--config",
+            configPath,
           ],
-          stdout: 'piped',
-          stderr: 'piped',
+          stdout: "piped",
+          stderr: "piped",
           cwd: Deno.cwd(),
         });
 
-        const { code: statusCode, stdout: statusOutput } = await statusCommand.output();
+        const { code: statusCode, stdout: statusOutput } =
+          await statusCommand.output();
         assertEquals(statusCode, 0);
-        
+
         const statusResult = new TextDecoder().decode(statusOutput);
-        assertStringIncludes(statusResult, 'System Status');
+        assertStringIncludes(statusResult, "System Status");
 
         // Step 12: List all agents and tasks
         const listAgentsCommand = new Deno.Command(Deno.execPath(), {
           args: [
-            'run', '--allow-all', 'src/cli/index.ts',
-            'agent', 'list',
-            '--config', configPath,
+            "run",
+            "--allow-all",
+            "src/cli/index.ts",
+            "agent",
+            "list",
+            "--config",
+            configPath,
           ],
-          stdout: 'piped',
-          stderr: 'piped',
+          stdout: "piped",
+          stderr: "piped",
           cwd: Deno.cwd(),
         });
 
@@ -325,33 +407,39 @@ describe('E2E Full Workflow', () => {
 
         const listTasksCommand = new Deno.Command(Deno.execPath(), {
           args: [
-            'run', '--allow-all', 'src/cli/index.ts',
-            'task', 'list',
-            '--config', configPath,
+            "run",
+            "--allow-all",
+            "src/cli/index.ts",
+            "task",
+            "list",
+            "--config",
+            configPath,
           ],
-          stdout: 'piped',
-          stderr: 'piped',
+          stdout: "piped",
+          stderr: "piped",
           cwd: Deno.cwd(),
         });
 
         const { code: listTasksCode } = await listTasksCommand.output();
         assertEquals(listTasksCode, 0);
-
       } finally {
         // Step 13: Shutdown system
         const shutdownCommand = new Deno.Command(Deno.execPath(), {
           args: [
-            'run', '--allow-all', 'src/cli/index.ts',
-            'shutdown',
-            '--config', configPath,
+            "run",
+            "--allow-all",
+            "src/cli/index.ts",
+            "shutdown",
+            "--config",
+            configPath,
           ],
-          stdout: 'piped',
-          stderr: 'piped',
+          stdout: "piped",
+          stderr: "piped",
           cwd: Deno.cwd(),
         });
 
         await shutdownCommand.output();
-        
+
         // Cleanup start process
         try {
           startProcess.kill();
@@ -361,18 +449,21 @@ describe('E2E Full Workflow', () => {
       }
     });
 
-    it('should handle multi-agent coordination workflow', async () => {
+    it("should handle multi-agent coordination workflow", async () => {
       // Start system
       const startCommand = new Deno.Command(Deno.execPath(), {
         args: [
-          'run', '--allow-all', 'src/cli/index.ts',
-          'start',
-          '--config', configPath,
-          '--daemon',
-          '--test-mode',
+          "run",
+          "--allow-all",
+          "src/cli/index.ts",
+          "start",
+          "--config",
+          configPath,
+          "--daemon",
+          "--test-mode",
         ],
-        stdout: 'piped',
-        stderr: 'piped',
+        stdout: "piped",
+        stderr: "piped",
         cwd: Deno.cwd(),
       });
 
@@ -383,16 +474,25 @@ describe('E2E Full Workflow', () => {
         // Create coordinator agent
         const coordinatorCommand = new Deno.Command(Deno.execPath(), {
           args: [
-            'run', '--allow-all', 'src/cli/index.ts',
-            'agent', 'spawn', 'coordinator',
-            '--name', 'Project Coordinator',
-            '--capabilities', 'planning,coordination,messaging',
-            '--priority', '1',
-            '--max-tasks', '5',
-            '--config', configPath,
+            "run",
+            "--allow-all",
+            "src/cli/index.ts",
+            "agent",
+            "spawn",
+            "coordinator",
+            "--name",
+            "Project Coordinator",
+            "--capabilities",
+            "planning,coordination,messaging",
+            "--priority",
+            "1",
+            "--max-tasks",
+            "5",
+            "--config",
+            configPath,
           ],
-          stdout: 'piped',
-          stderr: 'piped',
+          stdout: "piped",
+          stderr: "piped",
           cwd: Deno.cwd(),
         });
 
@@ -406,16 +506,25 @@ describe('E2E Full Workflow', () => {
         for (let i = 1; i <= 3; i++) {
           const workerCommand = new Deno.Command(Deno.execPath(), {
             args: [
-              'run', '--allow-all', 'src/cli/index.ts',
-              'agent', 'spawn', 'implementer',
-              '--name', `Worker Agent ${i}`,
-              '--capabilities', 'execution,processing,reporting',
-              '--priority', '3',
-              '--max-tasks', '2',
-              '--config', configPath,
+              "run",
+              "--allow-all",
+              "src/cli/index.ts",
+              "agent",
+              "spawn",
+              "implementer",
+              "--name",
+              `Worker Agent ${i}`,
+              "--capabilities",
+              "execution,processing,reporting",
+              "--priority",
+              "3",
+              "--max-tasks",
+              "2",
+              "--config",
+              configPath,
             ],
-            stdout: 'piped',
-            stderr: 'piped',
+            stdout: "piped",
+            stderr: "piped",
             cwd: Deno.cwd(),
           });
 
@@ -429,26 +538,38 @@ describe('E2E Full Workflow', () => {
         // Create coordination task
         const coordinationTaskCommand = new Deno.Command(Deno.execPath(), {
           args: [
-            'run', '--allow-all', 'src/cli/index.ts',
-            'task', 'create', 'coordination',
-            'Coordinate work distribution among worker agents',
-            '--priority', '10',
-            '--agent-id', coordinatorId,
-            '--metadata', JSON.stringify({
+            "run",
+            "--allow-all",
+            "src/cli/index.ts",
+            "task",
+            "create",
+            "coordination",
+            "Coordinate work distribution among worker agents",
+            "--priority",
+            "10",
+            "--agent-id",
+            coordinatorId,
+            "--metadata",
+            JSON.stringify({
               worker_agents: workerIds,
-              work_type: 'data_processing',
-              coordination_strategy: 'load_balanced',
+              work_type: "data_processing",
+              coordination_strategy: "load_balanced",
             }),
-            '--config', configPath,
+            "--config",
+            configPath,
           ],
-          stdout: 'piped',
-          stderr: 'piped',
+          stdout: "piped",
+          stderr: "piped",
           cwd: Deno.cwd(),
         });
 
-        const { stdout: coordinationTaskOutput } = await coordinationTaskCommand.output();
-        const coordinationTaskResult = new TextDecoder().decode(coordinationTaskOutput);
-        const coordinationTaskId = coordinationTaskResult.match(/"id":\s*"([^"]+)"/)?.[1];
+        const { stdout: coordinationTaskOutput } =
+          await coordinationTaskCommand.output();
+        const coordinationTaskResult = new TextDecoder().decode(
+          coordinationTaskOutput,
+        );
+        const coordinationTaskId =
+          coordinationTaskResult.match(/"id":\s*"([^"]+)"/)?.[1];
         assertExists(coordinationTaskId);
 
         // Create worker tasks
@@ -456,21 +577,30 @@ describe('E2E Full Workflow', () => {
         for (let i = 0; i < workerIds.length; i++) {
           const workerTaskCommand = new Deno.Command(Deno.execPath(), {
             args: [
-              'run', '--allow-all', 'src/cli/index.ts',
-              'task', 'create', 'processing',
+              "run",
+              "--allow-all",
+              "src/cli/index.ts",
+              "task",
+              "create",
+              "processing",
               `Process data chunk ${i + 1}`,
-              '--priority', '5',
-              '--dependencies', coordinationTaskId,
-              '--agent-id', workerIds[i],
-              '--metadata', JSON.stringify({
+              "--priority",
+              "5",
+              "--dependencies",
+              coordinationTaskId,
+              "--agent-id",
+              workerIds[i],
+              "--metadata",
+              JSON.stringify({
                 chunk_id: i + 1,
                 coordinator_task: coordinationTaskId,
-                processing_type: 'data_analysis',
+                processing_type: "data_analysis",
               }),
-              '--config', configPath,
+              "--config",
+              configPath,
             ],
-            stdout: 'piped',
-            stderr: 'piped',
+            stdout: "piped",
+            stderr: "piped",
             cwd: Deno.cwd(),
           });
 
@@ -484,27 +614,37 @@ describe('E2E Full Workflow', () => {
         // Execute coordination task
         const executeCoordinationCommand = new Deno.Command(Deno.execPath(), {
           args: [
-            'run', '--allow-all', 'src/cli/index.ts',
-            'task', 'execute', coordinationTaskId,
-            '--config', configPath,
+            "run",
+            "--allow-all",
+            "src/cli/index.ts",
+            "task",
+            "execute",
+            coordinationTaskId,
+            "--config",
+            configPath,
           ],
-          stdout: 'piped',
-          stderr: 'piped',
+          stdout: "piped",
+          stderr: "piped",
           cwd: Deno.cwd(),
         });
 
         await executeCoordinationCommand.output();
 
         // Execute worker tasks concurrently
-        const workerExecutions = workerTaskIds.map(taskId => {
+        const workerExecutions = workerTaskIds.map((taskId) => {
           const executeWorkerCommand = new Deno.Command(Deno.execPath(), {
             args: [
-              'run', '--allow-all', 'src/cli/index.ts',
-              'task', 'execute', taskId,
-              '--config', configPath,
+              "run",
+              "--allow-all",
+              "src/cli/index.ts",
+              "task",
+              "execute",
+              taskId,
+              "--config",
+              configPath,
             ],
-            stdout: 'piped',
-            stderr: 'piped',
+            stdout: "piped",
+            stderr: "piped",
             cwd: Deno.cwd(),
           });
 
@@ -517,12 +657,17 @@ describe('E2E Full Workflow', () => {
         for (const taskId of [coordinationTaskId, ...workerTaskIds]) {
           const statusCommand = new Deno.Command(Deno.execPath(), {
             args: [
-              'run', '--allow-all', 'src/cli/index.ts',
-              'task', 'status', taskId,
-              '--config', configPath,
+              "run",
+              "--allow-all",
+              "src/cli/index.ts",
+              "task",
+              "status",
+              taskId,
+              "--config",
+              configPath,
             ],
-            stdout: 'piped',
-            stderr: 'piped',
+            stdout: "piped",
+            stderr: "piped",
             cwd: Deno.cwd(),
           });
 
@@ -533,36 +678,45 @@ describe('E2E Full Workflow', () => {
         // Check memory for coordination events
         const coordinationMemoryCommand = new Deno.Command(Deno.execPath(), {
           args: [
-            'run', '--allow-all', 'src/cli/index.ts',
-            'memory', 'query',
-            '--agent-id', coordinatorId,
-            '--tags', 'coordination',
-            '--limit', '10',
-            '--config', configPath,
+            "run",
+            "--allow-all",
+            "src/cli/index.ts",
+            "memory",
+            "query",
+            "--agent-id",
+            coordinatorId,
+            "--tags",
+            "coordination",
+            "--limit",
+            "10",
+            "--config",
+            configPath,
           ],
-          stdout: 'piped',
-          stderr: 'piped',
+          stdout: "piped",
+          stderr: "piped",
           cwd: Deno.cwd(),
         });
 
         const { code: memoryCode } = await coordinationMemoryCommand.output();
         assertEquals(memoryCode, 0);
-
       } finally {
         // Shutdown system
         const shutdownCommand = new Deno.Command(Deno.execPath(), {
           args: [
-            'run', '--allow-all', 'src/cli/index.ts',
-            'shutdown',
-            '--config', configPath,
+            "run",
+            "--allow-all",
+            "src/cli/index.ts",
+            "shutdown",
+            "--config",
+            configPath,
           ],
-          stdout: 'piped',
-          stderr: 'piped',
+          stdout: "piped",
+          stderr: "piped",
           cwd: Deno.cwd(),
         });
 
         await shutdownCommand.output();
-        
+
         try {
           startProcess.kill();
         } catch {
@@ -571,18 +725,21 @@ describe('E2E Full Workflow', () => {
       }
     });
 
-    it('should handle error recovery and retry workflow', async () => {
+    it("should handle error recovery and retry workflow", async () => {
       // Start system
       const startCommand = new Deno.Command(Deno.execPath(), {
         args: [
-          'run', '--allow-all', 'src/cli/index.ts',
-          'start',
-          '--config', configPath,
-          '--daemon',
-          '--test-mode',
+          "run",
+          "--allow-all",
+          "src/cli/index.ts",
+          "start",
+          "--config",
+          configPath,
+          "--daemon",
+          "--test-mode",
         ],
-        stdout: 'piped',
-        stderr: 'piped',
+        stdout: "piped",
+        stderr: "piped",
         cwd: Deno.cwd(),
       });
 
@@ -593,16 +750,25 @@ describe('E2E Full Workflow', () => {
         // Create resilient agent
         const resilientAgentCommand = new Deno.Command(Deno.execPath(), {
           args: [
-            'run', '--allow-all', 'src/cli/index.ts',
-            'agent', 'spawn', 'implementer',
-            '--name', 'Resilient Agent',
-            '--capabilities', 'error-handling,recovery,terminal',
-            '--priority', '1',
-            '--max-tasks', '3',
-            '--config', configPath,
+            "run",
+            "--allow-all",
+            "src/cli/index.ts",
+            "agent",
+            "spawn",
+            "implementer",
+            "--name",
+            "Resilient Agent",
+            "--capabilities",
+            "error-handling,recovery,terminal",
+            "--priority",
+            "1",
+            "--max-tasks",
+            "3",
+            "--config",
+            configPath,
           ],
-          stdout: 'piped',
-          stderr: 'piped',
+          stdout: "piped",
+          stderr: "piped",
           cwd: Deno.cwd(),
         });
 
@@ -614,21 +780,29 @@ describe('E2E Full Workflow', () => {
         // Create task that may fail initially
         const unreliableTaskCommand = new Deno.Command(Deno.execPath(), {
           args: [
-            'run', '--allow-all', 'src/cli/index.ts',
-            'task', 'create', 'shell-command',
-            'Execute potentially failing command',
-            '--priority', '8',
-            '--agent-id', agentId,
-            '--metadata', JSON.stringify({
-              command: 'exit 1', // Command that fails
+            "run",
+            "--allow-all",
+            "src/cli/index.ts",
+            "task",
+            "create",
+            "shell-command",
+            "Execute potentially failing command",
+            "--priority",
+            "8",
+            "--agent-id",
+            agentId,
+            "--metadata",
+            JSON.stringify({
+              command: "exit 1", // Command that fails
               max_retries: 3,
-              retry_strategy: 'exponential_backoff',
-              recovery_action: 'log_and_continue',
+              retry_strategy: "exponential_backoff",
+              recovery_action: "log_and_continue",
             }),
-            '--config', configPath,
+            "--config",
+            configPath,
           ],
-          stdout: 'piped',
-          stderr: 'piped',
+          stdout: "piped",
+          stderr: "piped",
           cwd: Deno.cwd(),
         });
 
@@ -640,12 +814,17 @@ describe('E2E Full Workflow', () => {
         // Execute unreliable task
         const executeTaskCommand = new Deno.Command(Deno.execPath(), {
           args: [
-            'run', '--allow-all', 'src/cli/index.ts',
-            'task', 'execute', taskId,
-            '--config', configPath,
+            "run",
+            "--allow-all",
+            "src/cli/index.ts",
+            "task",
+            "execute",
+            taskId,
+            "--config",
+            configPath,
           ],
-          stdout: 'piped',
-          stderr: 'piped',
+          stdout: "piped",
+          stderr: "piped",
           cwd: Deno.cwd(),
         });
 
@@ -656,12 +835,17 @@ describe('E2E Full Workflow', () => {
         // Check task status to see retry attempts
         const statusCommand = new Deno.Command(Deno.execPath(), {
           args: [
-            'run', '--allow-all', 'src/cli/index.ts',
-            'task', 'status', taskId,
-            '--config', configPath,
+            "run",
+            "--allow-all",
+            "src/cli/index.ts",
+            "task",
+            "status",
+            taskId,
+            "--config",
+            configPath,
           ],
-          stdout: 'piped',
-          stderr: 'piped',
+          stdout: "piped",
+          stderr: "piped",
           cwd: Deno.cwd(),
         });
 
@@ -671,19 +855,27 @@ describe('E2E Full Workflow', () => {
         // Create recovery task
         const recoveryTaskCommand = new Deno.Command(Deno.execPath(), {
           args: [
-            'run', '--allow-all', 'src/cli/index.ts',
-            'task', 'create', 'shell-command',
-            'Recovery validation task',
-            '--priority', '10',
-            '--agent-id', agentId,
-            '--metadata', JSON.stringify({
+            "run",
+            "--allow-all",
+            "src/cli/index.ts",
+            "task",
+            "create",
+            "shell-command",
+            "Recovery validation task",
+            "--priority",
+            "10",
+            "--agent-id",
+            agentId,
+            "--metadata",
+            JSON.stringify({
               command: 'echo "Recovery successful"',
               recovery_from: taskId,
             }),
-            '--config', configPath,
+            "--config",
+            configPath,
           ],
-          stdout: 'piped',
-          stderr: 'piped',
+          stdout: "piped",
+          stderr: "piped",
           cwd: Deno.cwd(),
         });
 
@@ -695,12 +887,17 @@ describe('E2E Full Workflow', () => {
         // Execute recovery task
         const executeRecoveryCommand = new Deno.Command(Deno.execPath(), {
           args: [
-            'run', '--allow-all', 'src/cli/index.ts',
-            'task', 'execute', recoveryTaskId,
-            '--config', configPath,
+            "run",
+            "--allow-all",
+            "src/cli/index.ts",
+            "task",
+            "execute",
+            recoveryTaskId,
+            "--config",
+            configPath,
           ],
-          stdout: 'piped',
-          stderr: 'piped',
+          stdout: "piped",
+          stderr: "piped",
           cwd: Deno.cwd(),
         });
 
@@ -710,33 +907,38 @@ describe('E2E Full Workflow', () => {
         // Check system health after error scenarios
         const healthCommand = new Deno.Command(Deno.execPath(), {
           args: [
-            'run', '--allow-all', 'src/cli/index.ts',
-            'status',
-            '--config', configPath,
+            "run",
+            "--allow-all",
+            "src/cli/index.ts",
+            "status",
+            "--config",
+            configPath,
           ],
-          stdout: 'piped',
-          stderr: 'piped',
+          stdout: "piped",
+          stderr: "piped",
           cwd: Deno.cwd(),
         });
 
         const { code: healthCode } = await healthCommand.output();
         assertEquals(healthCode, 0);
-
       } finally {
         // Shutdown system
         const shutdownCommand = new Deno.Command(Deno.execPath(), {
           args: [
-            'run', '--allow-all', 'src/cli/index.ts',
-            'shutdown',
-            '--config', configPath,
+            "run",
+            "--allow-all",
+            "src/cli/index.ts",
+            "shutdown",
+            "--config",
+            configPath,
           ],
-          stdout: 'piped',
-          stderr: 'piped',
+          stdout: "piped",
+          stderr: "piped",
           cwd: Deno.cwd(),
         });
 
         await shutdownCommand.output();
-        
+
         try {
           startProcess.kill();
         } catch {
@@ -746,8 +948,8 @@ describe('E2E Full Workflow', () => {
     });
   });
 
-  describe('performance and stress testing', () => {
-    it('should handle high-load scenarios', async () => {
+  describe("performance and stress testing", () => {
+    it("should handle high-load scenarios", async () => {
       // Start system with performance config
       const perfConfig = {
         ...JSON.parse(await Deno.readTextFile(configPath)),
@@ -759,7 +961,7 @@ describe('E2E Full Workflow', () => {
           metricsInterval: 2000,
         },
         terminal: {
-          type: 'native',
+          type: "native",
           poolSize: 8,
           recycleAfter: 20,
           healthCheckInterval: 2000,
@@ -768,18 +970,24 @@ describe('E2E Full Workflow', () => {
       };
 
       const perfConfigPath = `${testDir}/perf-config.json`;
-      await Deno.writeTextFile(perfConfigPath, JSON.stringify(perfConfig, null, 2));
+      await Deno.writeTextFile(
+        perfConfigPath,
+        JSON.stringify(perfConfig, null, 2),
+      );
 
       const startCommand = new Deno.Command(Deno.execPath(), {
         args: [
-          'run', '--allow-all', 'src/cli/index.ts',
-          'start',
-          '--config', perfConfigPath,
-          '--daemon',
-          '--test-mode',
+          "run",
+          "--allow-all",
+          "src/cli/index.ts",
+          "start",
+          "--config",
+          perfConfigPath,
+          "--daemon",
+          "--test-mode",
         ],
-        stdout: 'piped',
-        stderr: 'piped',
+        stdout: "piped",
+        stderr: "piped",
         cwd: Deno.cwd(),
       });
 
@@ -792,16 +1000,25 @@ describe('E2E Full Workflow', () => {
         for (let i = 1; i <= 5; i++) {
           const agentCommand = new Deno.Command(Deno.execPath(), {
             args: [
-              'run', '--allow-all', 'src/cli/index.ts',
-              'agent', 'spawn', 'implementer',
-              '--name', `Load Test Agent ${i}`,
-              '--capabilities', 'processing,computation',
-              '--priority', '2',
-              '--max-tasks', '4',
-              '--config', perfConfigPath,
+              "run",
+              "--allow-all",
+              "src/cli/index.ts",
+              "agent",
+              "spawn",
+              "implementer",
+              "--name",
+              `Load Test Agent ${i}`,
+              "--capabilities",
+              "processing,computation",
+              "--priority",
+              "2",
+              "--max-tasks",
+              "4",
+              "--config",
+              perfConfigPath,
             ],
-            stdout: 'piped',
-            stderr: 'piped',
+            stdout: "piped",
+            stderr: "piped",
             cwd: Deno.cwd(),
           });
 
@@ -817,20 +1034,28 @@ describe('E2E Full Workflow', () => {
         for (let i = 1; i <= 20; i++) {
           const taskCommand = new Deno.Command(Deno.execPath(), {
             args: [
-              'run', '--allow-all', 'src/cli/index.ts',
-              'task', 'create', 'shell-command',
+              "run",
+              "--allow-all",
+              "src/cli/index.ts",
+              "task",
+              "create",
+              "shell-command",
               `Load test task ${i}`,
-              '--priority', String(Math.floor(Math.random() * 10) + 1),
-              '--agent-id', agentIds[Math.floor(Math.random() * agentIds.length)],
-              '--metadata', JSON.stringify({
+              "--priority",
+              String(Math.floor(Math.random() * 10) + 1),
+              "--agent-id",
+              agentIds[Math.floor(Math.random() * agentIds.length)],
+              "--metadata",
+              JSON.stringify({
                 command: `echo "Task ${i} processing..." && sleep 0.1`,
                 load_test: true,
                 task_number: i,
               }),
-              '--config', perfConfigPath,
+              "--config",
+              perfConfigPath,
             ],
-            stdout: 'piped',
-            stderr: 'piped',
+            stdout: "piped",
+            stderr: "piped",
             cwd: Deno.cwd(),
           });
 
@@ -845,16 +1070,21 @@ describe('E2E Full Workflow', () => {
         const batchSize = 5;
         for (let i = 0; i < taskIds.length; i += batchSize) {
           const batch = taskIds.slice(i, i + batchSize);
-          
-          const batchExecutions = batch.map(taskId => {
+
+          const batchExecutions = batch.map((taskId) => {
             const executeCommand = new Deno.Command(Deno.execPath(), {
               args: [
-                'run', '--allow-all', 'src/cli/index.ts',
-                'task', 'execute', taskId,
-                '--config', perfConfigPath,
+                "run",
+                "--allow-all",
+                "src/cli/index.ts",
+                "task",
+                "execute",
+                taskId,
+                "--config",
+                perfConfigPath,
               ],
-              stdout: 'piped',
-              stderr: 'piped',
+              stdout: "piped",
+              stderr: "piped",
               cwd: Deno.cwd(),
             });
 
@@ -862,7 +1092,7 @@ describe('E2E Full Workflow', () => {
           });
 
           await Promise.all(batchExecutions);
-          
+
           // Brief pause between batches
           await delay(500);
         }
@@ -870,52 +1100,62 @@ describe('E2E Full Workflow', () => {
         // Check system metrics after load test
         const metricsCommand = new Deno.Command(Deno.execPath(), {
           args: [
-            'run', '--allow-all', 'src/cli/index.ts',
-            'status',
-            '--detailed',
-            '--config', perfConfigPath,
+            "run",
+            "--allow-all",
+            "src/cli/index.ts",
+            "status",
+            "--detailed",
+            "--config",
+            perfConfigPath,
           ],
-          stdout: 'piped',
-          stderr: 'piped',
+          stdout: "piped",
+          stderr: "piped",
           cwd: Deno.cwd(),
         });
 
-        const { code: metricsCode, stdout: metricsOutput } = await metricsCommand.output();
+        const { code: metricsCode, stdout: metricsOutput } =
+          await metricsCommand.output();
         assertEquals(metricsCode, 0);
-        
+
         const metricsResult = new TextDecoder().decode(metricsOutput);
-        assertStringIncludes(metricsResult, 'System Status');
+        assertStringIncludes(metricsResult, "System Status");
 
         // Verify memory usage for completed tasks
         const memoryStatsCommand = new Deno.Command(Deno.execPath(), {
           args: [
-            'run', '--allow-all', 'src/cli/index.ts',
-            'memory', 'stats',
-            '--config', perfConfigPath,
+            "run",
+            "--allow-all",
+            "src/cli/index.ts",
+            "memory",
+            "stats",
+            "--config",
+            perfConfigPath,
           ],
-          stdout: 'piped',
-          stderr: 'piped',
+          stdout: "piped",
+          stderr: "piped",
           cwd: Deno.cwd(),
         });
 
         const { code: memoryStatsCode } = await memoryStatsCommand.output();
         assertEquals(memoryStatsCode, 0);
-
       } finally {
         // Shutdown system
         const shutdownCommand = new Deno.Command(Deno.execPath(), {
           args: [
-            'run', '--allow-all', 'src/cli/index.ts',
-            'shutdown',
-            '--config', perfConfigPath,
+            "run",
+            "--allow-all",
+            "src/cli/index.ts",
+            "shutdown",
+            "--config",
+            perfConfigPath,
           ],
-          stdout: 'piped',
-          stderr: 'piped',
+          stdout: "piped",
+          stderr: "piped",
           cwd: Deno.cwd(),
         });
 
         await shutdownCommand.output();
-        
+
         try {
           startProcess.kill();
         } catch {

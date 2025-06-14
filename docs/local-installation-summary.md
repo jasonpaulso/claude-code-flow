@@ -3,12 +3,14 @@
 ## What We've Done
 
 1. **Removed all Docker-related files**:
+
    - 6 Dockerfiles
    - docker-compose.yml
    - Docker configuration files
    - Docker scripts and documentation
 
 2. **Created clear installation documentation**:
+
    - `docs/installation.md` - Comprehensive installation guide
    - `BUILD.md` - Build instructions for developers
    - Updated README.md with local installation instructions
@@ -24,6 +26,7 @@
 ## How It Works
 
 The `npm link` command:
+
 1. Creates a symlink from the global node_modules to your local project
 2. Makes `claude-flow` available as a global command
 3. Points to `bin/claude-flow-launcher` which wraps Deno execution
@@ -47,6 +50,7 @@ claude-flow swarm new "Build feature X"
 ```
 
 The tool has direct access to:
+
 - Your project files
 - Local CLAUDE.md configuration
 - Memory persistence

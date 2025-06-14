@@ -1,5 +1,8 @@
 // security-review.js - Security Reviewer mode orchestration template
-export function getSecurityReviewOrchestration(taskDescription, memoryNamespace) {
+export function getSecurityReviewOrchestration(
+  taskDescription,
+  memoryNamespace,
+) {
   return `
 ## Task Orchestration Steps
 

@@ -1,12 +1,15 @@
 # Claude-Flow Build, Installation, and Swarm Command Issues Report
 
 ## Date: June 13, 2025
+
 ## Investigated by: Claude
+
 ## Updated: June 13, 2025 - Fixed swarm command issues
 
 ## Executive Summary
 
 Claude-Flow has two distinct categories of issues:
+
 1. **Build/Installation Issues**: The project cannot be built into a standalone binary due to Deno compilation errors
 2. **Swarm Command Issues**: The `claude-flow swarm` command is non-functional due to incomplete implementation and configuration errors
 
@@ -26,8 +29,8 @@ Per the [Getting Started Guide](./docs/01-getting-started.md), there are three r
    ```bash
    npm install -g claude-flow
    ```
-   
 2. **Deno Installation from URL**
+
    ```bash
    deno install --allow-all --name claude-flow https://raw.githubusercontent.com/ruvnet/claude-code-flow/main/src/cli/index.ts
    ```
@@ -42,15 +45,16 @@ Per the [Getting Started Guide](./docs/01-getting-started.md), there are three r
 ### Build Error Encountered
 
 **Command**: `deno task build`  
-**Initial Error**: 
+**Initial Error**:
+
 ```
 error: Writing deno compile executable to temporary file 'bin/claude-flow.tmp-110b4d42535eb313'
 
 Caused by:
     Import assertions are deprecated. Use `with` keyword, instead of 'assert' keyword.
-    
+
     import data from "./_data.json" assert { type: "json" };
-    
+
       at https://deno.land/std@0.196.0/console/unicode_width.ts:4:1
 ```
 
@@ -62,6 +66,7 @@ Caused by:
 2. **Cleared dependency cache** and reloaded: `rm deno.lock && deno cache --reload src/cli/main.ts`
 
 **Result**: Moved past the import assertion error but encountered:
+
 ```
 thread 'tokio-runtime-worker' has overflowed its stack
 fatal runtime error: stack overflow
@@ -70,6 +75,7 @@ fatal runtime error: stack overflow
 ### Stack Overflow Analysis
 
 The stack overflow during `deno compile` suggests:
+
 - Circular dependencies in the module graph
 - Excessive recursion during compilation
 - Large codebase exceeding compiler limits
@@ -77,11 +83,13 @@ The stack overflow during `deno compile` suggests:
 ### Workaround Implemented
 
 Created a Node.js launcher (`bin/claude-flow-launcher`) that:
+
 1. Locates the installation directory
 2. Runs the TypeScript files directly with `deno run` instead of compiling
 3. Updated `package.json` to use the launcher
 
 This allows the project to run but sacrifices:
+
 - Startup performance (interpreter vs compiled binary)
 - Single file distribution
 - Offline execution capability
@@ -100,10 +108,13 @@ This allows the project to run but sacrifices:
 The error originated from incomplete MemoryManager instantiation in multiple locations:
 
 1. **SwarmCoordinator** (`src/coordination/swarm-coordinator.ts:105`):
+
    ```typescript
    // Original (incorrect)
-   this.memoryManager = new MemoryManager({ namespace: this.config.memoryNamespace });
-   
+   this.memoryManager = new MemoryManager({
+     namespace: this.config.memoryNamespace,
+   });
+
    // Missing required fields: backend, cacheSizeMB, syncInterval, conflictResolution, retentionDays
    ```
 
@@ -113,17 +124,18 @@ The error originated from incomplete MemoryManager instantiation in multiple loc
    this.baseMemory = new MemoryManager({
      namespace: this.config.namespace,
      enableBackup: true,
-     backupInterval: 300000
+     backupInterval: 300000,
    });
    ```
 
 The `MemoryConfig` interface (defined in `src/utils/types.ts:213`) requires:
+
 ```typescript
 export interface MemoryConfig {
-  backend: 'sqlite' | 'markdown' | 'hybrid';
+  backend: "sqlite" | "markdown" | "hybrid";
   cacheSizeMB: number;
   syncInterval: number;
-  conflictResolution: 'last-write' | 'crdt' | 'manual';
+  conflictResolution: "last-write" | "crdt" | "manual";
   retentionDays: number;
   sqlitePath?: string;
   markdownDir?: string;
@@ -133,11 +145,13 @@ export interface MemoryConfig {
 ### 2. Logger Constructor Misuse
 
 Multiple classes were incorrectly instantiating the Logger class:
+
 - SwarmCoordinator: `new Logger('SwarmCoordinator')`
 - SwarmMemoryManager: `new Logger('SwarmMemoryManager')`
 - BackgroundExecutor: `new Logger('BackgroundExecutor')`
 
 The Logger constructor expects:
+
 ```typescript
 constructor(
   config: LoggingConfig = { level: 'info', format: 'json', destination: 'console' },
@@ -148,6 +162,7 @@ constructor(
 ### 3. MemoryManager Constructor Signature
 
 The MemoryManager requires three parameters:
+
 ```typescript
 constructor(
   private config: MemoryConfig,
@@ -161,36 +176,47 @@ constructor(
 ### 1. Updated MemoryManager Instantiations
 
 **SwarmCoordinator** (`src/coordination/swarm-coordinator.ts`):
+
 ```typescript
-this.memoryManager = new MemoryManager({
-  backend: 'markdown',
-  cacheSizeMB: 100,
-  syncInterval: 30000,
-  conflictResolution: 'last-write',
-  retentionDays: 30,
-  markdownDir: `./swarm-runs/memory/${this.config.memoryNamespace}`
-}, this.eventBus, this.logger);
+this.memoryManager = new MemoryManager(
+  {
+    backend: "markdown",
+    cacheSizeMB: 100,
+    syncInterval: 30000,
+    conflictResolution: "last-write",
+    retentionDays: 30,
+    markdownDir: `./swarm-runs/memory/${this.config.memoryNamespace}`,
+  },
+  this.eventBus,
+  this.logger,
+);
 ```
 
 **SwarmMemoryManager** (`src/memory/swarm-memory.ts`):
+
 ```typescript
-this.baseMemory = new MemoryManager({
-  backend: 'markdown',
-  cacheSizeMB: 100,
-  syncInterval: 30000,
-  conflictResolution: 'last-write',
-  retentionDays: 30,
-  markdownDir: path.join(this.config.persistencePath, 'entries')
-}, this.eventBus, this.logger);
+this.baseMemory = new MemoryManager(
+  {
+    backend: "markdown",
+    cacheSizeMB: 100,
+    syncInterval: 30000,
+    conflictResolution: "last-write",
+    retentionDays: 30,
+    markdownDir: path.join(this.config.persistencePath, "entries"),
+  },
+  this.eventBus,
+  this.logger,
+);
 ```
 
 ### 2. Fixed Logger Instantiations
 
 Updated all Logger constructor calls to:
+
 ```typescript
 this.logger = new Logger(
-  { level: 'info', format: 'json', destination: 'console' }, 
-  { component: 'ComponentName' }
+  { level: "info", format: "json", destination: "console" },
+  { component: "ComponentName" },
 );
 ```
 
@@ -207,17 +233,20 @@ this.logger = new Logger(
 **Location**: `src/coordination/swarm-coordinator.ts:663`
 
 The SwarmCoordinator is trying to call `remember()` on MemoryManager, but the actual method is `store()`. This suggests either:
+
 - The SwarmCoordinator was written for a different version of MemoryManager
 - There's a missing abstraction layer or adapter
 
 ### 2. SQLite Backend Issues
 
 Initially tried using SQLite backend but encountered:
+
 ```
 Failed to initialize SQLite backend
 ```
 
 This appears to be due to:
+
 - Missing SQLite FFI bindings in the Deno environment
 - Potential permission issues
 - Missing database file initialization
@@ -234,23 +263,27 @@ Switched to markdown backend as a workaround.
 ## Recommendations for Comprehensive Fix
 
 ### 1. Immediate Actions
+
 - [ ] Audit all MemoryManager method calls and update to use correct method names
 - [ ] Create a consistent interface for memory operations across all components
 - [ ] Fix all TypeScript errors to ensure type safety
 - [ ] Add proper error handling and initialization checks
 
 ### 2. Refactoring Suggestions
+
 - [ ] Create factory functions for complex object instantiation
 - [ ] Use dependency injection pattern instead of manual instantiation
 - [ ] Implement proper configuration management with defaults
 - [ ] Add integration tests for the swarm functionality
 
 ### 3. Configuration Management
+
 - [ ] Create a central configuration service that provides proper defaults
 - [ ] Validate configurations at startup
 - [ ] Provide clear error messages for missing configurations
 
 ### 4. Testing Strategy
+
 - [ ] Add unit tests for each component
 - [ ] Create integration tests for swarm command
 - [ ] Add mock implementations for testing without external dependencies
@@ -273,11 +306,13 @@ Additionally discovered that `deno compile` fails with stack overflow, requiring
 ### Phase 1: Verify Basic Installation
 
 1. **Start with the Getting Started guide** (`docs/01-getting-started.md`)
+
    - Try each installation method in order
    - Document which methods work/fail
    - Note specific error messages
 
 2. **Test Basic Commands First**
+
    ```bash
    claude-flow --version
    claude-flow --help
@@ -294,11 +329,13 @@ Additionally discovered that `deno compile` fails with stack overflow, requiring
 ### Phase 2: Address Build Issues
 
 1. **Investigate Compilation Failure**
+
    - Check for circular dependencies: `deno info src/cli/main.ts`
    - Try compiling individual modules to isolate the issue
    - Consider alternative entry points (e.g., `simple-cli.ts`)
 
 2. **Dependency Analysis**
+
    - Review all external dependencies for compatibility
    - Check for conflicting versions in the dependency tree
    - Consider pinning all dependencies to specific versions
@@ -313,11 +350,13 @@ Additionally discovered that `deno compile` fails with stack overflow, requiring
 Only after basic installation works:
 
 1. **Create Minimal Test Case**
+
    - Isolate swarm command code
    - Create unit tests for each component
    - Fix configuration issues systematically
 
 2. **Address API Mismatches**
+
    - Audit all MemoryManager usages
    - Standardize method names across components
    - Add interface definitions for contracts
@@ -330,6 +369,7 @@ Only after basic installation works:
 ## UPDATE: Issues Fixed (June 13, 2025)
 
 ### Fixed Issues:
+
 1. ✅ **Deno import assertion deprecation** - Updated Cliffy to v1.0.0-rc.4
 2. ✅ **MemoryManager instantiation** - Fixed all three store calls in SwarmCoordinator
 3. ✅ **Logger constructor usage** - Updated to use proper LoggingConfig interface
@@ -337,22 +377,28 @@ Only after basic installation works:
 5. ✅ **Memory entry structure** - Updated to match expected MemoryEntry interface
 
 ### Remaining Issues:
+
 1. ❌ **Build System**: Stack overflow during `deno compile` still requires workaround
 2. ⚠️ **Terminal Blocking**: Swarm command runs but blocks terminal (needs background mode or proper exit)
 
 ### Working Solution:
+
 The swarm command now works when run directly:
+
 ```bash
 deno run --allow-all src/cli/main.ts swarm "Your objective" --strategy development
 ```
 
 Or with the launcher (after fixes):
+
 ```bash
 ./bin/claude-flow-launcher swarm "Your objective" --strategy development
 ```
 
 ### Key Fixes Applied:
+
 1. Updated MemoryManager instantiation to include all required fields:
+
    - backend: 'markdown'
    - cacheSizeMB: 100
    - syncInterval: 30000
@@ -361,11 +407,12 @@ Or with the launcher (after fixes):
    - markdownDir: path to storage
 
 2. Fixed Logger instantiation:
+
    ```typescript
    new Logger(
-     { level: 'info', format: 'json', destination: 'console' },
-     { component: 'ComponentName' }
-   )
+     { level: "info", format: "json", destination: "console" },
+     { component: "ComponentName" },
+   );
    ```
 
 3. Updated store() calls to match MemoryEntry interface:

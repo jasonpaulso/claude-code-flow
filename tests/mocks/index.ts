@@ -55,9 +55,11 @@ interface IMCPServer {
 }
 
 // Helper function to create spy
-function createSpy<T extends (...args: any[]) => any>(implementation?: T): Spy<any, any> & T {
+function createSpy<T extends (...args: any[]) => any>(
+  implementation?: T,
+): Spy<any, any> & T {
   const mockObj: Record<string, any> = {};
-  const methodName = 'spyMethod';
+  const methodName = "spyMethod";
   mockObj[methodName] = implementation || (() => {});
   return stub(mockObj, methodName as keyof typeof mockObj) as any;
 }
@@ -72,7 +74,7 @@ export class MockEventBus implements IEventBus {
   emit(event: string, data?: unknown): void {
     this.events.push({ event, data });
     const eventHandlers = this.handlers.get(event) || [];
-    eventHandlers.forEach(handler => handler(data));
+    eventHandlers.forEach((handler) => handler(data));
   }
 
   on(event: string, handler: (data: unknown) => void): void {
@@ -118,19 +120,19 @@ export class MockLogger implements ILogger {
   private logs: Array<{ level: string; message: string; data?: any }> = [];
 
   debug(message: string, data?: unknown): void {
-    this.logs.push({ level: 'debug', message, data });
+    this.logs.push({ level: "debug", message, data });
   }
 
   info(message: string, data?: unknown): void {
-    this.logs.push({ level: 'info', message, data });
+    this.logs.push({ level: "info", message, data });
   }
 
   warn(message: string, data?: unknown): void {
-    this.logs.push({ level: 'warn', message, data });
+    this.logs.push({ level: "warn", message, data });
   }
 
   error(message: string, error?: unknown): void {
-    this.logs.push({ level: 'error', message, data: error });
+    this.logs.push({ level: "error", message, data: error });
   }
 
   async configure(config: any): Promise<void> {
@@ -146,7 +148,9 @@ export class MockLogger implements ILogger {
   }
 
   hasLog(level: string, message: string): boolean {
-    return this.logs.some(log => log.level === level && log.message.includes(message));
+    return this.logs.some(
+      (log) => log.level === level && log.message.includes(message),
+    );
   }
 }
 
@@ -154,9 +158,12 @@ export class MockLogger implements ILogger {
  * Mock Terminal Manager
  */
 export class MockTerminalManager implements ITerminalManager {
-  private terminals = new Map<string, { profile: AgentProfile; output: string[] }>();
+  private terminals = new Map<
+    string,
+    { profile: AgentProfile; output: string[] }
+  >();
   private initialized = false;
-  
+
   spawnTerminal = createSpy(async (profile: any): Promise<string> => {
     const id = `term-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     this.terminals.set(id, { profile, output: [] });
@@ -170,19 +177,22 @@ export class MockTerminalManager implements ITerminalManager {
     this.terminals.delete(terminalId);
   });
 
-  sendCommand = createSpy(async (terminalId: string, command: any): Promise<string> => {
-    const terminal = this.terminals.get(terminalId);
-    if (!terminal) throw new Error(`Terminal not found: ${terminalId}`);
-    
-    const commandStr = typeof command === 'string' ? command : command.command || 'unknown';
-    const output = `Mock output for: ${commandStr}`;
-    terminal.output.push(output);
-    return output;
-  });
+  sendCommand = createSpy(
+    async (terminalId: string, command: any): Promise<string> => {
+      const terminal = this.terminals.get(terminalId);
+      if (!terminal) throw new Error(`Terminal not found: ${terminalId}`);
+
+      const commandStr =
+        typeof command === "string" ? command : command.command || "unknown";
+      const output = `Mock output for: ${commandStr}`;
+      terminal.output.push(output);
+      return output;
+    },
+  );
 
   initialize = createSpy(async (): Promise<void> => {
     if (this.initialized) {
-      throw new Error('Terminal manager already initialized');
+      throw new Error("Terminal manager already initialized");
     }
     this.initialized = true;
   });
@@ -192,22 +202,31 @@ export class MockTerminalManager implements ITerminalManager {
     this.initialized = false;
   });
 
-  getHealthStatus = createSpy(async (): Promise<{ healthy: boolean; error?: string; metrics?: Record<string, number> }> => {
-    return {
-      healthy: this.initialized,
-      metrics: {
-        activeTerminals: this.terminals.size,
-        totalCommands: Array.from(this.terminals.values()).reduce((sum, t) => sum + t.output.length, 0),
-      },
-    };
-  });
+  getHealthStatus = createSpy(
+    async (): Promise<{
+      healthy: boolean;
+      error?: string;
+      metrics?: Record<string, number>;
+    }> => {
+      return {
+        healthy: this.initialized,
+        metrics: {
+          activeTerminals: this.terminals.size,
+          totalCommands: Array.from(this.terminals.values()).reduce(
+            (sum, t) => sum + t.output.length,
+            0,
+          ),
+        },
+      };
+    },
+  );
 
   performMaintenance = createSpy(async (): Promise<void> => {
     // Simulate maintenance by clearing old terminals
     const now = Date.now();
     for (const [id, terminal] of this.terminals.entries()) {
       // Remove terminals older than 1 hour (for testing)
-      const terminalAge = now - parseInt(id.split('-')[1]);
+      const terminalAge = now - parseInt(id.split("-")[1]);
       if (terminalAge > 3600000) {
         this.terminals.delete(id);
       }
@@ -232,7 +251,7 @@ export class MockMemoryManager implements IMemoryManager {
 
   initialize = createSpy(async (): Promise<void> => {
     if (this.initialized) {
-      throw new Error('Memory manager already initialized');
+      throw new Error("Memory manager already initialized");
     }
     this.initialized = true;
   });
@@ -244,7 +263,7 @@ export class MockMemoryManager implements IMemoryManager {
 
   createBank = createSpy(async (agentId: string): Promise<string> => {
     if (!agentId) {
-      throw new Error('Agent ID is required');
+      throw new Error("Agent ID is required");
     }
     const bankId = `bank-${agentId}-${Date.now()}`;
     this.banks.set(bankId, []);
@@ -258,41 +277,43 @@ export class MockMemoryManager implements IMemoryManager {
     this.banks.delete(bankId);
   });
 
-  store = createSpy(async (bankId: string, key: string, value: any): Promise<void> => {
-    const bank = this.banks.get(bankId);
-    if (!bank) throw new Error(`Bank not found: ${bankId}`);
-    
-    // Remove existing entry with same key
-    const existingIndex = bank.findIndex(e => e.key === key);
-    if (existingIndex >= 0) {
-      bank.splice(existingIndex, 1);
-    }
-    
-    bank.push({ 
-      key, 
-      value, 
-      timestamp: Date.now(),
-      size: JSON.stringify(value).length 
-    });
-  });
+  store = createSpy(
+    async (bankId: string, key: string, value: any): Promise<void> => {
+      const bank = this.banks.get(bankId);
+      if (!bank) throw new Error(`Bank not found: ${bankId}`);
+
+      // Remove existing entry with same key
+      const existingIndex = bank.findIndex((e) => e.key === key);
+      if (existingIndex >= 0) {
+        bank.splice(existingIndex, 1);
+      }
+
+      bank.push({
+        key,
+        value,
+        timestamp: Date.now(),
+        size: JSON.stringify(value).length,
+      });
+    },
+  );
 
   retrieve = createSpy(async (bankId: string, key: string): Promise<any> => {
     const bank = this.banks.get(bankId);
     if (!bank) throw new Error(`Bank not found: ${bankId}`);
-    const entry = bank.find(e => e.key === key);
+    const entry = bank.find((e) => e.key === key);
     return entry?.value;
   });
 
   list = createSpy(async (bankId: string): Promise<string[]> => {
     const bank = this.banks.get(bankId);
     if (!bank) throw new Error(`Bank not found: ${bankId}`);
-    return bank.map(e => e.key);
+    return bank.map((e) => e.key);
   });
 
   delete = createSpy(async (bankId: string, key: string): Promise<boolean> => {
     const bank = this.banks.get(bankId);
     if (!bank) throw new Error(`Bank not found: ${bankId}`);
-    const index = bank.findIndex(e => e.key === key);
+    const index = bank.findIndex((e) => e.key === key);
     if (index >= 0) {
       bank.splice(index, 1);
       return true;
@@ -300,31 +321,40 @@ export class MockMemoryManager implements IMemoryManager {
     return false;
   });
 
-  getHealthStatus = createSpy(async (): Promise<{ healthy: boolean; error?: string; metrics?: Record<string, number> }> => {
-    const totalEntries = Array.from(this.banks.values()).reduce((sum, bank) => sum + bank.length, 0);
-    const totalSize = Array.from(this.banks.values())
-      .flat()
-      .reduce((sum, entry) => sum + (entry.size || 0), 0);
+  getHealthStatus = createSpy(
+    async (): Promise<{
+      healthy: boolean;
+      error?: string;
+      metrics?: Record<string, number>;
+    }> => {
+      const totalEntries = Array.from(this.banks.values()).reduce(
+        (sum, bank) => sum + bank.length,
+        0,
+      );
+      const totalSize = Array.from(this.banks.values())
+        .flat()
+        .reduce((sum, entry) => sum + (entry.size || 0), 0);
 
-    return {
-      healthy: this.initialized,
-      metrics: {
-        banks: this.banks.size,
-        totalEntries,
-        totalSize,
-      },
-    };
-  });
+      return {
+        healthy: this.initialized,
+        metrics: {
+          banks: this.banks.size,
+          totalEntries,
+          totalSize,
+        },
+      };
+    },
+  );
 
   performMaintenance = createSpy(async (): Promise<void> => {
     // Simulate maintenance by cleaning up old entries
     const maxAge = 24 * 60 * 60 * 1000; // 24 hours
     const now = Date.now();
-    
+
     for (const bank of this.banks.values()) {
       for (let i = bank.length - 1; i >= 0; i--) {
         const entry = bank[i];
-        if (entry.timestamp && (now - entry.timestamp) > maxAge) {
+        if (entry.timestamp && now - entry.timestamp > maxAge) {
           bank.splice(i, 1);
         }
       }
@@ -363,7 +393,9 @@ export class MockCoordinationManager implements ICoordinationManager {
 
   getAgentTaskCount = spy(async (agentId: string): Promise<number> => {
     const tasks = this.agentTasks.get(agentId) || [];
-    return tasks.filter(t => t.status !== 'completed' && t.status !== 'failed').length;
+    return tasks.filter(
+      (t) => t.status !== "completed" && t.status !== "failed",
+    ).length;
   });
 
   getAgentTasks = spy(async (agentId: string): Promise<Task[]> => {
@@ -373,18 +405,24 @@ export class MockCoordinationManager implements ICoordinationManager {
   cancelTask = spy(async (taskId: string): Promise<void> => {
     const taskInfo = this.tasks.get(taskId);
     if (taskInfo) {
-      taskInfo.task.status = 'cancelled';
+      taskInfo.task.status = "cancelled";
     }
   });
 
-  getHealthStatus = spy(async (): Promise<{ healthy: boolean; error?: string; metrics?: Record<string, number> }> => {
-    return {
-      healthy: true,
-      metrics: {
-        totalTasks: this.tasks.size,
-      },
-    };
-  });
+  getHealthStatus = spy(
+    async (): Promise<{
+      healthy: boolean;
+      error?: string;
+      metrics?: Record<string, number>;
+    }> => {
+      return {
+        healthy: true,
+        metrics: {
+          totalTasks: this.tasks.size,
+        },
+      };
+    },
+  );
 
   performMaintenance = spy(async (): Promise<void> => {
     // No-op for mock
@@ -419,14 +457,20 @@ export class MockMCPServer implements IMCPServer {
     this.tools.set(name, tool);
   });
 
-  getHealthStatus = spy(async (): Promise<{ healthy: boolean; error?: string; metrics?: Record<string, number> }> => {
-    return {
-      healthy: this.started,
-      metrics: {
-        tools: this.tools.size,
-      },
-    };
-  });
+  getHealthStatus = spy(
+    async (): Promise<{
+      healthy: boolean;
+      error?: string;
+      metrics?: Record<string, number>;
+    }> => {
+      return {
+        healthy: this.started,
+        metrics: {
+          tools: this.tools.size,
+        },
+      };
+    },
+  );
 
   isStarted() {
     return this.started;
@@ -455,10 +499,12 @@ export function createMocks() {
  * Type guard for mock objects
  */
 export function isMock(obj: any): boolean {
-  return obj instanceof MockEventBus ||
-         obj instanceof MockLogger ||
-         obj instanceof MockTerminalManager ||
-         obj instanceof MockMemoryManager ||
-         obj instanceof MockCoordinationManager ||
-         obj instanceof MockMCPServer;
+  return (
+    obj instanceof MockEventBus ||
+    obj instanceof MockLogger ||
+    obj instanceof MockTerminalManager ||
+    obj instanceof MockMemoryManager ||
+    obj instanceof MockCoordinationManager ||
+    obj instanceof MockMCPServer
+  );
 }

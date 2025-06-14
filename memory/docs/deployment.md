@@ -49,7 +49,7 @@ CMD ["npm", "start"]
 
 ```yaml
 # docker-compose.yml
-version: '3.8'
+version: "3.8"
 services:
   memory-bank:
     build: .
@@ -76,18 +76,21 @@ services:
 ### System Requirements
 
 #### Minimum Requirements
+
 - **CPU**: 2 cores (2.0 GHz)
 - **RAM**: 4 GB
 - **Storage**: 20 GB SSD
 - **Network**: 100 Mbps
 
 #### Recommended Requirements
+
 - **CPU**: 4+ cores (2.5+ GHz)
 - **RAM**: 8+ GB
 - **Storage**: 100+ GB NVMe SSD
 - **Network**: 1+ Gbps
 
 #### High-Performance Requirements
+
 - **CPU**: 8+ cores (3.0+ GHz)
 - **RAM**: 32+ GB
 - **Storage**: 500+ GB NVMe SSD with high IOPS
@@ -99,44 +102,44 @@ services:
 
 ```typescript
 const productionConfig = {
-  backend: 'sqlite',
+  backend: "sqlite",
   storage: {
-    path: '/var/lib/memory/production.db',
+    path: "/var/lib/memory/production.db",
     options: {
       // Performance settings
-      journalMode: 'WAL',
-      synchronous: 'NORMAL',
-      cacheSize: 20000,           // 20k pages ≈ 80MB
-      mmapSize: 1073741824,       // 1GB memory mapping
-      tempStore: 'MEMORY',
-      
+      journalMode: "WAL",
+      synchronous: "NORMAL",
+      cacheSize: 20000, // 20k pages ≈ 80MB
+      mmapSize: 1073741824, // 1GB memory mapping
+      tempStore: "MEMORY",
+
       // Connection management
       maxConnections: 50,
       busyTimeout: 60000,
       idleTimeout: 300000,
-      
+
       // WAL optimization
       enableWalCheckpoint: true,
       walCheckpointInterval: 300000, // 5 minutes
       walCheckpointPages: 10000,
-      
+
       // Maintenance
       pragmaOptimize: true,
-      optimizeInterval: 3600000,  // 1 hour
-      autoVacuum: 'INCREMENTAL',
-      
+      optimizeInterval: 3600000, // 1 hour
+      autoVacuum: "INCREMENTAL",
+
       // Security
       foreignKeys: true,
-      secureDelete: true
-    }
+      secureDelete: true,
+    },
   },
   cache: {
     enabled: true,
     maxSize: 2 * 1024 * 1024 * 1024, // 2GB
-    strategy: 'adaptive',
-    ttl: 3600000,                    // 1 hour
-    compressionEnabled: true
-  }
+    strategy: "adaptive",
+    ttl: 3600000, // 1 hour
+    compressionEnabled: true,
+  },
 };
 ```
 
@@ -146,16 +149,16 @@ const productionConfig = {
 // Custom PostgreSQL backend for enterprise deployment
 const postgresConfig = {
   backend: new PostgreSQLBackend({
-    host: 'postgres.internal',
+    host: "postgres.internal",
     port: 5432,
-    database: 'memory_bank',
+    database: "memory_bank",
     username: process.env.DB_USERNAME,
     password: process.env.DB_PASSWORD,
     ssl: {
       rejectUnauthorized: false,
-      ca: fs.readFileSync('./certs/ca.pem').toString(),
-      cert: fs.readFileSync('./certs/client.pem').toString(),
-      key: fs.readFileSync('./certs/client.key').toString()
+      ca: fs.readFileSync("./certs/ca.pem").toString(),
+      cert: fs.readFileSync("./certs/client.pem").toString(),
+      key: fs.readFileSync("./certs/client.key").toString(),
     },
     pool: {
       min: 10,
@@ -163,9 +166,9 @@ const postgresConfig = {
       acquireTimeoutMillis: 60000,
       createTimeoutMillis: 30000,
       destroyTimeoutMillis: 5000,
-      idleTimeoutMillis: 30000
-    }
-  })
+      idleTimeoutMillis: 30000,
+    },
+  }),
 };
 ```
 
@@ -242,51 +245,51 @@ spec:
         app: memory-bank
     spec:
       containers:
-      - name: memory-bank
-        image: sparc/memory-bank:latest
-        ports:
-        - containerPort: 8080
-        env:
-        - name: NODE_ENV
-          value: "production"
-        - name: CONFIG_PATH
-          value: "/config/config.json"
-        - name: OPENAI_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: memory-secrets
-              key: openai-api-key
-        volumeMounts:
-        - name: config-volume
-          mountPath: /config
-        - name: data-volume
-          mountPath: /data
-        resources:
-          requests:
-            memory: "2Gi"
-            cpu: "1000m"
-          limits:
-            memory: "4Gi"
-            cpu: "2000m"
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 8080
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /ready
-            port: 8080
-          initialDelaySeconds: 5
-          periodSeconds: 5
+        - name: memory-bank
+          image: sparc/memory-bank:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: CONFIG_PATH
+              value: "/config/config.json"
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: memory-secrets
+                  key: openai-api-key
+          volumeMounts:
+            - name: config-volume
+              mountPath: /config
+            - name: data-volume
+              mountPath: /data
+          resources:
+            requests:
+              memory: "2Gi"
+              cpu: "1000m"
+            limits:
+              memory: "4Gi"
+              cpu: "2000m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
       volumes:
-      - name: config-volume
-        configMap:
-          name: memory-config
-      - name: data-volume
-        persistentVolumeClaim:
-          claimName: memory-storage
+        - name: config-volume
+          configMap:
+            name: memory-config
+        - name: data-volume
+          persistentVolumeClaim:
+            claimName: memory-storage
 
 ---
 # k8s/service.yaml
@@ -317,20 +320,20 @@ metadata:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
 spec:
   tls:
-  - hosts:
-    - memory.example.com
-    secretName: memory-bank-tls
+    - hosts:
+        - memory.example.com
+      secretName: memory-bank-tls
   rules:
-  - host: memory.example.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: memory-bank-service
-            port:
-              number: 80
+    - host: memory.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: memory-bank-service
+                port:
+                  number: 80
 ```
 
 ### Load Balancing and High Availability
@@ -339,7 +342,7 @@ spec:
 
 ```yaml
 # docker-compose-ha.yml
-version: '3.8'
+version: "3.8"
 services:
   memory-bank-1:
     build: .
@@ -350,7 +353,7 @@ services:
       - ./data:/data
     networks:
       - memory-network
-  
+
   memory-bank-2:
     build: .
     environment:
@@ -360,7 +363,7 @@ services:
       - ./data:/data
     networks:
       - memory-network
-  
+
   memory-bank-3:
     build: .
     environment:
@@ -370,7 +373,7 @@ services:
       - ./data:/data
     networks:
       - memory-network
-  
+
   nginx:
     image: nginx:alpine
     ports:
@@ -406,62 +409,62 @@ http {
         server memory-bank-2:8080 max_fails=3 fail_timeout=30s;
         server memory-bank-3:8080 max_fails=3 fail_timeout=30s;
     }
-    
+
     # Health check endpoint
     upstream memory_health {
         server memory-bank-1:8080;
         server memory-bank-2:8080;
         server memory-bank-3:8080;
     }
-    
+
     # SSL configuration
     ssl_certificate /etc/ssl/memory.crt;
     ssl_certificate_key /etc/ssl/memory.key;
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384;
     ssl_prefer_server_ciphers off;
-    
+
     # Rate limiting
     limit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;
-    
+
     server {
         listen 80;
         server_name memory.example.com;
         return 301 https://$server_name$request_uri;
     }
-    
+
     server {
         listen 443 ssl http2;
         server_name memory.example.com;
-        
+
         # Rate limiting
         limit_req zone=api burst=20 nodelay;
-        
+
         # Proxy settings
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        
+
         # Health check
         location /health {
             proxy_pass http://memory_health;
             access_log off;
         }
-        
+
         # API endpoints
         location / {
             proxy_pass http://memory_backend;
             proxy_timeout 60s;
             proxy_read_timeout 60s;
             proxy_connect_timeout 60s;
-            
+
             # WebSocket support
             proxy_http_version 1.1;
             proxy_set_header Upgrade $http_upgrade;
             proxy_set_header Connection "upgrade";
         }
-        
+
         # Security headers
         add_header X-Frame-Options DENY;
         add_header X-Content-Type-Options nosniff;
@@ -482,15 +485,16 @@ global:
   evaluation_interval: 15s
 
 scrape_configs:
-  - job_name: 'memory-bank'
+  - job_name: "memory-bank"
     static_configs:
-      - targets: ['memory-bank-1:8080', 'memory-bank-2:8080', 'memory-bank-3:8080']
+      - targets:
+          ["memory-bank-1:8080", "memory-bank-2:8080", "memory-bank-3:8080"]
     metrics_path: /metrics
     scrape_interval: 10s
-    
-  - job_name: 'node-exporter'
+
+  - job_name: "node-exporter"
     static_configs:
-      - targets: ['node-exporter:9100']
+      - targets: ["node-exporter:9100"]
 ```
 
 #### Grafana Dashboard
@@ -762,21 +766,21 @@ const memory = new MemoryManager({
   // ... other config
   system: {
     logging: {
-      level: 'debug',
+      level: "debug",
       enableQueryProfiling: true,
       enableSlowQueryLog: true,
-      slowQueryThreshold: 1000 // ms
-    }
-  }
+      slowQueryThreshold: 1000, // ms
+    },
+  },
 });
 
 // Monitor performance metrics
 setInterval(async () => {
   const stats = await memory.getStatistics();
-  console.log('Performance Stats:', {
+  console.log("Performance Stats:", {
     averageQueryTime: stats.performance.averageQueryTime,
     cacheHitRate: stats.cacheStats.hitRate,
-    totalItems: stats.totalItems
+    totalItems: stats.totalItems,
   });
 }, 60000); // Every minute
 ```

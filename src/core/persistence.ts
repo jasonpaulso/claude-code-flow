@@ -44,10 +44,10 @@ export class PersistenceManager {
   async initialize(): Promise<void> {
     // Ensure directory exists
     await ensureDir(join(this.dbPath, ".."));
-    
+
     // Open database
     this.db = new DB(this.dbPath);
-    
+
     // Create tables if they don't exist
     this.createTables();
   }
@@ -115,19 +115,28 @@ export class PersistenceManager {
         agent.maxConcurrentTasks,
         agent.priority,
         agent.createdAt,
-      ]
+      ],
     );
   }
 
   async getAgent(id: string): Promise<PersistedAgent | null> {
-    const rows = this.db.query<[string, string, string, string, string, string, number, number, number]>(
-      "SELECT * FROM agents WHERE id = ?",
-      [id]
-    );
-    
+    const rows = this.db.query<
+      [string, string, string, string, string, string, number, number, number]
+    >("SELECT * FROM agents WHERE id = ?", [id]);
+
     if (rows.length === 0) return null;
-    
-    const [id_, type, name, status, capabilities, systemPrompt, maxConcurrentTasks, priority, createdAt] = rows[0];
+
+    const [
+      id_,
+      type,
+      name,
+      status,
+      capabilities,
+      systemPrompt,
+      maxConcurrentTasks,
+      priority,
+      createdAt,
+    ] = rows[0];
     return {
       id: id_,
       type,
@@ -142,21 +151,35 @@ export class PersistenceManager {
   }
 
   async getActiveAgents(): Promise<PersistedAgent[]> {
-    const rows = this.db.query<[string, string, string, string, string, string, number, number, number]>(
-      "SELECT * FROM agents WHERE status IN ('active', 'idle') ORDER BY created_at DESC"
+    const rows = this.db.query<
+      [string, string, string, string, string, string, number, number, number]
+    >(
+      "SELECT * FROM agents WHERE status IN ('active', 'idle') ORDER BY created_at DESC",
     );
-    
-    return rows.map(([id, type, name, status, capabilities, systemPrompt, maxConcurrentTasks, priority, createdAt]) => ({
-      id,
-      type,
-      name,
-      status,
-      capabilities,
-      systemPrompt,
-      maxConcurrentTasks,
-      priority,
-      createdAt,
-    }));
+
+    return rows.map(
+      ([
+        id,
+        type,
+        name,
+        status,
+        capabilities,
+        systemPrompt,
+        maxConcurrentTasks,
+        priority,
+        createdAt,
+      ]) => ({
+        id,
+        type,
+        name,
+        status,
+        capabilities,
+        systemPrompt,
+        maxConcurrentTasks,
+        priority,
+        createdAt,
+      }),
+    );
   }
 
   async updateAgentStatus(id: string, status: string): Promise<void> {
@@ -182,19 +205,44 @@ export class PersistenceManager {
         task.error || null,
         task.createdAt,
         task.completedAt || null,
-      ]
+      ],
     );
   }
 
   async getTask(id: string): Promise<PersistedTask | null> {
-    const rows = this.db.query<[string, string, string, string, number, string, string, string | null, number, string | null, number, number | null]>(
-      "SELECT * FROM tasks WHERE id = ?",
-      [id]
-    );
-    
+    const rows = this.db.query<
+      [
+        string,
+        string,
+        string,
+        string,
+        number,
+        string,
+        string,
+        string | null,
+        number,
+        string | null,
+        number,
+        number | null,
+      ]
+    >("SELECT * FROM tasks WHERE id = ?", [id]);
+
     if (rows.length === 0) return null;
-    
-    const [id_, type, description, status, priority, dependencies, metadata, assignedAgent, progress, error, createdAt, completedAt] = rows[0];
+
+    const [
+      id_,
+      type,
+      description,
+      status,
+      priority,
+      dependencies,
+      metadata,
+      assignedAgent,
+      progress,
+      error,
+      createdAt,
+      completedAt,
+    ] = rows[0];
     return {
       id: id_,
       type,
@@ -212,31 +260,65 @@ export class PersistenceManager {
   }
 
   async getActiveTasks(): Promise<PersistedTask[]> {
-    const rows = this.db.query<[string, string, string, string, number, string, string, string | null, number, string | null, number, number | null]>(
-      "SELECT * FROM tasks WHERE status IN ('pending', 'in_progress', 'assigned') ORDER BY priority DESC, created_at ASC"
+    const rows = this.db.query<
+      [
+        string,
+        string,
+        string,
+        string,
+        number,
+        string,
+        string,
+        string | null,
+        number,
+        string | null,
+        number,
+        number | null,
+      ]
+    >(
+      "SELECT * FROM tasks WHERE status IN ('pending', 'in_progress', 'assigned') ORDER BY priority DESC, created_at ASC",
     );
-    
-    return rows.map(([id, type, description, status, priority, dependencies, metadata, assignedAgent, progress, error, createdAt, completedAt]) => ({
-      id,
-      type,
-      description,
-      status,
-      priority,
-      dependencies,
-      metadata,
-      assignedAgent: assignedAgent || undefined,
-      progress,
-      error: error || undefined,
-      createdAt,
-      completedAt: completedAt || undefined,
-    }));
+
+    return rows.map(
+      ([
+        id,
+        type,
+        description,
+        status,
+        priority,
+        dependencies,
+        metadata,
+        assignedAgent,
+        progress,
+        error,
+        createdAt,
+        completedAt,
+      ]) => ({
+        id,
+        type,
+        description,
+        status,
+        priority,
+        dependencies,
+        metadata,
+        assignedAgent: assignedAgent || undefined,
+        progress,
+        error: error || undefined,
+        createdAt,
+        completedAt: completedAt || undefined,
+      }),
+    );
   }
 
-  async updateTaskStatus(id: string, status: string, assignedAgent?: string): Promise<void> {
+  async updateTaskStatus(
+    id: string,
+    status: string,
+    assignedAgent?: string,
+  ): Promise<void> {
     if (assignedAgent) {
       this.db.query(
         "UPDATE tasks SET status = ?, assigned_agent = ? WHERE id = ?",
-        [status, assignedAgent, id]
+        [status, assignedAgent, id],
       );
     } else {
       this.db.query("UPDATE tasks SET status = ? WHERE id = ?", [status, id]);
@@ -255,12 +337,22 @@ export class PersistenceManager {
     pendingTasks: number;
     completedTasks: number;
   }> {
-    const [totalAgents] = this.db.query<[number]>("SELECT COUNT(*) FROM agents")[0];
-    const [activeAgents] = this.db.query<[number]>("SELECT COUNT(*) FROM agents WHERE status IN ('active', 'idle')")[0];
-    const [totalTasks] = this.db.query<[number]>("SELECT COUNT(*) FROM tasks")[0];
-    const [pendingTasks] = this.db.query<[number]>("SELECT COUNT(*) FROM tasks WHERE status IN ('pending', 'in_progress', 'assigned')")[0];
-    const [completedTasks] = this.db.query<[number]>("SELECT COUNT(*) FROM tasks WHERE status = 'completed'")[0];
-    
+    const [totalAgents] = this.db.query<[number]>(
+      "SELECT COUNT(*) FROM agents",
+    )[0];
+    const [activeAgents] = this.db.query<[number]>(
+      "SELECT COUNT(*) FROM agents WHERE status IN ('active', 'idle')",
+    )[0];
+    const [totalTasks] = this.db.query<[number]>(
+      "SELECT COUNT(*) FROM tasks",
+    )[0];
+    const [pendingTasks] = this.db.query<[number]>(
+      "SELECT COUNT(*) FROM tasks WHERE status IN ('pending', 'in_progress', 'assigned')",
+    )[0];
+    const [completedTasks] = this.db.query<[number]>(
+      "SELECT COUNT(*) FROM tasks WHERE status = 'completed'",
+    )[0];
+
     return {
       totalAgents,
       activeAgents,

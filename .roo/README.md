@@ -11,76 +11,91 @@ Create by @ruvnet
 Roo offers specialized modes for different aspects of the development process:
 
 ### 📋 Specification Writer
+
 - **Role**: Captures project context, functional requirements, edge cases, and constraints
 - **Focus**: Translates requirements into modular pseudocode with TDD anchors
 - **Best For**: Initial project planning and requirement gathering
 
 ### 🏗️ Architect
+
 - **Role**: Designs scalable, secure, and modular architectures
 - **Focus**: Creates architecture diagrams, data flows, and integration points
 - **Best For**: System design and component relationships
 
 ### 🧠 Auto-Coder
+
 - **Role**: Writes clean, efficient, modular code based on pseudocode and architecture
 - **Focus**: Implements features with proper configuration and environment abstraction
 - **Best For**: Feature implementation and code generation
 
 ### 🧪 Tester (TDD)
+
 - **Role**: Implements Test-Driven Development (TDD, London School)
 - **Focus**: Writes failing tests first, implements minimal code to pass, then refactors
 - **Best For**: Ensuring code quality and test coverage
 
 ### 🪲 Debugger
+
 - **Role**: Troubleshoots runtime bugs, logic errors, or integration failures
 - **Focus**: Uses logs, traces, and stack analysis to isolate and fix bugs
 - **Best For**: Resolving issues in existing code
 
 ### 🛡️ Security Reviewer
+
 - **Role**: Performs static and dynamic audits to ensure secure code practices
 - **Focus**: Flags secrets, poor modular boundaries, and oversized files
 - **Best For**: Security audits and vulnerability assessments
 
 ### 📚 Documentation Writer
+
 - **Role**: Writes concise, clear, and modular Markdown documentation
 - **Focus**: Creates documentation that explains usage, integration, setup, and configuration
 - **Best For**: Creating user guides and technical documentation
 
 ### 🔗 System Integrator
+
 - **Role**: Merges outputs of all modes into a working, tested, production-ready system
 - **Focus**: Verifies interface compatibility, shared modules, and configuration standards
 - **Best For**: Combining components into a cohesive system
 
 ### 📈 Deployment Monitor
+
 - **Role**: Observes the system post-launch, collecting performance data and user feedback
 - **Focus**: Configures metrics, logs, uptime checks, and alerts
 - **Best For**: Post-deployment observation and issue detection
 
 ### 🧹 Optimizer
+
 - **Role**: Refactors, modularizes, and improves system performance
 - **Focus**: Audits files for clarity, modularity, and size
 - **Best For**: Code refinement and performance optimization
 
 ### 🚀 DevOps
+
 - **Role**: Handles deployment, automation, and infrastructure operations
 - **Focus**: Provisions infrastructure, configures environments, and sets up CI/CD pipelines
 - **Best For**: Deployment and infrastructure management
 
 ### 🔐 Supabase Admin
+
 - **Role**: Designs and implements database schemas, RLS policies, triggers, and functions
 - **Focus**: Ensures secure, efficient, and scalable data management with Supabase
 - **Best For**: Database management and Supabase integration
 
 ### ♾️ MCP Integration
+
 - **Role**: Connects to and manages external services through MCP interfaces
 - **Focus**: Ensures secure, efficient, and reliable communication with external APIs
 - **Best For**: Integrating with third-party services
 
 ### ⚡️ SPARC Orchestrator
+
 - **Role**: Orchestrates complex workflows by breaking down objectives into subtasks
 - **Focus**: Ensures secure, modular, testable, and maintainable delivery
 - **Best For**: Managing complex projects with multiple components
 
 ### ❓ Ask
+
 - **Role**: Helps users navigate, ask, and delegate tasks to the correct modes
 - **Focus**: Guides users to formulate questions using the SPARC methodology
 - **Best For**: Getting started and understanding how to use Roo effectively
@@ -99,13 +114,13 @@ The MCP Integration Mode (♾️) in Roo is designed specifically for connecting
 
 ### MCP Integration Workflow
 
-| Phase | Action | Tool Preference |
-|-------|--------|-----------------|
-| 1. Connection | Establish connection to MCP servers and verify availability | `use_mcp_tool` for server operations |
-| 2. Authentication | Configure and validate authentication for service access | `use_mcp_tool` with proper credentials |
-| 3. Data Exchange | Implement data transformation and exchange between systems | `use_mcp_tool` for operations, `apply_diff` for code |
-| 4. Error Handling | Implement robust error handling and retry mechanisms | `apply_diff` for code modifications |
-| 5. Documentation | Document integration points, dependencies, and usage patterns | `insert_content` for documentation |
+| Phase             | Action                                                        | Tool Preference                                      |
+| ----------------- | ------------------------------------------------------------- | ---------------------------------------------------- |
+| 1. Connection     | Establish connection to MCP servers and verify availability   | `use_mcp_tool` for server operations                 |
+| 2. Authentication | Configure and validate authentication for service access      | `use_mcp_tool` with proper credentials               |
+| 3. Data Exchange  | Implement data transformation and exchange between systems    | `use_mcp_tool` for operations, `apply_diff` for code |
+| 4. Error Handling | Implement robust error handling and retry mechanisms          | `apply_diff` for code modifications                  |
+| 5. Documentation  | Document integration points, dependencies, and usage patterns | `insert_content` for documentation                   |
 
 ### Non-Negotiable Requirements
 
@@ -125,164 +140,167 @@ The MCP Integration Mode (♾️) in Roo is designed specifically for connecting
 This guide provides detailed information on Management Control Panel (MCP) integration capabilities. MCP enables seamless agent workflows by connecting to more than 80 servers, covering development, AI, data management, productivity, cloud storage, e-commerce, finance, communication, and design. Each server offers specialized tools, allowing agents to securely access, automate, and manage external services through a unified and modular system. This approach supports building dynamic, scalable, and intelligent workflows with minimal setup and maximum flexibility.
 
 ## Install via NPM
+
 ```
 npx create-sparc init --force
 ```
+
 ---
 
 ## Available MCP Servers
 
 ### 🛠️ Development & Coding
 
-|  | Service       | Description                        |
-|:------|:--------------|:-----------------------------------|
-| 🐙    | GitHub         | Repository management, issues, PRs |
-| 🦊    | GitLab         | Repo management, CI/CD pipelines   |
-| 🧺    | Bitbucket      | Code collaboration, repo hosting   |
-| 🐳    | DockerHub      | Container registry and management |
-| 📦    | npm            | Node.js package registry          |
-| 🐍    | PyPI           | Python package index              |
-| 🤗    | HuggingFace Hub| AI model repository               |
-| 🧠    | Cursor         | AI-powered code editor            |
-| 🌊    | Windsurf       | AI development platform           |
+|     | Service         | Description                        |
+| :-- | :-------------- | :--------------------------------- |
+| 🐙  | GitHub          | Repository management, issues, PRs |
+| 🦊  | GitLab          | Repo management, CI/CD pipelines   |
+| 🧺  | Bitbucket       | Code collaboration, repo hosting   |
+| 🐳  | DockerHub       | Container registry and management  |
+| 📦  | npm             | Node.js package registry           |
+| 🐍  | PyPI            | Python package index               |
+| 🤗  | HuggingFace Hub | AI model repository                |
+| 🧠  | Cursor          | AI-powered code editor             |
+| 🌊  | Windsurf        | AI development platform            |
 
 ---
 
 ### 🤖 AI & Machine Learning
 
-|  | Service       | Description                        |
-|:------|:--------------|:-----------------------------------|
-| 🔥    | OpenAI         | GPT models, DALL-E, embeddings      |
-| 🧩    | Perplexity AI  | AI search and question answering   |
-| 🧠    | Cohere         | NLP models                         |
-| 🧬    | Replicate      | AI model hosting                   |
-| 🎨    | Stability AI   | Image generation AI                |
-| 🚀    | Groq           | High-performance AI inference      |
-| 📚    | LlamaIndex     | Data framework for LLMs            |
-| 🔗    | LangChain      | Framework for LLM apps             |
-| ⚡    | Vercel AI      | AI SDK, fast deployment            |
-| 🛠️    | AutoGen        | Multi-agent orchestration          |
-| 🧑‍🤝‍🧑 | CrewAI         | Agent team framework               |
-| 🧠    | Huggingface    | Model hosting and APIs             |
+|     | Service       | Description                      |
+| :-- | :------------ | :------------------------------- |
+| 🔥  | OpenAI        | GPT models, DALL-E, embeddings   |
+| 🧩  | Perplexity AI | AI search and question answering |
+| 🧠  | Cohere        | NLP models                       |
+| 🧬  | Replicate     | AI model hosting                 |
+| 🎨  | Stability AI  | Image generation AI              |
+| 🚀  | Groq          | High-performance AI inference    |
+| 📚  | LlamaIndex    | Data framework for LLMs          |
+| 🔗  | LangChain     | Framework for LLM apps           |
+| ⚡  | Vercel AI     | AI SDK, fast deployment          |
+| 🛠️  | AutoGen       | Multi-agent orchestration        |
+| 🧑‍🤝‍🧑  | CrewAI        | Agent team framework             |
+| 🧠  | Huggingface   | Model hosting and APIs           |
 
 ---
 
 ### 📈 Data & Analytics
 
-|  | Service        | Description                        |
-|:------|:---------------|:-----------------------------------|
-| 🛢️   | Supabase        | Database, Auth, Storage backend   |
-| 🔍   | Ahrefs          | SEO analytics                     |
-| 🧮   | Code Interpreter| Code execution and data analysis  |
+|     | Service          | Description                      |
+| :-- | :--------------- | :------------------------------- |
+| 🛢️  | Supabase         | Database, Auth, Storage backend  |
+| 🔍  | Ahrefs           | SEO analytics                    |
+| 🧮  | Code Interpreter | Code execution and data analysis |
 
 ---
 
 ### 📅 Productivity & Collaboration
 
-|  | Service        | Description                        |
-|:------|:---------------|:-----------------------------------|
-| ✉️    | Gmail           | Email service                     |
-| 📹    | YouTube         | Video sharing platform            |
-| 👔    | LinkedIn        | Professional network              |
-| 📰    | HackerNews      | Tech news discussions             |
-| 🗒️   | Notion          | Knowledge management              |
-| 💬    | Slack           | Team communication                |
-| ✅    | Asana           | Project management                |
-| 📋    | Trello          | Kanban boards                     |
-| 🛠️    | Jira            | Issue tracking and projects       |
-| 🎟️   | Zendesk         | Customer service                  |
-| 🎮    | Discord         | Community messaging               |
-| 📲    | Telegram        | Messaging app                     |
+|     | Service    | Description                 |
+| :-- | :--------- | :-------------------------- |
+| ✉️  | Gmail      | Email service               |
+| 📹  | YouTube    | Video sharing platform      |
+| 👔  | LinkedIn   | Professional network        |
+| 📰  | HackerNews | Tech news discussions       |
+| 🗒️  | Notion     | Knowledge management        |
+| 💬  | Slack      | Team communication          |
+| ✅  | Asana      | Project management          |
+| 📋  | Trello     | Kanban boards               |
+| 🛠️  | Jira       | Issue tracking and projects |
+| 🎟️  | Zendesk    | Customer service            |
+| 🎮  | Discord    | Community messaging         |
+| 📲  | Telegram   | Messaging app               |
 
 ---
 
 ### 🗂️ File Storage & Management
 
-|  | Service        | Description                        |
-|:------|:---------------|:-----------------------------------|
-| ☁️    | Google Drive    | Cloud file storage                 |
-| 📦    | Dropbox         | Cloud file sharing                 |
-| 📁    | Box             | Enterprise file storage            |
-| 🪟    | OneDrive        | Microsoft cloud storage            |
-| 🧠    | Mem0            | Knowledge storage, notes           |
+|     | Service      | Description              |
+| :-- | :----------- | :----------------------- |
+| ☁️  | Google Drive | Cloud file storage       |
+| 📦  | Dropbox      | Cloud file sharing       |
+| 📁  | Box          | Enterprise file storage  |
+| 🪟  | OneDrive     | Microsoft cloud storage  |
+| 🧠  | Mem0         | Knowledge storage, notes |
 
 ---
 
 ### 🔎 Search & Web Information
 
-|  | Service         | Description                      |
-|:------|:----------------|:---------------------------------|
-| 🌐   | Composio Search  | Unified web search for agents    |
+|     | Service         | Description                   |
+| :-- | :-------------- | :---------------------------- |
+| 🌐  | Composio Search | Unified web search for agents |
 
 ---
 
 ### 🛒 E-commerce & Finance
 
-|  | Service        | Description                        |
-|:------|:---------------|:-----------------------------------|
-| 🛍️   | Shopify         | E-commerce platform               |
-| 💳    | Stripe          | Payment processing                |
-| 💰    | PayPal          | Online payments                   |
-| 📒    | QuickBooks      | Accounting software               |
-| 📈    | Xero            | Accounting and finance            |
-| 🏦    | Plaid           | Financial data APIs               |
+|     | Service    | Description            |
+| :-- | :--------- | :--------------------- |
+| 🛍️  | Shopify    | E-commerce platform    |
+| 💳  | Stripe     | Payment processing     |
+| 💰  | PayPal     | Online payments        |
+| 📒  | QuickBooks | Accounting software    |
+| 📈  | Xero       | Accounting and finance |
+| 🏦  | Plaid      | Financial data APIs    |
 
 ---
 
 ### 📣 Marketing & Communications
 
-|  | Service        | Description                        |
-|:------|:---------------|:-----------------------------------|
-| 🐒    | MailChimp       | Email marketing platform          |
-| ✉️    | SendGrid        | Email delivery service            |
-| 📞    | Twilio          | SMS and calling APIs              |
-| 💬    | Intercom        | Customer messaging                |
-| 🎟️   | Freshdesk       | Customer support                  |
+|     | Service   | Description              |
+| :-- | :-------- | :----------------------- |
+| 🐒  | MailChimp | Email marketing platform |
+| ✉️  | SendGrid  | Email delivery service   |
+| 📞  | Twilio    | SMS and calling APIs     |
+| 💬  | Intercom  | Customer messaging       |
+| 🎟️  | Freshdesk | Customer support         |
 
 ---
 
 ### 🛜 Social Media & Publishing
 
-|  | Service        | Description                        |
-|:------|:---------------|:-----------------------------------|
-| 👥    | Facebook        | Social networking                 |
-| 📷    | Instagram       | Photo sharing                     |
-| 🐦    | Twitter         | Microblogging platform            |
-| 👽    | Reddit          | Social news aggregation           |
-| ✍️    | Medium          | Blogging platform                 |
-| 🌐   | WordPress       | Website and blog publishing       |
-| 🌎   | Webflow         | Web design and hosting            |
+|     | Service   | Description                 |
+| :-- | :-------- | :-------------------------- |
+| 👥  | Facebook  | Social networking           |
+| 📷  | Instagram | Photo sharing               |
+| 🐦  | Twitter   | Microblogging platform      |
+| 👽  | Reddit    | Social news aggregation     |
+| ✍️  | Medium    | Blogging platform           |
+| 🌐  | WordPress | Website and blog publishing |
+| 🌎  | Webflow   | Web design and hosting      |
 
 ---
 
 ### 🎨 Design & Digital Assets
 
-|  | Service        | Description                        |
-|:------|:---------------|:-----------------------------------|
-| 🎨    | Figma           | Collaborative UI design           |
-| 🎞️   | Adobe           | Creative tools and software       |
+|     | Service | Description                 |
+| :-- | :------ | :-------------------------- |
+| 🎨  | Figma   | Collaborative UI design     |
+| 🎞️  | Adobe   | Creative tools and software |
 
 ---
 
 ### 🗓️ Scheduling & Events
 
-|  | Service        | Description                        |
-|:------|:---------------|:-----------------------------------|
-| 📆    | Calendly        | Appointment scheduling            |
-| 🎟️   | Eventbrite      | Event management and tickets      |
-| 📅    | Calendar Google | Google Calendar Integration       |
-| 📅    | Calendar Outlook| Outlook Calendar Integration      |
+|     | Service          | Description                  |
+| :-- | :--------------- | :--------------------------- |
+| 📆  | Calendly         | Appointment scheduling       |
+| 🎟️  | Eventbrite       | Event management and tickets |
+| 📅  | Calendar Google  | Google Calendar Integration  |
+| 📅  | Calendar Outlook | Outlook Calendar Integration |
 
 ---
 
 ## 🧩 Using MCP Tools
 
 To use an MCP server:
+
 1. Connect to the desired MCP endpoint or install server (e.g., Supabase via `npx`).
 2. Authenticate with your credentials.
 3. Trigger available actions through Roo workflows.
 4. Maintain security and restrict only necessary permissions.
- 
+
 ### Example: GitHub Integration
 
 ```
@@ -331,6 +349,7 @@ To use an MCP server:
 ### Primary Tools
 
 - `use_mcp_tool`: Use for all MCP server operations
+
   ```
   <use_mcp_tool>
     <server_name>server_name</server_name>
@@ -340,6 +359,7 @@ To use an MCP server:
   ```
 
 - `access_mcp_resource`: Use for accessing MCP resources
+
   ```
   <access_mcp_resource>
     <server_name>server_name</server_name>

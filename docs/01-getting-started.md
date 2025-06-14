@@ -3,6 +3,7 @@
 Welcome to Claude-Flow, an advanced AI agent orchestration system designed for sophisticated multi-agent collaboration, task coordination, and memory management. This guide will help you get up and running quickly.
 
 ## ⚠️ Current Status (June 13, 2025)
+
 **CORE SWARM FUNCTIONALITY IS WORKING!** 🎉
 
 The system is production-ready with the swarm orchestration features. Please use the launcher script (`./bin/claude-flow-launcher`) instead of the compiled binary due to a known build issue.
@@ -10,6 +11,7 @@ The system is production-ready with the swarm orchestration features. Please use
 ## Quick Installation
 
 ### Option 1: NPX with SPARC (Recommended) ✅
+
 ```bash
 # Initialize with SPARC development environment
 npx -y claude-flow@latest init --sparc
@@ -21,6 +23,7 @@ npx -y claude-flow@latest init --sparc
 ```
 
 ### Option 2: Local Installation (For Development)
+
 ```bash
 # Clone the repository
 git clone https://github.com/ruvnet/claude-code-flow.git
@@ -39,6 +42,7 @@ which claude-flow  # Should show the global install path
 ## Working Commands ✅
 
 ### 1. Test Swarm Functionality
+
 ```bash
 # Test swarm creation (dry-run)
 claude-flow swarm new "Test task" --dry-run
@@ -51,6 +55,7 @@ claude-flow swarm --help
 ```
 
 ### 2. Memory Operations (WORKING)
+
 ```bash
 # Store data
 claude-flow memory store "key" "value"
@@ -60,6 +65,7 @@ claude-flow memory query "search term"
 ```
 
 ### 3. Check Version
+
 ```bash
 # Verify installation
 claude-flow --version
@@ -71,12 +77,14 @@ claude-flow --version
 Let's create a simple swarm to demonstrate Claude-Flow's working capabilities:
 
 ### Step 1: Initialize the Project
+
 ```bash
 # If you haven't already, initialize with SPARC
 npx -y claude-flow@latest init --sparc
 ```
 
 ### Step 2: Test Swarm Creation
+
 ```bash
 # Test configuration without execution
 claude-flow swarm new "Research AI trends" --dry-run
@@ -85,6 +93,7 @@ claude-flow swarm new "Research AI trends" --dry-run
 ```
 
 ### Step 3: Run a Real Swarm
+
 ```bash
 # Create and run a simple swarm
 claude-flow swarm new "Build a simple REST API" --max-agents 1
@@ -97,6 +106,7 @@ claude-flow swarm new "Build a simple REST API" --max-agents 1
 ```
 
 ### Step 4: Check Results
+
 ```bash
 # Results are saved in the swarm directory
 ls -la swarms/
@@ -115,6 +125,7 @@ claude-flow repl
 ```
 
 In REPL mode, you can:
+
 ```bash
 # Get help
 > help
@@ -135,28 +146,36 @@ In REPL mode, you can:
 ## Basic Concepts
 
 ### Agents
+
 Agents are specialized AI workers with specific capabilities:
+
 - **Researcher**: Information gathering and analysis
 - **Implementer**: Code development and technical tasks
 - **Analyst**: Data analysis and pattern recognition
 - **Coordinator**: Planning and task delegation
 
 ### Tasks
+
 Tasks represent work to be done:
+
 - **Research**: Information gathering
 - **Implementation**: Code development
 - **Analysis**: Data processing
 - **Coordination**: Planning and management
 
 ### Memory Bank
+
 The memory system stores:
+
 - Agent discoveries and insights
 - Task progress and results
 - Shared knowledge across agents
 - Project history and context
 
 ### MCP Integration
+
 Model Context Protocol enables:
+
 - External tool integration
 - API connectivity
 - Custom tool development
@@ -165,6 +184,7 @@ Model Context Protocol enables:
 ## Common Commands Reference
 
 ### Agent Management
+
 ```bash
 # List all agents
 claude-flow agent list
@@ -177,6 +197,7 @@ claude-flow agent terminate <agent-id>
 ```
 
 ### Task Management
+
 ```bash
 # List all tasks
 claude-flow task list
@@ -189,6 +210,7 @@ claude-flow task cancel <task-id>
 ```
 
 ### Memory Operations
+
 ```bash
 # Search memory
 claude-flow memory query --search "keyword"
@@ -201,6 +223,7 @@ claude-flow memory cleanup --older-than 30d
 ```
 
 ### Configuration
+
 ```bash
 # View current config
 claude-flow config show
@@ -231,11 +254,15 @@ claude-flow config init --force
 ### 🔧 Known Issues and Solutions
 
 #### Build System Issue
+
 **Problem**: `deno compile` fails with stack overflow
+
 ```
 error: RangeError: Maximum call stack size exceeded
 ```
+
 **Solution**: Use the launcher script
+
 ```bash
 # Always use:
 ./bin/claude-flow-launcher
@@ -245,20 +272,25 @@ error: RangeError: Maximum call stack size exceeded
 ```
 
 #### Permission Issues
+
 **Problem**: Permission denied when running commands
 **Solution**: Make launcher executable
+
 ```bash
 chmod +x bin/claude-flow-launcher
 ```
 
 #### Process Hanging
+
 **Problem**: Commands hang or timeout
 **Solution**: Use `--no-wait` flag
+
 ```bash
 ./bin/claude-flow-launcher swarm new "task" --no-wait
 ```
 
 ### For detailed troubleshooting, see:
+
 - [Complete Troubleshooting Guide](./10-troubleshooting.md)
 - [Environment Variables](./environment-variables.md)
 

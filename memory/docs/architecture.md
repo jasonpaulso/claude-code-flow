@@ -34,15 +34,16 @@ class MemoryManager {
   private config: MemoryConfig;
 
   // Core operations
-  async store(item: Partial<MemoryItem>): Promise<MemoryItem>
-  async retrieve(id: string): Promise<MemoryItem | null>
-  async query(query: MemoryQuery): Promise<MemoryItem[]>
-  async update(id: string, updates: Partial<MemoryItem>): Promise<MemoryItem>
-  async delete(id: string): Promise<boolean>
+  async store(item: Partial<MemoryItem>): Promise<MemoryItem>;
+  async retrieve(id: string): Promise<MemoryItem | null>;
+  async query(query: MemoryQuery): Promise<MemoryItem[]>;
+  async update(id: string, updates: Partial<MemoryItem>): Promise<MemoryItem>;
+  async delete(id: string): Promise<boolean>;
 }
 ```
 
 **Key Responsibilities:**
+
 - Coordinate operations across all subsystems
 - Manage transactions and consistency
 - Handle caching strategies
@@ -54,6 +55,7 @@ class MemoryManager {
 #### SQLite Backend
 
 **Optimizations:**
+
 - WAL (Write-Ahead Logging) mode for concurrent access
 - FTS5 full-text search with custom tokenizers
 - Prepared statements for performance
@@ -61,6 +63,7 @@ class MemoryManager {
 - Automatic vacuum and optimization
 
 **Schema Design:**
+
 ```sql
 CREATE TABLE memory_items (
   id TEXT PRIMARY KEY,
@@ -95,6 +98,7 @@ CREATE VIRTUAL TABLE memory_fts USING fts5(
 #### Markdown Backend
 
 **Directory Structure:**
+
 ```
 memory/
 ├── namespaces/
@@ -114,6 +118,7 @@ memory/
 ```
 
 **File Format:**
+
 ```markdown
 ---
 id: task-001
@@ -153,6 +158,7 @@ Implemented JWT-based authentication system with the following features:
 ### Caching System
 
 **Multi-Strategy Cache:**
+
 ```typescript
 interface CacheEntry<T> {
   value: T;
@@ -181,6 +187,7 @@ class MemoryCache {
 ```
 
 **Cache Strategies:**
+
 - **LRU (Least Recently Used)**: Evicts items not accessed recently
 - **LFU (Least Frequently Used)**: Evicts items with lowest access count
 - **FIFO (First In, First Out)**: Evicts oldest items first
@@ -189,6 +196,7 @@ class MemoryCache {
 ### Indexing System
 
 **Multi-Dimensional Indexing:**
+
 ```typescript
 class MemoryIndexer {
   private indexes: {
@@ -207,6 +215,7 @@ class MemoryIndexer {
 ```
 
 **Vector Search Implementation:**
+
 - HNSW (Hierarchical Navigable Small World) for efficient similarity search
 - Cosine similarity for semantic matching
 - Configurable embedding dimensions (default: 1536 for OpenAI)
@@ -215,6 +224,7 @@ class MemoryIndexer {
 ### Conflict Resolution (CRDT)
 
 **Vector Clock Implementation:**
+
 ```typescript
 interface VectorClock {
   [agentId: string]: number;
@@ -229,7 +239,7 @@ class ConflictResolver {
     for (const agent in clockB) {
       const a = clockA[agent] || 0;
       const b = clockB[agent] || 0;
-      
+
       if (a > b) return false;
       if (a < b) atLeastOneLess = true;
     }
@@ -247,7 +257,7 @@ class ConflictResolver {
       metadata: this.mergeMetadata(itemA.metadata, itemB.metadata),
       version: Math.max(itemA.version, itemB.version) + 1,
       vectorClock: this.mergeVectorClocks(itemA.vectorClock, itemB.vectorClock),
-      updated: new Date()
+      updated: new Date(),
     };
   }
 }
@@ -256,6 +266,7 @@ class ConflictResolver {
 ### Replication Manager
 
 **Distributed Synchronization:**
+
 ```typescript
 class ReplicationManager {
   private peers: Map<string, PeerConnection>;
@@ -273,7 +284,7 @@ class ReplicationManager {
     const peer = this.peers.get(peerId);
     const localState = await this.getLocalState();
     const remoteState = await peer.getState();
-    
+
     return this.reconcile(localState, remoteState);
   }
 }
@@ -282,6 +293,7 @@ class ReplicationManager {
 ### Namespace Management
 
 **Multi-Tenant Isolation:**
+
 ```typescript
 interface NamespaceConfig {
   id: string;
@@ -301,10 +313,14 @@ interface NamespacePermissions {
 }
 
 class NamespaceManager {
-  async createNamespace(config: NamespaceConfig): Promise<void>
-  async deleteNamespace(id: string): Promise<void>
-  async checkPermission(namespace: string, agent: string, action: string): Promise<boolean>
-  async enforceQuotas(namespace: string): Promise<QuotaStatus>
+  async createNamespace(config: NamespaceConfig): Promise<void>;
+  async deleteNamespace(id: string): Promise<void>;
+  async checkPermission(
+    namespace: string,
+    agent: string,
+    action: string,
+  ): Promise<boolean>;
+  async enforceQuotas(namespace: string): Promise<QuotaStatus>;
 }
 ```
 
@@ -357,13 +373,13 @@ sequenceDiagram
 
 ### Time Complexity
 
-| Operation | SQLite Backend | Markdown Backend | Notes |
-|-----------|---------------|------------------|-------|
-| Store | O(log n) | O(1) | SQLite index updates |
-| Retrieve by ID | O(1) | O(1) | Hash table lookup |
-| Query by category | O(log n) | O(n) | Index vs scan |
-| Full-text search | O(k log n) | O(n) | FTS5 vs grep |
-| Vector search | O(k log n) | O(n) | HNSW vs linear |
+| Operation         | SQLite Backend | Markdown Backend | Notes                |
+| ----------------- | -------------- | ---------------- | -------------------- |
+| Store             | O(log n)       | O(1)             | SQLite index updates |
+| Retrieve by ID    | O(1)           | O(1)             | Hash table lookup    |
+| Query by category | O(log n)       | O(n)             | Index vs scan        |
+| Full-text search  | O(k log n)     | O(n)             | FTS5 vs grep         |
+| Vector search     | O(k log n)     | O(n)             | HNSW vs linear       |
 
 ### Space Complexity
 

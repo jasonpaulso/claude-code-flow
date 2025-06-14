@@ -3,31 +3,48 @@
  * Tests stdio and HTTP transports, protocol compliance, and error handling
  */
 
-import { describe, it, beforeEach, afterEach } from "https://deno.land/std@0.220.0/testing/bdd.ts";
-import { assertEquals, assertExists, assertRejects, assertThrows } from "https://deno.land/std@0.220.0/assert/mod.ts";
+import {
+  describe,
+  it,
+  beforeEach,
+  afterEach,
+} from "https://deno.land/std@0.220.0/testing/bdd.ts";
+import {
+  assertEquals,
+  assertExists,
+  assertRejects,
+  assertThrows,
+} from "https://deno.land/std@0.220.0/assert/mod.ts";
 import { FakeTime } from "https://deno.land/std@0.220.0/testing/time.ts";
 import { spy, stub } from "https://deno.land/std@0.220.0/testing/mock.ts";
 
-import { MCPServer } from '../../../src/mcp/server.ts';
-import { MCPClient } from '../../../src/mcp/client.ts';
-import { StdioTransport } from '../../../src/mcp/transports/stdio.ts';
-import { HttpTransport } from '../../../src/mcp/transports/http.ts';
-import { SessionManager } from '../../../src/mcp/session-manager.ts';
-import { LoadBalancer } from '../../../src/mcp/load-balancer.ts';
-import { AuthManager } from '../../../src/mcp/auth.ts';
-import { Logger } from '../../../src/core/logger.ts';
-import { EventBus } from '../../../src/core/event-bus.ts';
-import { 
-  AsyncTestUtils, 
+import { MCPServer } from "../../../src/mcp/server.ts";
+import { MCPClient } from "../../../src/mcp/client.ts";
+import { StdioTransport } from "../../../src/mcp/transports/stdio.ts";
+import { HttpTransport } from "../../../src/mcp/transports/http.ts";
+import { SessionManager } from "../../../src/mcp/session-manager.ts";
+import { LoadBalancer } from "../../../src/mcp/load-balancer.ts";
+import { AuthManager } from "../../../src/mcp/auth.ts";
+import { Logger } from "../../../src/core/logger.ts";
+import { EventBus } from "../../../src/core/event-bus.ts";
+import {
+  AsyncTestUtils,
   PerformanceTestUtils,
   TestAssertions,
   MockFactory,
-  FileSystemTestUtils
-} from '../../utils/test-utils.ts';
-import { generateMCPMessages, generateErrorScenarios } from '../../fixtures/generators.ts';
-import { setupTestEnv, cleanupTestEnv, TEST_CONFIG } from '../../test.config.ts';
+  FileSystemTestUtils,
+} from "../../utils/test-utils.ts";
+import {
+  generateMCPMessages,
+  generateErrorScenarios,
+} from "../../fixtures/generators.ts";
+import {
+  setupTestEnv,
+  cleanupTestEnv,
+  TEST_CONFIG,
+} from "../../test.config.ts";
 
-describe('MCP Interface - Comprehensive Tests', () => {
+describe("MCP Interface - Comprehensive Tests", () => {
   let tempDir: string;
   let fakeTime: FakeTime;
   let mockLogger: Logger;
@@ -35,17 +52,17 @@ describe('MCP Interface - Comprehensive Tests', () => {
 
   beforeEach(async () => {
     setupTestEnv();
-    tempDir = await FileSystemTestUtils.createTempDir('mcp-test-');
+    tempDir = await FileSystemTestUtils.createTempDir("mcp-test-");
     fakeTime = new FakeTime();
-    
+
     // Create a proper logger instance
     mockLogger = new Logger();
     await mockLogger.configure({
-      level: 'debug',
-      format: 'text',
-      destination: 'console',
+      level: "debug",
+      format: "text",
+      destination: "console",
     });
-    
+
     eventBus = EventBus.getInstance(false);
   });
 
@@ -55,29 +72,29 @@ describe('MCP Interface - Comprehensive Tests', () => {
     await cleanupTestEnv();
   });
 
-  describe('MCP Protocol Compliance', () => {
-    it('should handle JSON-RPC 2.0 message format correctly', () => {
+  describe("MCP Protocol Compliance", () => {
+    it("should handle JSON-RPC 2.0 message format correctly", () => {
       const validMessages = [
         {
-          jsonrpc: '2.0',
+          jsonrpc: "2.0",
           id: 1,
-          method: 'list_tools',
+          method: "list_tools",
           params: {},
         },
         {
-          jsonrpc: '2.0',
+          jsonrpc: "2.0",
           id: 2,
           result: { tools: [] },
         },
         {
-          jsonrpc: '2.0',
+          jsonrpc: "2.0",
           id: 3,
-          error: { code: -32601, message: 'Method not found' },
+          error: { code: -32601, message: "Method not found" },
         },
         {
-          jsonrpc: '2.0',
-          method: 'notification',
-          params: { type: 'status', data: {} },
+          jsonrpc: "2.0",
+          method: "notification",
+          params: { type: "status", data: {} },
         },
       ];
 
@@ -85,7 +102,7 @@ describe('MCP Interface - Comprehensive Tests', () => {
         // Test message validation
         const isValid = validateMCPMessage(message);
         assertEquals(isValid, true);
-        
+
         // Test serialization/deserialization
         const serialized = JSON.stringify(message);
         const deserialized = JSON.parse(serialized);
@@ -93,13 +110,13 @@ describe('MCP Interface - Comprehensive Tests', () => {
       }
     });
 
-    it('should reject invalid JSON-RPC messages', () => {
+    it("should reject invalid JSON-RPC messages", () => {
       const invalidMessages = [
-        { id: 1, method: 'test' }, // Missing jsonrpc
-        { jsonrpc: '1.0', id: 1, method: 'test' }, // Wrong version
-        { jsonrpc: '2.0', method: 'test', params: 'invalid' }, // Invalid params
-        { jsonrpc: '2.0', id: null, method: 'test' }, // Invalid id
-        { jsonrpc: '2.0' }, // Missing method/result/error
+        { id: 1, method: "test" }, // Missing jsonrpc
+        { jsonrpc: "1.0", id: 1, method: "test" }, // Wrong version
+        { jsonrpc: "2.0", method: "test", params: "invalid" }, // Invalid params
+        { jsonrpc: "2.0", id: null, method: "test" }, // Invalid id
+        { jsonrpc: "2.0" }, // Missing method/result/error
       ];
 
       for (const message of invalidMessages) {
@@ -108,45 +125,45 @@ describe('MCP Interface - Comprehensive Tests', () => {
       }
     });
 
-    it('should handle MCP-specific message types', () => {
+    it("should handle MCP-specific message types", () => {
       const mcpMessages = [
         {
-          jsonrpc: '2.0',
+          jsonrpc: "2.0",
           id: 1,
-          method: 'initialize',
+          method: "initialize",
           params: {
-            protocolVersion: '1.0.0',
+            protocolVersion: "1.0.0",
             capabilities: {},
-            clientInfo: { name: 'test-client', version: '1.0.0' },
+            clientInfo: { name: "test-client", version: "1.0.0" },
           },
         },
         {
-          jsonrpc: '2.0',
+          jsonrpc: "2.0",
           id: 2,
-          method: 'list_tools',
+          method: "list_tools",
           params: {},
         },
         {
-          jsonrpc: '2.0',
+          jsonrpc: "2.0",
           id: 3,
-          method: 'call_tool',
+          method: "call_tool",
           params: {
-            name: 'test-tool',
-            arguments: { arg1: 'value1' },
+            name: "test-tool",
+            arguments: { arg1: "value1" },
           },
         },
         {
-          jsonrpc: '2.0',
+          jsonrpc: "2.0",
           id: 4,
-          method: 'list_prompts',
+          method: "list_prompts",
           params: {},
         },
         {
-          jsonrpc: '2.0',
+          jsonrpc: "2.0",
           id: 5,
-          method: 'get_prompt',
+          method: "get_prompt",
           params: {
-            name: 'test-prompt',
+            name: "test-prompt",
             arguments: {},
           },
         },
@@ -155,13 +172,13 @@ describe('MCP Interface - Comprehensive Tests', () => {
       for (const message of mcpMessages) {
         const isValid = validateMCPMessage(message);
         assertEquals(isValid, true);
-        
+
         const messageType = getMCPMessageType(message);
         assertExists(messageType);
       }
     });
 
-    it('should handle capability negotiation correctly', () => {
+    it("should handle capability negotiation correctly", () => {
       const serverCapabilities = {
         tools: { listChanged: true },
         prompts: { listChanged: true },
@@ -174,15 +191,18 @@ describe('MCP Interface - Comprehensive Tests', () => {
         sampling: {},
       };
 
-      const negotiatedCapabilities = negotiateCapabilities(serverCapabilities, clientCapabilities);
-      
+      const negotiatedCapabilities = negotiateCapabilities(
+        serverCapabilities,
+        clientCapabilities,
+      );
+
       assertExists(negotiatedCapabilities);
-      assertEquals(typeof negotiatedCapabilities.server, 'object');
-      assertEquals(typeof negotiatedCapabilities.client, 'object');
+      assertEquals(typeof negotiatedCapabilities.server, "object");
+      assertEquals(typeof negotiatedCapabilities.client, "object");
     });
   });
 
-  describe('Stdio Transport', () => {
+  describe("Stdio Transport", () => {
     let stdioTransport: StdioTransport;
 
     beforeEach(() => {
@@ -195,20 +215,20 @@ describe('MCP Interface - Comprehensive Tests', () => {
       }
     });
 
-    it('should create stdio transport successfully', () => {
+    it("should create stdio transport successfully", () => {
       assertExists(stdioTransport);
     });
 
-    it('should handle stdio start and stop', async () => {
+    it("should handle stdio start and stop", async () => {
       // Since we can't actually test stdin/stdout in tests, we'll just verify the methods exist
-      assertEquals(typeof stdioTransport.start, 'function');
-      assertEquals(typeof stdioTransport.stop, 'function');
-      assertEquals(typeof stdioTransport.connect, 'function');
-      assertEquals(typeof stdioTransport.disconnect, 'function');
+      assertEquals(typeof stdioTransport.start, "function");
+      assertEquals(typeof stdioTransport.stop, "function");
+      assertEquals(typeof stdioTransport.connect, "function");
+      assertEquals(typeof stdioTransport.disconnect, "function");
     });
   });
 
-  describe('HTTP Transport', () => {
+  describe("HTTP Transport", () => {
     let httpTransport: HttpTransport;
     let mockServer: any;
 
@@ -217,27 +237,27 @@ describe('MCP Interface - Comprehensive Tests', () => {
       mockServer = {
         port: TEST_CONFIG.mocks.mcp_server_port,
         responses: new Map(),
-        
+
         start: async () => {
           // Mock HTTP server implementation
           mockServer.running = true;
         },
-        
+
         stop: async () => {
           mockServer.running = false;
         },
-        
+
         setResponse: (path: string, response: any) => {
           mockServer.responses.set(path, response);
         },
       };
 
       httpTransport = new HttpTransport(
-        'localhost',
+        "localhost",
         mockServer.port,
         false, // tlsEnabled
         mockLogger,
-        undefined // config
+        undefined, // config
       );
 
       await mockServer.start();
@@ -252,31 +272,31 @@ describe('MCP Interface - Comprehensive Tests', () => {
       }
     });
 
-    it('should create HTTP transport successfully', () => {
+    it("should create HTTP transport successfully", () => {
       assertExists(httpTransport);
     });
 
-    it('should handle HTTP start and stop', async () => {
-      assertEquals(typeof httpTransport.start, 'function');
-      assertEquals(typeof httpTransport.stop, 'function');
-      assertEquals(typeof httpTransport.connect, 'function');
-      assertEquals(typeof httpTransport.disconnect, 'function');
+    it("should handle HTTP start and stop", async () => {
+      assertEquals(typeof httpTransport.start, "function");
+      assertEquals(typeof httpTransport.stop, "function");
+      assertEquals(typeof httpTransport.connect, "function");
+      assertEquals(typeof httpTransport.disconnect, "function");
     });
   });
 
-  describe('MCP Server Implementation', () => {
+  describe("MCP Server Implementation", () => {
     let mcpServer: MCPServer;
 
     beforeEach(async () => {
       const config = {
-        transport: 'stdio' as const,
-        host: 'localhost',
+        transport: "stdio" as const,
+        host: "localhost",
         port: 3002,
         tlsEnabled: false,
-        auth: { enabled: false, method: 'token' as const },
+        auth: { enabled: false, method: "token" as const },
         loadBalancer: {
           enabled: false,
-          strategy: 'round-robin' as const,
+          strategy: "round-robin" as const,
           maxRequestsPerSecond: 100,
           healthCheckInterval: 30000,
           circuitBreakerThreshold: 5,
@@ -294,36 +314,36 @@ describe('MCP Interface - Comprehensive Tests', () => {
       }
     });
 
-    it('should create server correctly', () => {
+    it("should create server correctly", () => {
       assertExists(mcpServer);
     });
 
-    it('should register and list tools correctly', () => {
+    it("should register and list tools correctly", () => {
       mcpServer.registerTool({
-        name: 'test/tool1',
-        description: 'A test tool',
+        name: "test/tool1",
+        description: "A test tool",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {
-            input: { type: 'string' },
+            input: { type: "string" },
           },
         },
         handler: async (params: any) => ({
-          content: [{ type: 'text', text: `Processed: ${params.input}` }],
+          content: [{ type: "text", text: `Processed: ${params.input}` }],
         }),
       });
 
       mcpServer.registerTool({
-        name: 'test/tool2',
-        description: 'Another test tool',
+        name: "test/tool2",
+        description: "Another test tool",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {
-            value: { type: 'number' },
+            value: { type: "number" },
           },
         },
         handler: async (params: any) => ({
-          content: [{ type: 'text', text: `Result: ${params.value * 2}` }],
+          content: [{ type: "text", text: `Result: ${params.value * 2}` }],
         }),
       });
 
@@ -333,7 +353,7 @@ describe('MCP Interface - Comprehensive Tests', () => {
     });
   });
 
-  describe('MCP Client Implementation', () => {
+  describe("MCP Client Implementation", () => {
     let mcpClient: MCPClient;
     let mockTransport: any;
 
@@ -342,11 +362,12 @@ describe('MCP Interface - Comprehensive Tests', () => {
       mockTransport = {
         connect: () => Promise.resolve(),
         disconnect: () => Promise.resolve(),
-        sendRequest: () => Promise.resolve({
-          jsonrpc: '2.0' as const,
-          id: '123',
-          result: { success: true },
-        }),
+        sendRequest: () =>
+          Promise.resolve({
+            jsonrpc: "2.0" as const,
+            id: "123",
+            result: { success: true },
+          }),
         sendNotification: () => Promise.resolve(),
         start: () => Promise.resolve(),
         stop: () => Promise.resolve(),
@@ -366,36 +387,36 @@ describe('MCP Interface - Comprehensive Tests', () => {
       }
     });
 
-    it('should connect and disconnect correctly', async () => {
+    it("should connect and disconnect correctly", async () => {
       await mcpClient.connect();
       assertEquals(mcpClient.isConnected(), true);
-      
+
       await mcpClient.disconnect();
       assertEquals(mcpClient.isConnected(), false);
     });
 
-    it('should send requests correctly', async () => {
+    it("should send requests correctly", async () => {
       await mcpClient.connect();
-      
-      const result = await mcpClient.request('test_method', { param: 'value' });
+
+      const result = await mcpClient.request("test_method", { param: "value" });
       assertExists(result);
       assertEquals(result, { success: true });
     });
   });
 
-  describe('Session Management', () => {
+  describe("Session Management", () => {
     let sessionManager: SessionManager;
 
     beforeEach(() => {
       const config = {
-        transport: 'stdio' as const,
-        host: 'localhost',
+        transport: "stdio" as const,
+        host: "localhost",
         port: 3002,
         tlsEnabled: false,
-        auth: { enabled: false, method: 'token' as const },
+        auth: { enabled: false, method: "token" as const },
         loadBalancer: {
           enabled: false,
-          strategy: 'round-robin' as const,
+          strategy: "round-robin" as const,
           maxRequestsPerSecond: 100,
           healthCheckInterval: 30000,
           circuitBreakerThreshold: 5,
@@ -413,24 +434,24 @@ describe('MCP Interface - Comprehensive Tests', () => {
       }
     });
 
-    it('should create session manager correctly', () => {
+    it("should create session manager correctly", () => {
       assertExists(sessionManager);
     });
 
-    it('should handle session operations', () => {
+    it("should handle session operations", () => {
       // Session manager doesn't have start/stop methods but we can test basic functionality
-      assertEquals(typeof sessionManager.createSession, 'function');
-      assertEquals(typeof sessionManager.getSession, 'function');
+      assertEquals(typeof sessionManager.createSession, "function");
+      assertEquals(typeof sessionManager.getSession, "function");
     });
   });
 
-  describe('Load Balancing and Scaling', () => {
+  describe("Load Balancing and Scaling", () => {
     let loadBalancer: LoadBalancer;
 
     beforeEach(() => {
       const config = {
         enabled: true,
-        strategy: 'round-robin' as const,
+        strategy: "round-robin" as const,
         maxRequestsPerSecond: 100,
         healthCheckInterval: 1000,
         circuitBreakerThreshold: 5,
@@ -445,19 +466,19 @@ describe('MCP Interface - Comprehensive Tests', () => {
       }
     });
 
-    it('should create load balancer correctly', () => {
+    it("should create load balancer correctly", () => {
       assertExists(loadBalancer);
     });
   });
 
-  describe('Authentication and Security', () => {
+  describe("Authentication and Security", () => {
     let authManager: AuthManager;
 
     beforeEach(() => {
       const config = {
         enabled: true,
-        method: 'token' as const,
-        tokens: ['test-token'],
+        method: "token" as const,
+        tokens: ["test-token"],
         certificatePath: `${tempDir}/test-cert.pem`,
       };
 
@@ -470,17 +491,18 @@ describe('MCP Interface - Comprehensive Tests', () => {
       }
     });
 
-    it('should create auth manager correctly', () => {
+    it("should create auth manager correctly", () => {
       assertExists(authManager);
     });
   });
 
-  describe('Error Handling and Recovery', () => {
-    it('should handle transport failures gracefully', async () => {
+  describe("Error Handling and Recovery", () => {
+    it("should handle transport failures gracefully", async () => {
       const faultyTransport = {
-        connect: () => Promise.reject(new Error('Connection failed')),
+        connect: () => Promise.reject(new Error("Connection failed")),
         disconnect: () => Promise.resolve(),
-        sendRequest: () => Promise.resolve({ jsonrpc: '2.0' as const, id: '1', result: {} }),
+        sendRequest: () =>
+          Promise.resolve({ jsonrpc: "2.0" as const, id: "1", result: {} }),
         sendNotification: () => Promise.resolve(),
         start: () => Promise.resolve(),
         stop: () => Promise.resolve(),
@@ -495,17 +517,17 @@ describe('MCP Interface - Comprehensive Tests', () => {
 
       await TestAssertions.assertThrowsAsync(
         () => clientWithFaultyTransport.connect(),
-        Error
+        Error,
       );
     });
 
-    it('should handle malformed messages correctly', async () => {
+    it("should handle malformed messages correctly", async () => {
       const errorScenarios = generateErrorScenarios();
-      
+
       for (const scenario of errorScenarios) {
         // Test how the MCP implementation handles various error scenarios
         console.log(`Testing error scenario: ${scenario.name}`);
-        
+
         // This would involve sending malformed messages and verifying
         // that the system handles them gracefully
       }
@@ -515,16 +537,16 @@ describe('MCP Interface - Comprehensive Tests', () => {
 
 // Helper functions for MCP protocol compliance testing
 function validateMCPMessage(message: any): boolean {
-  if (!message || typeof message !== 'object') return false;
-  if (message.jsonrpc !== '2.0') return false;
-  
+  if (!message || typeof message !== "object") return false;
+  if (message.jsonrpc !== "2.0") return false;
+
   // Must have either method (request/notification) or result/error (response)
-  const hasMethod = typeof message.method === 'string';
-  const hasResult = 'result' in message;
-  const hasError = 'error' in message;
-  
+  const hasMethod = typeof message.method === "string";
+  const hasResult = "result" in message;
+  const hasError = "error" in message;
+
   if (!hasMethod && !hasResult && !hasError) return false;
-  
+
   // Requests with id and responses must have valid id
   if (hasResult || hasError) {
     // Responses must have an id
@@ -532,7 +554,7 @@ function validateMCPMessage(message: any): boolean {
       return false;
     }
   }
-  
+
   // Requests (not notifications) should have an id
   if (hasMethod && message.id !== undefined) {
     // This is a request, check for valid id type
@@ -540,21 +562,21 @@ function validateMCPMessage(message: any): boolean {
       return false;
     }
   }
-  
+
   return true;
 }
 
 function getMCPMessageType(message: any): string | null {
   if (!validateMCPMessage(message)) return null;
-  
+
   if (message.method) {
-    return message.id !== undefined ? 'request' : 'notification';
+    return message.id !== undefined ? "request" : "notification";
   } else if (message.result !== undefined) {
-    return 'response';
+    return "response";
   } else if (message.error !== undefined) {
-    return 'error';
+    return "error";
   }
-  
+
   return null;
 }
 

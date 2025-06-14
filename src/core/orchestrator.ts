@@ -12,17 +12,26 @@ import {
   ComponentHealth,
   TaskStatus,
   OrchestratorMetrics,
-} from '../utils/types.ts';
-import { IEventBus } from './event-bus.ts';
-import { ILogger } from './logger.ts';
-import { ITerminalManager } from '../terminal/manager.ts';
-import { IMemoryManager } from '../memory/manager.ts';
-import { ICoordinationManager } from '../coordination/manager.ts';
-import { IMCPServer } from '../mcp/server.ts';
-import { SystemError, InitializationError, ShutdownError } from '../utils/errors.ts';
-import { delay, retry, circuitBreaker, CircuitBreaker } from '../utils/helpers.ts';
-import { ensureDir, exists } from 'https://deno.land/std@0.208.0/fs/mod.ts';
-import { join, dirname } from 'https://deno.land/std@0.208.0/path/mod.ts';
+} from "../utils/types.ts";
+import { IEventBus } from "./event-bus.ts";
+import { ILogger } from "./logger.ts";
+import { ITerminalManager } from "../terminal/manager.ts";
+import { IMemoryManager } from "../memory/manager.ts";
+import { ICoordinationManager } from "../coordination/manager.ts";
+import { IMCPServer } from "../mcp/server.ts";
+import {
+  SystemError,
+  InitializationError,
+  ShutdownError,
+} from "../utils/errors.ts";
+import {
+  delay,
+  retry,
+  circuitBreaker,
+  CircuitBreaker,
+} from "../utils/helpers.ts";
+import { ensureDir, exists } from "https://deno.land/std@0.208.0/fs/mod.ts";
+import { join, dirname } from "https://deno.land/std@0.208.0/path/mod.ts";
 import process from "node:process";
 
 export interface ISessionManager {
@@ -46,7 +55,6 @@ export interface IOrchestrator {
   getMetrics(): Promise<OrchestratorMetrics>;
   performMaintenance(): Promise<void>;
 }
-
 
 export interface SessionPersistence {
   sessions: Array<AgentSession & { profile: AgentProfile }>;
@@ -76,15 +84,16 @@ class SessionManager implements ISessionManager {
     private config: Config,
   ) {
     this.persistencePath = join(
-      config.orchestrator.dataDir || './data',
-      'sessions.json'
+      config.orchestrator.dataDir || "./data",
+      "sessions.json",
     );
-    
+
     // Circuit breaker for persistence operations
-    this.persistenceCircuitBreaker = circuitBreaker(
-      'SessionPersistence',
-      { threshold: 5, timeout: 30000, resetTimeout: 60000 }
-    );
+    this.persistenceCircuitBreaker = circuitBreaker("SessionPersistence", {
+      threshold: 5,
+      timeout: 30000,
+      resetTimeout: 60000,
+    });
   }
 
   async createSession(profile: AgentProfile): Promise<AgentSession> {
@@ -92,13 +101,13 @@ class SessionManager implements ISessionManager {
       // Create terminal with retry logic
       const terminalId = await retry(
         () => this.terminalManager.spawnTerminal(profile),
-        { maxAttempts: 3, initialDelay: 1000 }
+        { maxAttempts: 3, initialDelay: 1000 },
       );
 
       // Create memory bank with retry logic
       const memoryBankId = await retry(
         () => this.memoryManager.createBank(profile.id),
-        { maxAttempts: 3, initialDelay: 1000 }
+        { maxAttempts: 3, initialDelay: 1000 },
       );
 
       // Create session
@@ -107,30 +116,36 @@ class SessionManager implements ISessionManager {
         agentId: profile.id,
         terminalId,
         startTime: new Date(),
-        status: 'active',
+        status: "active",
         lastActivity: new Date(),
         memoryBankId,
       };
 
       this.sessions.set(session.id, session);
       this.sessionProfiles.set(session.id, profile);
-      
-      this.logger.info('Session created', { 
-        sessionId: session.id, 
+
+      this.logger.info("Session created", {
+        sessionId: session.id,
         agentId: profile.id,
         terminalId,
-        memoryBankId 
+        memoryBankId,
       });
-      
+
       // Persist sessions asynchronously
-      this.persistSessions().catch(error => 
-        this.logger.error('Failed to persist sessions', error)
+      this.persistSessions().catch((error) =>
+        this.logger.error("Failed to persist sessions", error),
       );
-      
+
       return session;
     } catch (error) {
-      this.logger.error('Failed to create session', { agentId: profile.id, error });
-      throw new SystemError(`Failed to create session for agent ${profile.id}`, { error });
+      this.logger.error("Failed to create session", {
+        agentId: profile.id,
+        error,
+      });
+      throw new SystemError(
+        `Failed to create session for agent ${profile.id}`,
+        { error },
+      );
     }
   }
 
@@ -140,7 +155,7 @@ class SessionManager implements ISessionManager {
 
   getActiveSessions(): AgentSession[] {
     return Array.from(this.sessions.values()).filter(
-      (session) => session.status === 'active' || session.status === 'idle',
+      (session) => session.status === "active" || session.status === "idle",
     );
   }
 
@@ -152,53 +167,59 @@ class SessionManager implements ISessionManager {
 
     try {
       // Update session status first
-      session.status = 'terminated';
+      session.status = "terminated";
       session.endTime = new Date();
 
       // Terminate terminal with timeout
       await Promise.race([
         this.terminalManager.terminateTerminal(session.terminalId),
         delay(5000).then(() => {
-          throw new Error('Terminal termination timeout');
-        })
-      ]).catch(error => {
-        this.logger.error('Error terminating terminal', { sessionId, error });
+          throw new Error("Terminal termination timeout");
+        }),
+      ]).catch((error) => {
+        this.logger.error("Error terminating terminal", { sessionId, error });
       });
 
       // Close memory bank with timeout
       await Promise.race([
         this.memoryManager.closeBank(session.memoryBankId),
         delay(5000).then(() => {
-          throw new Error('Memory bank close timeout');
-        })
-      ]).catch(error => {
-        this.logger.error('Error closing memory bank', { sessionId, error });
+          throw new Error("Memory bank close timeout");
+        }),
+      ]).catch((error) => {
+        this.logger.error("Error closing memory bank", { sessionId, error });
       });
 
       // Clean up
       this.sessionProfiles.delete(sessionId);
 
-      this.logger.info('Session terminated', { sessionId, duration: session.endTime.getTime() - session.startTime.getTime() });
-      
+      this.logger.info("Session terminated", {
+        sessionId,
+        duration: session.endTime.getTime() - session.startTime.getTime(),
+      });
+
       // Persist sessions asynchronously
-      this.persistSessions().catch(error => 
-        this.logger.error('Failed to persist sessions', error)
+      this.persistSessions().catch((error) =>
+        this.logger.error("Failed to persist sessions", error),
       );
     } catch (error) {
-      this.logger.error('Error during session termination', { sessionId, error });
+      this.logger.error("Error during session termination", {
+        sessionId,
+        error,
+      });
       throw error;
     }
   }
 
   async terminateAllSessions(): Promise<void> {
     const sessions = this.getActiveSessions();
-    
+
     // Terminate sessions in batches to avoid overwhelming the system
     const batchSize = 5;
     for (let i = 0; i < sessions.length; i += batchSize) {
       const batch = sessions.slice(i, i + batchSize);
       await Promise.allSettled(
-        batch.map((session) => this.terminateSession(session.id))
+        batch.map((session) => this.terminateSession(session.id)),
       );
     }
   }
@@ -216,10 +237,12 @@ class SessionManager implements ISessionManager {
     try {
       await this.persistenceCircuitBreaker.execute(async () => {
         const data: SessionPersistence = {
-          sessions: Array.from(this.sessions.values()).map(session => ({
-            ...session,
-            profile: this.sessionProfiles.get(session.id)!
-          })).filter(s => s.profile),
+          sessions: Array.from(this.sessions.values())
+            .map((session) => ({
+              ...session,
+              profile: this.sessionProfiles.get(session.id)!,
+            }))
+            .filter((s) => s.profile),
           taskQueue: [],
           metrics: {
             completedTasks: 0,
@@ -230,12 +253,17 @@ class SessionManager implements ISessionManager {
         };
 
         await ensureDir(dirname(this.persistencePath));
-        await Deno.writeTextFile(this.persistencePath, JSON.stringify(data, null, 2));
-        
-        this.logger.debug('Sessions persisted', { count: data.sessions.length });
+        await Deno.writeTextFile(
+          this.persistencePath,
+          JSON.stringify(data, null, 2),
+        );
+
+        this.logger.debug("Sessions persisted", {
+          count: data.sessions.length,
+        });
       });
     } catch (error) {
-      this.logger.error('Failed to persist sessions', error);
+      this.logger.error("Failed to persist sessions", error);
     }
   }
 
@@ -247,35 +275,35 @@ class SessionManager implements ISessionManager {
     try {
       const data = await Deno.readTextFile(this.persistencePath);
       const persistence: SessionPersistence = JSON.parse(data);
-      
+
       // Restore only active/idle sessions
       const sessionsToRestore = persistence.sessions.filter(
-        s => s.status === 'active' || s.status === 'idle'
+        (s) => s.status === "active" || s.status === "idle",
       );
-      
+
       for (const sessionData of sessionsToRestore) {
         try {
           // Recreate session
           const session = await this.createSession(sessionData.profile);
-          
+
           // Update with persisted data
           Object.assign(session, {
             id: sessionData.id,
             startTime: new Date(sessionData.startTime),
             lastActivity: new Date(sessionData.lastActivity),
           });
-          
-          this.logger.info('Session restored', { sessionId: session.id });
+
+          this.logger.info("Session restored", { sessionId: session.id });
         } catch (error) {
-          this.logger.error('Failed to restore session', { 
-            sessionId: sessionData.id, 
-            error 
+          this.logger.error("Failed to restore session", {
+            sessionId: sessionData.id,
+            error,
           });
         }
       }
     } catch (error) {
-      if ((error as any).code !== 'ENOENT') {
-        this.logger.error('Failed to restore sessions', error);
+      if ((error as any).code !== "ENOENT") {
+        this.logger.error("Failed to restore sessions", error);
       }
     }
   }
@@ -295,14 +323,14 @@ export class Orchestrator implements IOrchestrator {
   private taskQueue: Task[] = [];
   private taskHistory = new Map<string, Task>();
   private startTime = Date.now();
-  
+
   // Metrics tracking
   private metrics = {
     completedTasks: 0,
     failedTasks: 0,
     totalTaskDuration: 0,
   };
-  
+
   // Circuit breakers for critical operations
   private healthCheckCircuitBreaker: CircuitBreaker;
   private taskAssignmentCircuitBreaker: CircuitBreaker;
@@ -323,37 +351,44 @@ export class Orchestrator implements IOrchestrator {
       logger,
       config,
     );
-    
+
     // Initialize circuit breakers
-    this.healthCheckCircuitBreaker = circuitBreaker(
-      'HealthCheck',
-      { threshold: 3, timeout: 10000, resetTimeout: 30000 }
-    );
-    
-    this.taskAssignmentCircuitBreaker = circuitBreaker(
-      'TaskAssignment',
-      { threshold: 5, timeout: 5000, resetTimeout: 20000 }
-    );
+    this.healthCheckCircuitBreaker = circuitBreaker("HealthCheck", {
+      threshold: 3,
+      timeout: 10000,
+      resetTimeout: 30000,
+    });
+
+    this.taskAssignmentCircuitBreaker = circuitBreaker("TaskAssignment", {
+      threshold: 5,
+      timeout: 5000,
+      resetTimeout: 20000,
+    });
   }
 
   async initialize(): Promise<void> {
     if (this.initialized) {
-      throw new InitializationError('Orchestrator already initialized');
+      throw new InitializationError("Orchestrator already initialized");
     }
 
-    this.logger.info('Initializing orchestrator...');
+    this.logger.info("Initializing orchestrator...");
     const startTime = Date.now();
 
     try {
       // Initialize components in parallel where possible
       await Promise.all([
-        this.initializeComponent('Terminal Manager', () => this.terminalManager.initialize()),
-        this.initializeComponent('Memory Manager', () => this.memoryManager.initialize()),
-        this.initializeComponent('Coordination Manager', () => this.coordinationManager.initialize()),
+        this.initializeComponent("Terminal Manager", () =>
+          this.terminalManager.initialize(),
+        ),
+        this.initializeComponent("Memory Manager", () =>
+          this.memoryManager.initialize(),
+        ),
+        this.initializeComponent("Coordination Manager", () =>
+          this.coordinationManager.initialize(),
+        ),
       ]);
-      
-      // MCP server needs to be started after other components
-      await this.initializeComponent('MCP Server', () => this.mcpServer.start());
+
+      // MCP server is already started by ProcessManager - no need to start it again
 
       // Restore persisted sessions
       await this.sessionManager.restoreSessions();
@@ -370,14 +405,16 @@ export class Orchestrator implements IOrchestrator {
 
       const initDuration = Date.now() - startTime;
       this.eventBus.emit(SystemEvents.SYSTEM_READY, { timestamp: new Date() });
-      this.logger.info('Orchestrator initialized successfully', { duration: initDuration });
+      this.logger.info("Orchestrator initialized successfully", {
+        duration: initDuration,
+      });
     } catch (error) {
-      this.logger.error('Failed to initialize orchestrator', error);
-      
+      this.logger.error("Failed to initialize orchestrator", error);
+
       // Attempt cleanup on initialization failure
       await this.emergencyShutdown();
-      
-      throw new InitializationError('Orchestrator', { error });
+
+      throw new InitializationError("Orchestrator", { error });
     }
   }
 
@@ -387,7 +424,7 @@ export class Orchestrator implements IOrchestrator {
     }
 
     this.shutdownInProgress = true;
-    this.logger.info('Shutting down orchestrator...');
+    this.logger.info("Shutting down orchestrator...");
     const shutdownStart = Date.now();
 
     try {
@@ -410,15 +447,19 @@ export class Orchestrator implements IOrchestrator {
       ]);
 
       const shutdownDuration = Date.now() - shutdownStart;
-      this.eventBus.emit(SystemEvents.SYSTEM_SHUTDOWN, { reason: 'Graceful shutdown' });
-      this.logger.info('Orchestrator shutdown complete', { duration: shutdownDuration });
+      this.eventBus.emit(SystemEvents.SYSTEM_SHUTDOWN, {
+        reason: "Graceful shutdown",
+      });
+      this.logger.info("Orchestrator shutdown complete", {
+        duration: shutdownDuration,
+      });
     } catch (error) {
-      this.logger.error('Error during shutdown', error);
-      
+      this.logger.error("Error during shutdown", error);
+
       // Force shutdown if graceful shutdown fails
       await this.emergencyShutdown();
-      
-      throw new ShutdownError('Failed to shutdown gracefully', { error });
+
+      throw new ShutdownError("Failed to shutdown gracefully", { error });
     } finally {
       this.initialized = false;
       this.shutdownInProgress = false;
@@ -427,24 +468,27 @@ export class Orchestrator implements IOrchestrator {
 
   async spawnAgent(profile: AgentProfile): Promise<string> {
     if (!this.initialized) {
-      throw new SystemError('Orchestrator not initialized');
+      throw new SystemError("Orchestrator not initialized");
     }
 
     // Check agent limit
     if (this.agents.size >= this.config.orchestrator.maxConcurrentAgents) {
-      throw new SystemError('Maximum concurrent agents reached');
+      throw new SystemError("Maximum concurrent agents reached");
     }
 
     // Validate agent profile
     this.validateAgentProfile(profile);
 
-    this.logger.info('Spawning agent', { agentId: profile.id, type: profile.type });
+    this.logger.info("Spawning agent", {
+      agentId: profile.id,
+      type: profile.type,
+    });
 
     try {
       // Create session with retry
       const session = await retry(
         () => this.sessionManager.createSession(profile),
-        { maxAttempts: 3, initialDelay: 2000 }
+        { maxAttempts: 3, initialDelay: 2000 },
       );
 
       // Store agent profile
@@ -462,14 +506,17 @@ export class Orchestrator implements IOrchestrator {
 
       return session.id;
     } catch (error) {
-      this.logger.error('Failed to spawn agent', { agentId: profile.id, error });
+      this.logger.error("Failed to spawn agent", {
+        agentId: profile.id,
+        error,
+      });
       throw error;
     }
   }
 
   async terminateAgent(agentId: string): Promise<void> {
     if (!this.initialized) {
-      throw new SystemError('Orchestrator not initialized');
+      throw new SystemError("Orchestrator not initialized");
     }
 
     const profile = this.agents.get(agentId);
@@ -477,19 +524,21 @@ export class Orchestrator implements IOrchestrator {
       throw new SystemError(`Agent not found: ${agentId}`);
     }
 
-    this.logger.info('Terminating agent', { agentId });
+    this.logger.info("Terminating agent", { agentId });
 
     try {
       // Cancel any assigned tasks
       await this.cancelAgentTasks(agentId);
 
       // Find and terminate all sessions for this agent
-      const sessions = this.sessionManager.getActiveSessions().filter(
-        (session) => session.agentId === agentId,
-      );
+      const sessions = this.sessionManager
+        .getActiveSessions()
+        .filter((session) => session.agentId === agentId);
 
       await Promise.allSettled(
-        sessions.map((session) => this.sessionManager.terminateSession(session.id)),
+        sessions.map((session) =>
+          this.sessionManager.terminateSession(session.id),
+        ),
       );
 
       // Remove agent
@@ -498,17 +547,17 @@ export class Orchestrator implements IOrchestrator {
       // Emit event
       this.eventBus.emit(SystemEvents.AGENT_TERMINATED, {
         agentId,
-        reason: 'User requested',
+        reason: "User requested",
       });
     } catch (error) {
-      this.logger.error('Failed to terminate agent', { agentId, error });
+      this.logger.error("Failed to terminate agent", { agentId, error });
       throw error;
     }
   }
 
   async assignTask(task: Task): Promise<void> {
     if (!this.initialized) {
-      throw new SystemError('Orchestrator not initialized');
+      throw new SystemError("Orchestrator not initialized");
     }
 
     // Validate task
@@ -522,12 +571,12 @@ export class Orchestrator implements IOrchestrator {
         // Add to queue if no agent assigned
         if (!task.assignedAgent) {
           if (this.taskQueue.length >= this.config.orchestrator.taskQueueSize) {
-            throw new SystemError('Task queue is full');
+            throw new SystemError("Task queue is full");
           }
 
           this.taskQueue.push(task);
           this.eventBus.emit(SystemEvents.TASK_CREATED, { task });
-          
+
           // Try to assign immediately
           await this.processTaskQueue();
           return;
@@ -540,14 +589,14 @@ export class Orchestrator implements IOrchestrator {
         }
 
         await this.coordinationManager.assignTask(task, task.assignedAgent);
-        
+
         this.eventBus.emit(SystemEvents.TASK_ASSIGNED, {
           taskId: task.id,
           agentId: task.assignedAgent,
         });
       });
     } catch (error) {
-      this.logger.error('Failed to assign task', { taskId: task.id, error });
+      this.logger.error("Failed to assign task", { taskId: task.id, error });
       throw error;
     }
   }
@@ -560,33 +609,39 @@ export class Orchestrator implements IOrchestrator {
         // Check all components in parallel
         const [terminal, memory, coordination, mcp] = await Promise.allSettled([
           this.getComponentHealth(
-            'Terminal Manager',
+            "Terminal Manager",
             async () => await this.terminalManager.getHealthStatus(),
           ),
           this.getComponentHealth(
-            'Memory Manager',
+            "Memory Manager",
             async () => await this.memoryManager.getHealthStatus(),
           ),
           this.getComponentHealth(
-            'Coordination Manager',
+            "Coordination Manager",
             async () => await this.coordinationManager.getHealthStatus(),
           ),
           this.getComponentHealth(
-            'MCP Server',
+            "MCP Server",
             async () => await this.mcpServer.getHealthStatus(),
           ),
         ]);
 
         // Process results
-        components.terminal = this.processHealthResult(terminal, 'Terminal Manager');
-        components.memory = this.processHealthResult(memory, 'Memory Manager');
-        components.coordination = this.processHealthResult(coordination, 'Coordination Manager');
-        components.mcp = this.processHealthResult(mcp, 'MCP Server');
+        components.terminal = this.processHealthResult(
+          terminal,
+          "Terminal Manager",
+        );
+        components.memory = this.processHealthResult(memory, "Memory Manager");
+        components.coordination = this.processHealthResult(
+          coordination,
+          "Coordination Manager",
+        );
+        components.mcp = this.processHealthResult(mcp, "MCP Server");
 
         // Add orchestrator self-check
         components.orchestrator = {
-          name: 'Orchestrator',
-          status: 'healthy',
+          name: "Orchestrator",
+          status: "healthy",
           lastCheck: new Date(),
           metrics: {
             uptime: Date.now() - this.startTime,
@@ -598,12 +653,12 @@ export class Orchestrator implements IOrchestrator {
 
         // Determine overall status
         const statuses = Object.values(components).map((c) => c.status);
-        let overallStatus: HealthStatus['status'] = 'healthy';
-        
-        if (statuses.some((s) => s === 'unhealthy')) {
-          overallStatus = 'unhealthy';
-        } else if (statuses.some((s) => s === 'degraded')) {
-          overallStatus = 'degraded';
+        let overallStatus: HealthStatus["status"] = "healthy";
+
+        if (statuses.some((s) => s === "unhealthy")) {
+          overallStatus = "unhealthy";
+        } else if (statuses.some((s) => s === "degraded")) {
+          overallStatus = "degraded";
         }
 
         return {
@@ -613,17 +668,17 @@ export class Orchestrator implements IOrchestrator {
         };
       });
     } catch (error) {
-      this.logger.error('Health check failed', error);
-      
+      this.logger.error("Health check failed", error);
+
       // Return degraded status if health check fails
       return {
-        status: 'degraded',
+        status: "degraded",
         components: {
           orchestrator: {
-            name: 'Orchestrator',
-            status: 'degraded',
+            name: "Orchestrator",
+            status: "degraded",
             lastCheck: new Date(),
-            error: 'Health check circuit breaker open',
+            error: "Health check circuit breaker open",
           },
         },
         timestamp: new Date(),
@@ -634,10 +689,11 @@ export class Orchestrator implements IOrchestrator {
   async getMetrics(): Promise<OrchestratorMetrics> {
     const memUsage = process.memoryUsage();
     const cpuUsage = process.cpuUsage();
-    
-    const avgTaskDuration = this.metrics.completedTasks > 0
-      ? this.metrics.totalTaskDuration / this.metrics.completedTasks
-      : 0;
+
+    const avgTaskDuration =
+      this.metrics.completedTasks > 0
+        ? this.metrics.totalTaskDuration / this.metrics.completedTasks
+        : 0;
 
     return {
       uptime: Date.now() - this.startTime,
@@ -655,7 +711,7 @@ export class Orchestrator implements IOrchestrator {
   }
 
   async performMaintenance(): Promise<void> {
-    this.logger.debug('Performing maintenance tasks');
+    this.logger.debug("Performing maintenance tasks");
 
     try {
       // Clean up terminated sessions
@@ -679,9 +735,9 @@ export class Orchestrator implements IOrchestrator {
         globalThis.gc();
       }
 
-      this.logger.debug('Maintenance tasks completed');
+      this.logger.debug("Maintenance tasks completed");
     } catch (error) {
-      this.logger.error('Error during maintenance', error);
+      this.logger.error("Error during maintenance", error);
     }
   }
 
@@ -691,7 +747,7 @@ export class Orchestrator implements IOrchestrator {
       const { taskId, agentId } = data as { taskId: string; agentId: string };
       const task = this.taskHistory.get(taskId);
       if (task) {
-        task.status = 'running';
+        task.status = "running";
         task.startedAt = new Date();
       }
     });
@@ -700,19 +756,20 @@ export class Orchestrator implements IOrchestrator {
       const { taskId, result } = data as { taskId: string; result: unknown };
       const task = this.taskHistory.get(taskId);
       if (task) {
-        task.status = 'completed';
+        task.status = "completed";
         task.completedAt = new Date();
         if (result !== undefined) {
           task.output = result as Record<string, unknown>;
         }
-        
+
         // Update metrics
         this.metrics.completedTasks++;
         if (task.startedAt) {
-          this.metrics.totalTaskDuration += task.completedAt.getTime() - task.startedAt.getTime();
+          this.metrics.totalTaskDuration +=
+            task.completedAt.getTime() - task.startedAt.getTime();
         }
       }
-      
+
       await this.processTaskQueue();
     });
 
@@ -720,14 +777,14 @@ export class Orchestrator implements IOrchestrator {
       const { taskId, error } = data as { taskId: string; error: Error };
       const task = this.taskHistory.get(taskId);
       if (task) {
-        task.status = 'failed';
+        task.status = "failed";
         task.completedAt = new Date();
         task.error = error;
-        
+
         // Update metrics
         this.metrics.failedTasks++;
       }
-      
+
       // Retry or requeue based on configuration
       await this.handleTaskFailure(taskId, error);
     });
@@ -735,8 +792,8 @@ export class Orchestrator implements IOrchestrator {
     // Handle agent events
     this.eventBus.on(SystemEvents.AGENT_ERROR, async (data: unknown) => {
       const { agentId, error } = data as { agentId: string; error: Error };
-      this.logger.error('Agent error', { agentId, error });
-      
+      this.logger.error("Agent error", { agentId, error });
+
       // Implement agent recovery
       await this.handleAgentError(agentId, error);
     });
@@ -744,11 +801,11 @@ export class Orchestrator implements IOrchestrator {
     this.eventBus.on(SystemEvents.AGENT_IDLE, async (data: unknown) => {
       const { agentId } = data as { agentId: string };
       // Update session status
-      const sessions = this.sessionManager.getActiveSessions().filter(
-        s => s.agentId === agentId
-      );
-      sessions.forEach(s => s.status = 'idle');
-      
+      const sessions = this.sessionManager
+        .getActiveSessions()
+        .filter((s) => s.agentId === agentId);
+      sessions.forEach((s) => (s.status = "idle"));
+
       // Try to assign queued tasks
       await this.processTaskQueue();
     });
@@ -756,17 +813,20 @@ export class Orchestrator implements IOrchestrator {
     // Handle system events
     this.eventBus.on(SystemEvents.SYSTEM_ERROR, (data: unknown) => {
       const { error, component } = data as { error: Error; component: string };
-      this.logger.error('System error', { component, error });
-      
+      this.logger.error("System error", { component, error });
+
       // Implement system-level error recovery
       this.handleSystemError(component, error);
     });
 
     // Handle resource events
     this.eventBus.on(SystemEvents.DEADLOCK_DETECTED, (data: unknown) => {
-      const { agents, resources } = data as { agents: string[]; resources: string[] };
-      this.logger.error('Deadlock detected', { agents, resources });
-      
+      const { agents, resources } = data as {
+        agents: string[];
+        resources: string[];
+      };
+      this.logger.error("Deadlock detected", { agents, resources });
+
       // Implement deadlock resolution
       this.resolveDeadlock(agents, resources);
     });
@@ -777,15 +837,15 @@ export class Orchestrator implements IOrchestrator {
       try {
         const health = await this.getHealthStatus();
         this.eventBus.emit(SystemEvents.SYSTEM_HEALTHCHECK, { status: health });
-        
-        if (health.status === 'unhealthy') {
-          this.logger.warn('System health check failed', health);
-          
+
+        if (health.status === "unhealthy") {
+          this.logger.warn("System health check failed", health);
+
           // Attempt recovery for unhealthy components
           await this.recoverUnhealthyComponents(health);
         }
       } catch (error) {
-        this.logger.error('Health check error', error);
+        this.logger.error("Health check error", error);
       }
     }, this.config.orchestrator.healthCheckInterval);
   }
@@ -800,12 +860,12 @@ export class Orchestrator implements IOrchestrator {
     this.metricsInterval = setInterval(async () => {
       try {
         const metrics = await this.getMetrics();
-        this.logger.debug('Metrics collected', metrics);
-        
+        this.logger.debug("Metrics collected", metrics);
+
         // Emit metrics event for monitoring systems
-        this.eventBus.emit('metrics:collected', metrics);
+        this.eventBus.emit("metrics:collected", metrics);
       } catch (error) {
-        this.logger.error('Metrics collection error', error);
+        this.logger.error("Metrics collection error", error);
       }
     }, this.config.orchestrator.metricsInterval || 60000); // 1 minute default
   }
@@ -824,26 +884,37 @@ export class Orchestrator implements IOrchestrator {
 
   private async shutdownComponents(): Promise<void> {
     const shutdownTasks = [
-      this.shutdownComponent('Terminal Manager', () => this.terminalManager.shutdown()),
-      this.shutdownComponent('Memory Manager', () => this.memoryManager.shutdown()),
-      this.shutdownComponent('Coordination Manager', () => this.coordinationManager.shutdown()),
-      this.shutdownComponent('MCP Server', () => this.mcpServer.stop()),
+      this.shutdownComponent("Terminal Manager", () =>
+        this.terminalManager.shutdown(),
+      ),
+      this.shutdownComponent("Memory Manager", () =>
+        this.memoryManager.shutdown(),
+      ),
+      this.shutdownComponent("Coordination Manager", () =>
+        this.coordinationManager.shutdown(),
+      ),
+      this.shutdownComponent("MCP Server", () => this.mcpServer.stop()),
     ];
 
     const results = await Promise.allSettled(shutdownTasks);
-    
+
     // Log any shutdown failures
     results.forEach((result, index) => {
-      if (result.status === 'rejected') {
-        const componentName = ['Terminal Manager', 'Memory Manager', 'Coordination Manager', 'MCP Server'][index];
+      if (result.status === "rejected") {
+        const componentName = [
+          "Terminal Manager",
+          "Memory Manager",
+          "Coordination Manager",
+          "MCP Server",
+        ][index];
         this.logger.error(`Failed to shutdown ${componentName}`, result.reason);
       }
     });
   }
 
   private async emergencyShutdown(): Promise<void> {
-    this.logger.warn('Performing emergency shutdown');
-    
+    this.logger.warn("Performing emergency shutdown");
+
     try {
       // Force stop all components
       await Promise.allSettled([
@@ -853,7 +924,7 @@ export class Orchestrator implements IOrchestrator {
         this.mcpServer.stop().catch(() => {}),
       ]);
     } catch (error) {
-      this.logger.error('Emergency shutdown error', error);
+      this.logger.error("Emergency shutdown error", error);
     }
   }
 
@@ -863,30 +934,33 @@ export class Orchestrator implements IOrchestrator {
     }
 
     const availableAgents = await this.getAvailableAgents();
-    
+
     while (this.taskQueue.length > 0 && availableAgents.length > 0) {
       const task = this.taskQueue.shift()!;
       const agent = this.selectAgentForTask(task, availableAgents);
-      
+
       if (agent) {
         task.assignedAgent = agent.id;
-        task.status = 'assigned';
-        
+        task.status = "assigned";
+
         try {
           await this.coordinationManager.assignTask(task, agent.id);
-          
+
           this.eventBus.emit(SystemEvents.TASK_ASSIGNED, {
             taskId: task.id,
             agentId: agent.id,
           });
-          
+
           // Remove agent from available list
           const index = availableAgents.indexOf(agent);
           availableAgents.splice(index, 1);
         } catch (error) {
           // Put task back in queue
           this.taskQueue.unshift(task);
-          this.logger.error('Failed to assign task', { taskId: task.id, error });
+          this.logger.error("Failed to assign task", {
+            taskId: task.id,
+            error,
+          });
           break;
         }
       } else {
@@ -902,16 +976,21 @@ export class Orchestrator implements IOrchestrator {
     const available: AgentProfile[] = [];
 
     for (const session of sessions) {
-      if (session.status === 'idle' || session.status === 'active') {
+      if (session.status === "idle" || session.status === "active") {
         const profile = this.agents.get(session.agentId);
         if (profile) {
           try {
-            const taskCount = await this.coordinationManager.getAgentTaskCount(profile.id);
+            const taskCount = await this.coordinationManager.getAgentTaskCount(
+              profile.id,
+            );
             if (taskCount < profile.maxConcurrentTasks) {
               available.push(profile);
             }
           } catch (error) {
-            this.logger.error('Failed to get agent task count', { agentId: profile.id, error });
+            this.logger.error("Failed to get agent task count", {
+              agentId: profile.id,
+              error,
+            });
           }
         }
       }
@@ -920,38 +999,42 @@ export class Orchestrator implements IOrchestrator {
     return available.sort((a, b) => b.priority - a.priority);
   }
 
-  private selectAgentForTask(task: Task, agents: AgentProfile[]): AgentProfile | undefined {
+  private selectAgentForTask(
+    task: Task,
+    agents: AgentProfile[],
+  ): AgentProfile | undefined {
     // Score agents based on capabilities, load, and priority
-    const scoredAgents = agents.map(agent => {
+    const scoredAgents = agents.map((agent) => {
       let score = agent.priority * 10;
-      
+
       // Check capability match
-      const requiredCapabilities = (task.metadata?.requiredCapabilities as string[]) || [];
-      const matchedCapabilities = requiredCapabilities.filter(
-        cap => agent.capabilities.includes(cap)
+      const requiredCapabilities =
+        (task.metadata?.requiredCapabilities as string[]) || [];
+      const matchedCapabilities = requiredCapabilities.filter((cap) =>
+        agent.capabilities.includes(cap),
       ).length;
-      
+
       if (requiredCapabilities.length > 0 && matchedCapabilities === 0) {
         return { agent, score: -1 }; // Can't handle task
       }
-      
+
       score += matchedCapabilities * 5;
-      
+
       // Prefer agents with matching type
       if (task.type === agent.type) {
         score += 20;
       }
-      
+
       return { agent, score };
     });
-    
+
     // Filter out agents that can't handle the task
     const eligibleAgents = scoredAgents.filter(({ score }) => score >= 0);
-    
+
     if (eligibleAgents.length === 0) {
       return undefined;
     }
-    
+
     // Select agent with highest score
     eligibleAgents.sort((a, b) => b.score - a.score);
     return eligibleAgents[0].agent;
@@ -959,53 +1042,63 @@ export class Orchestrator implements IOrchestrator {
 
   private async getComponentHealth(
     name: string,
-    check: () => Promise<{ healthy: boolean; error?: string; metrics?: Record<string, number> }>,
+    check: () => Promise<{
+      healthy: boolean;
+      error?: string;
+      metrics?: Record<string, number>;
+    }>,
   ): Promise<ComponentHealth> {
     try {
       const result = await Promise.race([
         check(),
-        delay(5000).then(() => ({ healthy: false, error: 'Health check timeout' }))
+        delay(5000).then(() => ({
+          healthy: false,
+          error: "Health check timeout",
+        })),
       ]);
-      
+
       const health: ComponentHealth = {
         name,
-        status: result.healthy ? 'healthy' : 'unhealthy',
+        status: result.healthy ? "healthy" : "unhealthy",
         lastCheck: new Date(),
       };
       if (result.error !== undefined) {
         health.error = result.error;
       }
-      if ('metrics' in result && result.metrics !== undefined) {
+      if ("metrics" in result && result.metrics !== undefined) {
         health.metrics = result.metrics;
       }
       return health;
     } catch (error) {
       return {
         name,
-        status: 'unhealthy',
+        status: "unhealthy",
         lastCheck: new Date(),
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : "Unknown error",
       };
     }
   }
 
   private processHealthResult(
     result: PromiseSettledResult<ComponentHealth>,
-    componentName: string
+    componentName: string,
   ): ComponentHealth {
-    if (result.status === 'fulfilled') {
+    if (result.status === "fulfilled") {
       return result.value;
     } else {
       return {
         name: componentName,
-        status: 'unhealthy',
+        status: "unhealthy",
         lastCheck: new Date(),
-        error: result.reason?.message || 'Health check failed',
+        error: result.reason?.message || "Health check failed",
       };
     }
   }
 
-  private async initializeComponent(name: string, init: () => Promise<void>): Promise<void> {
+  private async initializeComponent(
+    name: string,
+    init: () => Promise<void>,
+  ): Promise<void> {
     try {
       await retry(init, { maxAttempts: 3, initialDelay: 2000 });
       this.logger.info(`${name} initialized`);
@@ -1015,11 +1108,14 @@ export class Orchestrator implements IOrchestrator {
     }
   }
 
-  private async shutdownComponent(name: string, shutdown: () => Promise<void>): Promise<void> {
+  private async shutdownComponent(
+    name: string,
+    shutdown: () => Promise<void>,
+  ): Promise<void> {
     try {
       await Promise.race([
         shutdown(),
-        delay(10000) // 10 second timeout per component
+        delay(10000), // 10 second timeout per component
       ]);
       this.logger.info(`${name} shut down`);
     } catch (error) {
@@ -1030,13 +1126,15 @@ export class Orchestrator implements IOrchestrator {
 
   private validateAgentProfile(profile: AgentProfile): void {
     if (!profile.id || !profile.name || !profile.type) {
-      throw new Error('Invalid agent profile: missing required fields');
+      throw new Error("Invalid agent profile: missing required fields");
     }
-    
+
     if (profile.maxConcurrentTasks < 1) {
-      throw new Error('Invalid agent profile: maxConcurrentTasks must be at least 1');
+      throw new Error(
+        "Invalid agent profile: maxConcurrentTasks must be at least 1",
+      );
     }
-    
+
     if (this.agents.has(profile.id)) {
       throw new Error(`Agent with ID ${profile.id} already exists`);
     }
@@ -1044,13 +1142,13 @@ export class Orchestrator implements IOrchestrator {
 
   private validateTask(task: Task): void {
     if (!task.id || !task.type || !task.description) {
-      throw new Error('Invalid task: missing required fields');
+      throw new Error("Invalid task: missing required fields");
     }
-    
+
     if (task.priority < 0 || task.priority > 100) {
-      throw new Error('Invalid task: priority must be between 0 and 100');
+      throw new Error("Invalid task: priority must be between 0 and 100");
     }
-    
+
     if (this.taskHistory.has(task.id)) {
       throw new Error(`Task with ID ${task.id} already exists`);
     }
@@ -1063,7 +1161,7 @@ export class Orchestrator implements IOrchestrator {
     }
 
     // Log error details
-    this.logger.error('Handling agent error', { agentId, error });
+    this.logger.error("Handling agent error", { agentId, error });
 
     // Check if agent should be restarted
     const errorCount = (profile.metadata?.errorCount as number) || 0;
@@ -1074,14 +1172,23 @@ export class Orchestrator implements IOrchestrator {
       try {
         await this.terminateAgent(agentId);
         await delay(2000); // Wait before restart
-        await this.spawnAgent({ ...profile, metadata: { ...profile.metadata, errorCount: 0 } });
-        this.logger.info('Agent restarted after error', { agentId });
+        await this.spawnAgent({
+          ...profile,
+          metadata: { ...profile.metadata, errorCount: 0 },
+        });
+        this.logger.info("Agent restarted after error", { agentId });
       } catch (restartError) {
-        this.logger.error('Failed to restart agent', { agentId, error: restartError });
+        this.logger.error("Failed to restart agent", {
+          agentId,
+          error: restartError,
+        });
       }
     } else {
       // Too many errors, terminate agent
-      this.logger.error('Agent exceeded error threshold, terminating', { agentId, errorCount });
+      this.logger.error("Agent exceeded error threshold, terminating", {
+        agentId,
+        errorCount,
+      });
       await this.terminateAgent(agentId);
     }
   }
@@ -1098,71 +1205,82 @@ export class Orchestrator implements IOrchestrator {
     if (retryCount < maxRetries) {
       // Retry task
       task.metadata = { ...task.metadata, retryCount: retryCount + 1 };
-      task.status = 'queued';
+      task.status = "queued";
       delete task.assignedAgent;
-      
+
       // Add back to queue with delay
-      setTimeout(() => {
-        this.taskQueue.push(task);
-        this.processTaskQueue();
-      }, Math.pow(2, retryCount) * 1000); // Exponential backoff
-      
-      this.logger.info('Task queued for retry', { taskId, retryCount: retryCount + 1 });
+      setTimeout(
+        () => {
+          this.taskQueue.push(task);
+          this.processTaskQueue();
+        },
+        Math.pow(2, retryCount) * 1000,
+      ); // Exponential backoff
+
+      this.logger.info("Task queued for retry", {
+        taskId,
+        retryCount: retryCount + 1,
+      });
     } else {
-      this.logger.error('Task exceeded retry limit', { taskId, retryCount });
+      this.logger.error("Task exceeded retry limit", { taskId, retryCount });
     }
   }
 
   private handleSystemError(component: string, error: Error): void {
     // Implement system-level error recovery strategies
-    this.logger.error('Handling system error', { component, error });
+    this.logger.error("Handling system error", { component, error });
 
     // TODO: Implement specific recovery strategies based on component and error type
   }
 
-  private async resolveDeadlock(agents: string[], resources: string[]): Promise<void> {
-    this.logger.warn('Resolving deadlock', { agents, resources });
+  private async resolveDeadlock(
+    agents: string[],
+    resources: string[],
+  ): Promise<void> {
+    this.logger.warn("Resolving deadlock", { agents, resources });
 
     // Simple deadlock resolution: cancel lowest priority agent's tasks
     const agentProfiles = agents
-      .map(id => this.agents.get(id))
+      .map((id) => this.agents.get(id))
       .filter(Boolean) as AgentProfile[];
-    
+
     if (agentProfiles.length === 0) {
       return;
     }
 
     // Sort by priority (lowest first)
     agentProfiles.sort((a, b) => a.priority - b.priority);
-    
+
     // Cancel tasks for lowest priority agent
     const targetAgent = agentProfiles[0];
     await this.cancelAgentTasks(targetAgent.id);
-    
-    this.logger.info('Deadlock resolved by cancelling tasks', { agentId: targetAgent.id });
+
+    this.logger.info("Deadlock resolved by cancelling tasks", {
+      agentId: targetAgent.id,
+    });
   }
 
   private async cancelAgentTasks(agentId: string): Promise<void> {
     try {
       const tasks = await this.coordinationManager.getAgentTasks(agentId);
-      
+
       for (const task of tasks) {
         await this.coordinationManager.cancelTask(task.id);
-        
+
         // Update task status
         const trackedTask = this.taskHistory.get(task.id);
         if (trackedTask) {
-          trackedTask.status = 'cancelled';
+          trackedTask.status = "cancelled";
           trackedTask.completedAt = new Date();
         }
-        
+
         this.eventBus.emit(SystemEvents.TASK_CANCELLED, {
           taskId: task.id,
-          reason: 'Agent termination',
+          reason: "Agent termination",
         });
       }
     } catch (error) {
-      this.logger.error('Failed to cancel agent tasks', { agentId, error });
+      this.logger.error("Failed to cancel agent tasks", { agentId, error });
     }
   }
 
@@ -1170,23 +1288,25 @@ export class Orchestrator implements IOrchestrator {
     // TODO: Implement periodic health checks for individual agents
   }
 
-  private async recoverUnhealthyComponents(health: HealthStatus): Promise<void> {
+  private async recoverUnhealthyComponents(
+    health: HealthStatus,
+  ): Promise<void> {
     for (const [name, component] of Object.entries(health.components)) {
-      if (component.status === 'unhealthy') {
-        this.logger.warn('Attempting to recover unhealthy component', { name });
-        
+      if (component.status === "unhealthy") {
+        this.logger.warn("Attempting to recover unhealthy component", { name });
+
         // TODO: Implement component-specific recovery strategies
         switch (name) {
-          case 'Terminal Manager':
+          case "Terminal Manager":
             // Restart terminal pools, etc.
             break;
-          case 'Memory Manager':
+          case "Memory Manager":
             // Clear cache, reconnect to backends, etc.
             break;
-          case 'Coordination Manager':
+          case "Coordination Manager":
             // Reset locks, clear message queues, etc.
             break;
-          case 'MCP Server':
+          case "MCP Server":
             // Restart server, reset connections, etc.
             break;
         }
@@ -1196,26 +1316,33 @@ export class Orchestrator implements IOrchestrator {
 
   private async cleanupTerminatedSessions(): Promise<void> {
     const allSessions = this.sessionManager.getActiveSessions();
-    const terminatedSessions = allSessions.filter(s => (s as any).status === 'terminated');
-    
-    const cutoffTime = Date.now() - (this.config.orchestrator.sessionRetentionMs || 3600000); // 1 hour default
-    
+    const terminatedSessions = allSessions.filter(
+      (s) => (s as any).status === "terminated",
+    );
+
+    const cutoffTime =
+      Date.now() - (this.config.orchestrator.sessionRetentionMs || 3600000); // 1 hour default
+
     for (const session of terminatedSessions) {
       const typedSession = session as any;
       if (typedSession.endTime && typedSession.endTime.getTime() < cutoffTime) {
         await this.sessionManager.terminateSession(typedSession.id);
-        this.logger.debug('Cleaned up old session', { sessionId: typedSession.id });
+        this.logger.debug("Cleaned up old session", {
+          sessionId: typedSession.id,
+        });
       }
     }
   }
 
   private async cleanupTaskHistory(): Promise<void> {
-    const cutoffTime = Date.now() - (this.config.orchestrator.taskHistoryRetentionMs || 86400000); // 24 hours default
-    
+    const cutoffTime =
+      Date.now() -
+      (this.config.orchestrator.taskHistoryRetentionMs || 86400000); // 24 hours default
+
     for (const [taskId, task] of this.taskHistory.entries()) {
       if (task.completedAt && task.completedAt.getTime() < cutoffTime) {
         this.taskHistory.delete(taskId);
-        this.logger.debug('Cleaned up old task', { taskId });
+        this.logger.debug("Cleaned up old task", { taskId });
       }
     }
   }
@@ -1223,12 +1350,14 @@ export class Orchestrator implements IOrchestrator {
   private async processShutdownTasks(): Promise<void> {
     // Process any critical tasks before shutdown
     const criticalTasks = this.taskQueue.filter(
-      t => t.priority >= 90 || t.metadata?.critical === true
+      (t) => t.priority >= 90 || t.metadata?.critical === true,
     );
-    
+
     if (criticalTasks.length > 0) {
-      this.logger.info('Processing critical tasks before shutdown', { count: criticalTasks.length });
-      
+      this.logger.info("Processing critical tasks before shutdown", {
+        count: criticalTasks.length,
+      });
+
       // TODO: Implement critical task processing
     }
   }

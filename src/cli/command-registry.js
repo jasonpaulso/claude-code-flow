@@ -1,30 +1,31 @@
 // command-registry.js - Extensible command registration system
-import { initCommand } from './simple-commands/init.js';
-import { memoryCommand } from './simple-commands/memory.js';
-import { sparcCommand } from './simple-commands/sparc.js';
-import { agentCommand } from './simple-commands/agent.js';
-import { taskCommand } from './simple-commands/task.js';
-import { configCommand } from './simple-commands/config.js';
-import { statusCommand } from './simple-commands/status.js';
-import { mcpCommand } from './simple-commands/mcp.js';
-import { monitorCommand } from './simple-commands/monitor.js';
-import { startCommand } from './simple-commands/start.js';
-import { swarmCommand } from './simple-commands/swarm.js';
+import { initCommand } from "./simple-commands/init.js";
+import { memoryCommand } from "./simple-commands/memory.js";
+import { sparcCommand } from "./simple-commands/sparc.js";
+import { agentCommand } from "./simple-commands/agent.js";
+import { taskCommand } from "./simple-commands/task.js";
+import { configCommand } from "./simple-commands/config.js";
+import { statusCommand } from "./simple-commands/status.js";
+import { mcpCommand } from "./simple-commands/mcp.js";
+import { monitorCommand } from "./simple-commands/monitor.js";
+import { startCommand } from "./simple-commands/start.js";
+import { swarmCommand } from "./simple-commands/swarm.js";
 
 // Command registry for extensible CLI
 export const commandRegistry = new Map();
 
 // Register core commands
 export function registerCoreCommands() {
-  commandRegistry.set('init', {
+  commandRegistry.set("init", {
     handler: initCommand,
-    description: 'Initialize Claude Code integration files and SPARC development environment',
-    usage: 'init [--force] [--minimal] [--sparc]',
+    description:
+      "Initialize Claude Code integration files and SPARC development environment",
+    usage: "init [--force] [--minimal] [--sparc]",
     examples: [
-      'npx claude-flow@latest init --sparc  # Recommended: Full SPARC setup',
-      'init --sparc                         # Initialize with SPARC modes',
-      'init --force --minimal               # Minimal setup, overwrite existing',
-      'init --sparc --force                 # Force SPARC setup'
+      "npx claude-flow@latest init --sparc  # Recommended: Full SPARC setup",
+      "init --sparc                         # Initialize with SPARC modes",
+      "init --force --minimal               # Minimal setup, overwrite existing",
+      "init --sparc --force                 # Force SPARC setup",
     ],
     details: `
 The --sparc flag creates a complete development environment:
@@ -33,142 +34,140 @@ The --sparc flag creates a complete development environment:
   • Pre-configured modes: architect, code, tdd, debug, security, and more
   • Ready for TDD workflows and automated code generation
   
-First-time users should run: npx claude-flow@latest init --sparc`
+First-time users should run: npx claude-flow@latest init --sparc`,
   });
 
-  commandRegistry.set('start', {
+  commandRegistry.set("start", {
     handler: startCommand,
-    description: 'Start the Claude-Flow orchestration system',
-    usage: 'start [--daemon] [--port <port>] [--verbose]',
+    description: "Start the Claude-Flow orchestration system",
+    usage: "start [--daemon] [--port <port>] [--verbose]",
     examples: [
-      'start                    # Start in interactive mode',
-      'start --daemon           # Start as background daemon',
-      'start --port 8080        # Use custom MCP port',
-      'start --verbose          # Show detailed system activity'
-    ]
+      "start                    # Start in interactive mode",
+      "start --daemon           # Start as background daemon",
+      "start --port 8080        # Use custom MCP port",
+      "start --verbose          # Show detailed system activity",
+    ],
   });
 
-  commandRegistry.set('memory', {
+  commandRegistry.set("memory", {
     handler: memoryCommand,
-    description: 'Memory management operations',
-    usage: 'memory <subcommand> [options]',
+    description: "Memory management operations",
+    usage: "memory <subcommand> [options]",
     examples: [
       'memory store key "value"',
-      'memory query search_term',
-      'memory stats',
-      'memory export backup.json'
-    ]
+      "memory query search_term",
+      "memory stats",
+      "memory export backup.json",
+    ],
   });
 
-  commandRegistry.set('sparc', {
+  commandRegistry.set("sparc", {
     handler: sparcCommand,
-    description: 'SPARC development mode operations',
-    usage: 'sparc [subcommand] [options]',
+    description: "SPARC development mode operations",
+    usage: "sparc [subcommand] [options]",
     examples: [
       'sparc "orchestrate full app development"  # Default: sparc orchestrator',
-      'sparc modes                               # List available modes',
+      "sparc modes                               # List available modes",
       'sparc run code "implement feature"        # Run specific mode',
       'sparc tdd "feature description"           # TDD workflow',
-      'sparc info architect                      # Mode details'
-    ]
+      "sparc info architect                      # Mode details",
+    ],
   });
 
-  commandRegistry.set('agent', {
+  commandRegistry.set("agent", {
     handler: agentCommand,
-    description: 'Manage AI agents and hierarchies',
-    usage: 'agent <subcommand> [options]',
+    description: "Manage AI agents and hierarchies",
+    usage: "agent <subcommand> [options]",
     examples: [
       'agent spawn researcher --name "DataBot"',
-      'agent list --verbose',
-      'agent hierarchy create enterprise',
-      'agent ecosystem status'
-    ]
+      "agent list --verbose",
+      "agent hierarchy create enterprise",
+      "agent ecosystem status",
+    ],
   });
 
-  commandRegistry.set('task', {
+  commandRegistry.set("task", {
     handler: taskCommand,
-    description: 'Manage tasks and workflows',
-    usage: 'task <subcommand> [options]',
+    description: "Manage tasks and workflows",
+    usage: "task <subcommand> [options]",
     examples: [
       'task create research "Market analysis"',
-      'task list --filter running',
-      'task workflow examples/dev-flow.json',
-      'task coordination status'
-    ]
+      "task list --filter running",
+      "task workflow examples/dev-flow.json",
+      "task coordination status",
+    ],
   });
 
-  commandRegistry.set('config', {
+  commandRegistry.set("config", {
     handler: configCommand,
-    description: 'Manage system configuration',
-    usage: 'config <subcommand> [options]',
+    description: "Manage system configuration",
+    usage: "config <subcommand> [options]",
     examples: [
-      'config init',
-      'config set terminal.poolSize 15',
-      'config get orchestrator.maxConcurrentTasks',
-      'config validate'
-    ]
+      "config init",
+      "config set terminal.poolSize 15",
+      "config get orchestrator.maxConcurrentTasks",
+      "config validate",
+    ],
   });
 
-  commandRegistry.set('status', {
+  commandRegistry.set("status", {
     handler: statusCommand,
-    description: 'Show system status and health',
-    usage: 'status [--verbose] [--json]',
-    examples: [
-      'status',
-      'status --verbose',
-      'status --json'
-    ]
+    description: "Show system status and health",
+    usage: "status [--verbose] [--json]",
+    examples: ["status", "status --verbose", "status --json"],
   });
 
-  commandRegistry.set('mcp', {
+  commandRegistry.set("mcp", {
     handler: mcpCommand,
-    description: 'Manage MCP server and tools',
-    usage: 'mcp <subcommand> [options]',
+    description: "Manage MCP server and tools",
+    usage: "mcp <subcommand> [options]",
     examples: [
-      'mcp status',
-      'mcp start --port 8080',
-      'mcp tools --verbose',
-      'mcp auth setup'
-    ]
+      "mcp status",
+      "mcp start --port 8080",
+      "mcp tools --verbose",
+      "mcp auth setup",
+    ],
   });
 
-  commandRegistry.set('monitor', {
+  commandRegistry.set("monitor", {
     handler: monitorCommand,
-    description: 'Real-time system monitoring',
-    usage: 'monitor [--watch] [--interval <ms>]',
+    description: "Real-time system monitoring",
+    usage: "monitor [--watch] [--interval <ms>]",
     examples: [
-      'monitor',
-      'monitor --watch',
-      'monitor --interval 1000 --watch',
-      'monitor --format json'
-    ]
+      "monitor",
+      "monitor --watch",
+      "monitor --interval 1000 --watch",
+      "monitor --format json",
+    ],
   });
 
-  commandRegistry.set('swarm', {
+  commandRegistry.set("swarm", {
     handler: swarmCommand,
-    description: 'Swarm-based AI agent coordination',
-    usage: 'swarm <objective> [options]',
+    description: "Swarm-based AI agent coordination",
+    usage: "swarm <objective> [options]",
     examples: [
       'swarm "Build a REST API"',
       'swarm "Research cloud architecture" --strategy research',
       'swarm "Analyze data" --max-agents 3 --parallel',
-      'swarm "Development task" --ui --monitor --background'
-    ]
+      'swarm "Development task" --ui --monitor --background',
+    ],
   });
 }
 
 // Register a new command
 export function registerCommand(name, command) {
   if (commandRegistry.has(name)) {
-    console.warn(`Command '${name}' already exists and will be overwritten`);
+    process.stderr.write(
+      `Warning: Command '${name}' already exists and will be overwritten\n`,
+    );
   }
-  
+
   commandRegistry.set(name, {
     handler: command.handler,
-    description: command.description || 'No description available',
+    description: command.description || "No description available",
     usage: command.usage || `${name} [options]`,
     examples: command.examples || [],
-    hidden: command.hidden || false
+    hidden: command.hidden || false,
   });
 }
 
@@ -184,7 +183,7 @@ export function listCommands(includeHidden = false) {
     if (includeHidden || !command.hidden) {
       commands.push({
         name,
-        ...command
+        ...command,
       });
     }
   }
@@ -202,7 +201,7 @@ export async function executeCommand(name, subArgs, flags) {
   if (!command) {
     throw new Error(`Unknown command: ${name}`);
   }
-  
+
   try {
     await command.handler(subArgs, flags);
   } catch (err) {
@@ -214,25 +213,25 @@ export async function executeCommand(name, subArgs, flags) {
 export function showCommandHelp(name) {
   const command = commandRegistry.get(name);
   if (!command) {
-    console.log(`Unknown command: ${name}`);
+    process.stdout.write(`Unknown command: ${name}\n`);
     return;
   }
-  
-  console.log(`Command: ${name}`);
-  console.log(`Description: ${command.description}`);
-  console.log(`Usage: claude-flow ${command.usage}`);
-  
+
+  process.stdout.write(`Command: ${name}\n`);
+  process.stdout.write(`Description: ${command.description}\n`);
+  process.stdout.write(`Usage: claude-flow ${command.usage}\n`);
+
   if (command.details) {
-    console.log(command.details);
+    process.stdout.write(`${command.details}\n`);
   }
-  
+
   if (command.examples.length > 0) {
-    console.log('\nExamples:');
+    process.stdout.write("\nExamples:\n");
     for (const example of command.examples) {
-      if (example.startsWith('npx')) {
-        console.log(`  ${example}`);
+      if (example.startsWith("npx")) {
+        process.stdout.write(`  ${example}\n`);
       } else {
-        console.log(`  claude-flow ${example}`);
+        process.stdout.write(`  claude-flow ${example}\n`);
       }
     }
   }
@@ -241,16 +240,20 @@ export function showCommandHelp(name) {
 // Helper to show all commands
 export function showAllCommands() {
   const commands = listCommands();
-  
-  console.log('Available commands:');
-  console.log();
-  
+
+  process.stdout.write("Available commands:\n");
+  process.stdout.write("\n");
+
   for (const command of commands) {
-    console.log(`  ${command.name.padEnd(12)} ${command.description}`);
+    process.stdout.write(
+      `  ${command.name.padEnd(12)} ${command.description}\n`,
+    );
   }
-  
-  console.log();
-  console.log('Use "claude-flow help <command>" for detailed usage information');
+
+  process.stdout.write("\n");
+  process.stdout.write(
+    'Use "claude-flow help <command>" for detailed usage information\n',
+  );
 }
 
 // Initialize the command registry

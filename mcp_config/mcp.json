@@ -2,12 +2,7 @@
   "mcpServers": {
     "claude-flow": {
       "command": "npx",
-      "args": [
-        "-y",
-        "claude-flow",
-        "mcp",
-        "serve"
-      ],
+      "args": ["-y", "claude-flow", "mcp", "serve"],
       "env": {
         "CLAUDE_FLOW_LOG_LEVEL": "info",
         "CLAUDE_FLOW_MCP_PORT": "3000"
@@ -42,13 +37,7 @@
     },
     "claude-flow-minimal": {
       "command": "npx",
-      "args": [
-        "-y",
-        "claude-flow@latest",
-        "mcp",
-        "serve",
-        "--minimal"
-      ],
+      "args": ["-y", "claude-flow@latest", "mcp", "serve", "--minimal"],
       "env": {
         "NODE_ENV": "production"
       },
@@ -65,47 +54,23 @@
   "tools": {
     "agent": {
       "description": "Manage AI agents",
-      "commands": [
-        "spawn",
-        "list",
-        "terminate",
-        "info"
-      ]
+      "commands": ["spawn", "list", "terminate", "info"]
     },
     "task": {
       "description": "Manage tasks and workflows",
-      "commands": [
-        "create",
-        "list",
-        "status",
-        "cancel"
-      ]
+      "commands": ["create", "list", "status", "cancel"]
     },
     "memory": {
       "description": "Knowledge management",
-      "commands": [
-        "query",
-        "store",
-        "stats",
-        "export"
-      ]
+      "commands": ["query", "store", "stats", "export"]
     },
     "terminal": {
       "description": "Terminal session management",
-      "commands": [
-        "execute",
-        "list",
-        "create",
-        "terminate"
-      ]
+      "commands": ["execute", "list", "create", "terminate"]
     },
     "workflow": {
       "description": "Execute multi-step workflows",
-      "commands": [
-        "run",
-        "status",
-        "list"
-      ]
+      "commands": ["run", "status", "list"]
     }
   },
   "examples": {

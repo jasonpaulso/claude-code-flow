@@ -2,8 +2,8 @@
  * Memory indexer for fast querying
  */
 
-import { MemoryEntry, MemoryQuery } from '../utils/types.ts';
-import { ILogger } from '../core/logger.ts';
+import { MemoryEntry, MemoryQuery } from "../utils/types.ts";
+import { ILogger } from "../core/logger.ts";
 
 interface Index<T> {
   get(key: T): Set<string>;
@@ -65,7 +65,7 @@ export class MemoryIndexer {
    * Builds index from a list of entries
    */
   async buildIndex(entries: MemoryEntry[]): Promise<void> {
-    this.logger.info('Building memory index', { entries: entries.length });
+    this.logger.info("Building memory index", { entries: entries.length });
 
     this.clear();
 
@@ -73,7 +73,7 @@ export class MemoryIndexer {
       this.addEntry(entry);
     }
 
-    this.logger.info('Memory index built', { 
+    this.logger.info("Memory index built", {
       totalEntries: this.entries.size,
       agents: this.agentIndex.keys().length,
       sessions: this.sessionIndex.keys().length,
@@ -93,7 +93,7 @@ export class MemoryIndexer {
     this.agentIndex.add(entry.agentId, entry.id);
     this.sessionIndex.add(entry.sessionId, entry.id);
     this.typeIndex.add(entry.type, entry.id);
-    
+
     for (const tag of entry.tags) {
       this.tagIndex.add(tag, entry.id);
     }
@@ -125,7 +125,7 @@ export class MemoryIndexer {
     this.agentIndex.remove(entry.agentId, id);
     this.sessionIndex.remove(entry.sessionId, id);
     this.typeIndex.remove(entry.type, id);
-    
+
     for (const tag of entry.tags) {
       this.tagIndex.remove(tag, id);
     }
@@ -142,11 +142,17 @@ export class MemoryIndexer {
 
     // Apply index-based filters
     if (query.agentId) {
-      resultIds = this.intersectSets(resultIds, this.agentIndex.get(query.agentId));
+      resultIds = this.intersectSets(
+        resultIds,
+        this.agentIndex.get(query.agentId),
+      );
     }
 
     if (query.sessionId) {
-      resultIds = this.intersectSets(resultIds, this.sessionIndex.get(query.sessionId));
+      resultIds = this.intersectSets(
+        resultIds,
+        this.sessionIndex.get(query.sessionId),
+      );
     }
 
     if (query.type) {
@@ -154,7 +160,7 @@ export class MemoryIndexer {
     }
 
     if (query.tags && query.tags.length > 0) {
-      const tagSets = query.tags.map(tag => this.tagIndex.get(tag));
+      const tagSets = query.tags.map((tag) => this.tagIndex.get(tag));
       const unionSet = this.unionSets(...tagSets);
       resultIds = this.intersectSets(resultIds, unionSet);
     }

@@ -2,10 +2,12 @@
  * Base transport interface for MCP
  */
 
-import { MCPRequest, MCPResponse, MCPNotification } from '../../utils/types.ts';
+import { MCPRequest, MCPResponse, MCPNotification } from "../../utils/types.ts";
 
 export type RequestHandler = (request: MCPRequest) => Promise<MCPResponse>;
-export type NotificationHandler = (notification: MCPNotification) => Promise<void>;
+export type NotificationHandler = (
+  notification: MCPNotification,
+) => Promise<void>;
 
 export interface ITransport {
   start(): Promise<void>;
@@ -16,9 +18,9 @@ export interface ITransport {
   onNotification?(handler: NotificationHandler): void;
   sendRequest(request: MCPRequest): Promise<MCPResponse>;
   sendNotification?(notification: MCPNotification): Promise<void>;
-  getHealthStatus(): Promise<{ 
-    healthy: boolean; 
-    error?: string; 
+  getHealthStatus(): Promise<{
+    healthy: boolean;
+    error?: string;
     metrics?: Record<string, number>;
   }>;
 }

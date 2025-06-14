@@ -58,6 +58,7 @@ High-performance relational storage with ACID compliance:
 ```
 
 **Features:**
+
 - ACID transactions
 - Full-text search (FTS5)
 - Vector storage support
@@ -89,6 +90,7 @@ Human-readable storage with git integration:
 ```
 
 **Features:**
+
 - Human-readable files
 - Git version control
 - Hierarchical organization
@@ -138,24 +140,24 @@ claude-flow memory store \
 **Programmatic API:**
 
 ```typescript
-import { MemoryManager } from 'claude-flow';
+import { MemoryManager } from "claude-flow";
 
 const memory = new MemoryManager(config);
 
 // Store a memory
 const item = await memory.store({
-  category: 'research',
-  content: 'Deep learning models benefit from attention mechanisms',
-  tags: ['deep-learning', 'attention', 'transformers'],
-  namespace: 'ai-research',
+  category: "research",
+  content: "Deep learning models benefit from attention mechanisms",
+  tags: ["deep-learning", "attention", "transformers"],
+  namespace: "ai-research",
   metadata: {
-    source: 'research-paper',
+    source: "research-paper",
     confidence: 0.95,
-    author: 'research-agent'
-  }
+    author: "research-agent",
+  },
 });
 
-console.log('Stored memory:', item.id);
+console.log("Stored memory:", item.id);
 ```
 
 ### Retrieving Information
@@ -184,25 +186,25 @@ claude-flow memory search \
 
 ```typescript
 // Direct retrieval
-const item = await memory.retrieve('memory_1704123456789');
+const item = await memory.retrieve("memory_1704123456789");
 
 // Query with filters
 const researchItems = await memory.query({
-  category: 'research',
-  tags: ['ai', 'claude'],
+  category: "research",
+  tags: ["ai", "claude"],
   dateRange: {
-    start: new Date('2024-01-01'),
-    field: 'created'
+    start: new Date("2024-01-01"),
+    field: "created",
   },
-  limit: 10
+  limit: 10,
 });
 
 // Vector similarity search
 const similarItems = await memory.vectorSearch({
-  text: 'natural language processing techniques',
+  text: "natural language processing techniques",
   threshold: 0.7,
   limit: 5,
-  namespace: 'ai-research'
+  namespace: "ai-research",
 });
 ```
 
@@ -213,29 +215,29 @@ The memory system supports sophisticated queries:
 ```typescript
 // Complex query with multiple criteria
 const results = await memory.query({
-  categories: ['research', 'analysis'],
-  tags: ['ai'],
-  fullText: 'machine learning',
+  categories: ["research", "analysis"],
+  tags: ["ai"],
+  fullText: "machine learning",
   dateRange: {
-    start: new Date('2024-01-01'),
-    end: new Date('2024-12-31'),
-    field: 'updated'
+    start: new Date("2024-01-01"),
+    end: new Date("2024-12-31"),
+    field: "updated",
   },
   metadata: {
-    priority: 'high',
-    status: 'completed'
+    priority: "high",
+    status: "completed",
   },
-  sortBy: 'updated',
-  sortOrder: 'desc',
-  limit: 20
+  sortBy: "updated",
+  sortOrder: "desc",
+  limit: 20,
 });
 
 // Faceted search
 const facets = await memory.getFacets({
   categories: true,
   tags: true,
-  metadata: ['priority', 'status'],
-  timeRanges: true
+  metadata: ["priority", "status"],
+  timeRanges: true,
 });
 ```
 
@@ -287,28 +289,28 @@ claude-flow memory stats --embeddings
 ```typescript
 // Find similar content
 const similar = await memory.vectorSearch({
-  text: 'neural network architecture optimization',
+  text: "neural network architecture optimization",
   threshold: 0.8,
   limit: 10,
-  includeScores: true
+  includeScores: true,
 });
 
 // Use existing memory as query
 const relatedMemories = await memory.vectorSearch({
-  referenceId: 'memory_1704123456789',
+  referenceId: "memory_1704123456789",
   threshold: 0.75,
-  excludeReference: true
+  excludeReference: true,
 });
 
 // Search within specific context
 const contextualResults = await memory.vectorSearch({
-  text: 'database optimization',
+  text: "database optimization",
   context: {
-    category: 'implementation',
-    namespace: 'backend-services',
-    tags: ['performance']
+    category: "implementation",
+    namespace: "backend-services",
+    tags: ["performance"],
   },
-  limit: 5
+  limit: 5,
 });
 ```
 
@@ -404,21 +406,21 @@ Claude-Flow uses Conflict-free Replicated Data Types (CRDTs) for automatic confl
 ```typescript
 // Handle conflicts manually
 memory.onConflict(async (local, remote, metadata) => {
-  if (metadata.priority === 'high') {
+  if (metadata.priority === "high") {
     // Always prefer high-priority updates
     return remote;
   }
-  
+
   if (local.updated > remote.updated) {
     return local;
   }
-  
+
   // Merge content intelligently
   return {
     ...remote,
     content: mergeContent(local.content, remote.content),
     tags: [...new Set([...local.tags, ...remote.tags])],
-    metadata: { ...local.metadata, ...remote.metadata }
+    metadata: { ...local.metadata, ...remote.metadata },
   };
 });
 ```
@@ -528,29 +530,29 @@ claude-flow memory search \
 
 ```typescript
 // Programmatic text search
-const results = await memory.fullTextSearch('deep learning', {
-  categories: ['research', 'analysis'],
+const results = await memory.fullTextSearch("deep learning", {
+  categories: ["research", "analysis"],
   fuzzy: true,
   highlight: true,
   limit: 20,
-  minScore: 0.5
+  minScore: 0.5,
 });
 
 // Advanced search with ranking
 const rankedResults = await memory.fullTextSearch({
-  query: 'machine learning optimization',
-  fields: ['content', 'tags'],
+  query: "machine learning optimization",
+  fields: ["content", "tags"],
   boost: {
     content: 1.0,
     tags: 2.0,
-    title: 1.5
+    title: 1.5,
   },
   filters: {
-    category: 'research',
+    category: "research",
     metadata: {
-      verified: true
-    }
-  }
+      verified: true,
+    },
+  },
 });
 ```
 
@@ -583,11 +585,11 @@ claude-flow memory growth \
 // Monitor memory performance
 const monitor = new MemoryMonitor(memory);
 
-monitor.on('slowQuery', (query, duration) => {
+monitor.on("slowQuery", (query, duration) => {
   console.log(`Slow query detected: ${duration}ms`, query);
 });
 
-monitor.on('cacheHitRate', (rate) => {
+monitor.on("cacheHitRate", (rate) => {
   if (rate < 0.8) {
     console.log(`Low cache hit rate: ${rate}`);
   }
@@ -598,7 +600,7 @@ const metrics = await memory.getPerformanceMetrics();
 console.log({
   averageQueryTime: metrics.averageQueryTime,
   cacheHitRate: metrics.cacheHitRate,
-  throughput: metrics.operationsPerSecond
+  throughput: metrics.operationsPerSecond,
 });
 ```
 
@@ -688,7 +690,7 @@ class SemanticEnhancementPlugin implements MemoryPlugin {
     item.metadata.sentiment = await this.analyzeSentiment(item.content);
     return item;
   }
-  
+
   async afterStore(item: MemoryItem): Promise<void> {
     // Update knowledge graph
     await this.updateKnowledgeGraph(item);
@@ -716,11 +718,11 @@ Automate memory operations with workflows:
           },
           {
             "action": "extractKeywords",
-            "parameters": {"maxKeywords": 10}
+            "parameters": { "maxKeywords": 10 }
           },
           {
             "action": "linkRelated",
-            "parameters": {"threshold": 0.8}
+            "parameters": { "threshold": 0.8 }
           }
         ]
       }

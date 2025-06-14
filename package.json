@@ -8,7 +8,8 @@
   },
   "scripts": {
     "postinstall": "node scripts/install.js",
-    "build": "PATH=\"/home/codespace/.deno/bin:$PATH\" deno compile --allow-all --no-check --output=bin/claude-flow src/cli/main.ts",
+    "build": "./scripts/safe-build.sh",
+    "build:direct": "PATH=\"/home/codespace/.deno/bin:$PATH\" deno compile --allow-all --no-check --output=bin/claude-flow src/cli/main.ts",
     "build:simple": "PATH=\"/home/codespace/.deno/bin:$PATH\" deno compile --allow-all --no-check --output=bin/claude-flow-simple src/cli/simple-cli.ts",
     "test": "deno run --allow-all tests/run-tests.ts",
     "test:unit": "deno run --allow-all tests/run-tests.ts --suite unit",
@@ -61,7 +62,14 @@
     "SWARM_VISIBILITY.md"
   ],
   "dependencies": {
+    "@types/axios": "^0.14.4",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/js-yaml": "^4.0.9",
+    "@types/uuid": "^10.0.0",
+    "axios": "^1.10.0",
+    "better-sqlite3": "^11.10.0",
     "blessed": "^0.1.81",
+    "js-yaml": "^4.1.0",
     "node-pty": "^1.0.0"
   }
 }

@@ -27,46 +27,47 @@ coordination/
 
 ### 1. Task Assignment
 
-* Check `orchestration/agent_assignments.md` before starting
-* Claim your task by logging your agent ID
-* Avoid overlap through transparent ownership
+- Check `orchestration/agent_assignments.md` before starting
+- Claim your task by logging your agent ID
+- Avoid overlap through transparent ownership
 
 ### 2. Knowledge Sharing
 
-* Log all useful discoveries in `memory_bank/`
-* Include failed attempts to reduce redundancy
-* Share tuning parameters and workarounds promptly
+- Log all useful discoveries in `memory_bank/`
+- Include failed attempts to reduce redundancy
+- Share tuning parameters and workarounds promptly
 
 ### 3. Progress Updates
 
-* Record progress in `orchestration/progress_tracker.md`
-* Mark completed subtasks inside `subtasks/` files
-* Note blockers or required inputs from other agents
+- Record progress in `orchestration/progress_tracker.md`
+- Mark completed subtasks inside `subtasks/` files
+- Note blockers or required inputs from other agents
 
 ### 4. Integration Points
 
-* Follow `orchestration/integration_plan.md` for assembly
-* Test partial integrations regularly
-* Log interface contracts and assumptions
+- Follow `orchestration/integration_plan.md` for assembly
+- Test partial integrations regularly
+- Log interface contracts and assumptions
 
 ## Communication Standards
 
 ### Status Markers
 
-* 🟢 COMPLETE – Task finished and verified
-* 🟡 IN\_PROGRESS – Actively being worked on
-* 🔴 BLOCKED – Dependent or paused
-* ⚪ TODO – Unclaimed or unstarted
-* 🔵 REVIEW – Awaiting validation
+- 🟢 COMPLETE – Task finished and verified
+- 🟡 IN_PROGRESS – Actively being worked on
+- 🔴 BLOCKED – Dependent or paused
+- ⚪ TODO – Unclaimed or unstarted
+- 🔵 REVIEW – Awaiting validation
 
 ### Update Format
 
 ```markdown
-## [Timestamp] Agent: [Agent_ID]  
+## [Timestamp] Agent: [Agent_ID]
+
 **Task**: [Brief summary]  
 **Status**: [Status marker]  
 **Details**: [Progress, issues, discoveries]  
-**Next**: [Planned follow-up action]  
+**Next**: [Planned follow-up action]
 ```
 
 ## Critical Rules
@@ -74,6 +75,5 @@ coordination/
 1. **No Uncoordinated Edits** – Avoid editing shared files without claiming
 2. **Always Test Before Completion** – Validate outputs before status updates
 3. **Log All Failures** – Negative results are part of the process
-4. **Share Tunings and Fixes** – Parameters, configs, and tricks belong in memory\_bank
+4. **Share Tunings and Fixes** – Parameters, configs, and tricks belong in memory_bank
 5. **Commit in Small Units** – Make atomic, reversible changes
- 

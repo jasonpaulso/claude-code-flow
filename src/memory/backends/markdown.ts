@@ -2,11 +2,11 @@
  * Markdown backend implementation for human-readable memory storage
  */
 
-import { IMemoryBackend } from './base.ts';
-import { MemoryEntry, MemoryQuery } from '../../utils/types.ts';
-import { ILogger } from '../../core/logger.ts';
-import { MemoryBackendError } from '../../utils/errors.ts';
-import { ensureDir } from 'https://deno.land/std@0.208.0/fs/mod.ts';
+import { IMemoryBackend } from "./base.ts";
+import { MemoryEntry, MemoryQuery } from "../../utils/types.ts";
+import { ILogger } from "../../core/logger.ts";
+import { MemoryBackendError } from "../../utils/errors.ts";
+import { ensureDir } from "https://deno.land/std@0.208.0/fs/mod.ts";
 
 /**
  * Markdown-based memory backend
@@ -23,7 +23,9 @@ export class MarkdownBackend implements IMemoryBackend {
   }
 
   async initialize(): Promise<void> {
-    this.logger.info('Initializing Markdown backend', { baseDir: this.baseDir });
+    this.logger.info("Initializing Markdown backend", {
+      baseDir: this.baseDir,
+    });
 
     try {
       // Ensure directories exist
@@ -34,14 +36,16 @@ export class MarkdownBackend implements IMemoryBackend {
       // Load index
       await this.loadIndex();
 
-      this.logger.info('Markdown backend initialized');
+      this.logger.info("Markdown backend initialized");
     } catch (error) {
-      throw new MemoryBackendError('Failed to initialize Markdown backend', { error });
+      throw new MemoryBackendError("Failed to initialize Markdown backend", {
+        error,
+      });
     }
   }
 
   async shutdown(): Promise<void> {
-    this.logger.info('Shutting down Markdown backend');
+    this.logger.info("Shutting down Markdown backend");
 
     // Save index before shutdown
     await this.saveIndex();
@@ -59,7 +63,7 @@ export class MarkdownBackend implements IMemoryBackend {
       // Update index
       await this.saveIndex();
     } catch (error) {
-      throw new MemoryBackendError('Failed to store entry', { error });
+      throw new MemoryBackendError("Failed to store entry", { error });
     }
   }
 
@@ -92,7 +96,7 @@ export class MarkdownBackend implements IMemoryBackend {
       // Update index
       await this.saveIndex();
     } catch (error) {
-      throw new MemoryBackendError('Failed to delete entry', { error });
+      throw new MemoryBackendError("Failed to delete entry", { error });
     }
   }
 
@@ -101,40 +105,41 @@ export class MarkdownBackend implements IMemoryBackend {
 
     // Apply filters
     if (query.agentId) {
-      results = results.filter(e => e.agentId === query.agentId);
+      results = results.filter((e) => e.agentId === query.agentId);
     }
 
     if (query.sessionId) {
-      results = results.filter(e => e.sessionId === query.sessionId);
+      results = results.filter((e) => e.sessionId === query.sessionId);
     }
 
     if (query.type) {
-      results = results.filter(e => e.type === query.type);
+      results = results.filter((e) => e.type === query.type);
     }
 
     if (query.tags && query.tags.length > 0) {
-      results = results.filter(e => 
-        query.tags!.some(tag => e.tags.includes(tag)),
+      results = results.filter((e) =>
+        query.tags!.some((tag) => e.tags.includes(tag)),
       );
     }
 
     if (query.startTime) {
-      results = results.filter(e => 
-        e.timestamp.getTime() >= query.startTime!.getTime(),
+      results = results.filter(
+        (e) => e.timestamp.getTime() >= query.startTime!.getTime(),
       );
     }
 
     if (query.endTime) {
-      results = results.filter(e => 
-        e.timestamp.getTime() <= query.endTime!.getTime(),
+      results = results.filter(
+        (e) => e.timestamp.getTime() <= query.endTime!.getTime(),
       );
     }
 
     if (query.search) {
       const searchLower = query.search.toLowerCase();
-      results = results.filter(e => 
-        e.content.toLowerCase().includes(searchLower) ||
-        e.tags.some(tag => tag.toLowerCase().includes(searchLower)),
+      results = results.filter(
+        (e) =>
+          e.content.toLowerCase().includes(searchLower) ||
+          e.tags.some((tag) => tag.toLowerCase().includes(searchLower)),
       );
     }
 
@@ -153,9 +158,9 @@ export class MarkdownBackend implements IMemoryBackend {
     return Array.from(this.entries.values());
   }
 
-  async getHealthStatus(): Promise<{ 
-    healthy: boolean; 
-    error?: string; 
+  async getHealthStatus(): Promise<{
+    healthy: boolean;
+    error?: string;
     metrics?: Record<string, number>;
   }> {
     try {
@@ -186,7 +191,7 @@ export class MarkdownBackend implements IMemoryBackend {
     } catch (error) {
       return {
         healthy: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : "Unknown error",
       };
     }
   }
@@ -203,10 +208,10 @@ export class MarkdownBackend implements IMemoryBackend {
         this.entries.set(id, entry);
       }
 
-      this.logger.info('Loaded memory index', { entries: this.entries.size });
+      this.logger.info("Loaded memory index", { entries: this.entries.size });
     } catch (error) {
       if (!(error instanceof Deno.errors.NotFound)) {
-        this.logger.warn('Failed to load index', { error });
+        this.logger.warn("Failed to load index", { error });
       }
       // Start with empty index if file doesn't exist
     }
@@ -214,7 +219,7 @@ export class MarkdownBackend implements IMemoryBackend {
 
   private async saveIndex(): Promise<void> {
     const index: Record<string, MemoryEntry> = {};
-    
+
     for (const [id, entry] of this.entries) {
       index[id] = entry;
     }
@@ -225,7 +230,7 @@ export class MarkdownBackend implements IMemoryBackend {
 
   private async writeEntryToFile(entry: MemoryEntry): Promise<void> {
     const filePath = this.getEntryFilePath(entry);
-    const dirPath = filePath.substring(0, filePath.lastIndexOf('/'));
+    const dirPath = filePath.substring(0, filePath.lastIndexOf("/"));
 
     // Ensure directory exists
     await ensureDir(dirPath);
@@ -238,46 +243,50 @@ export class MarkdownBackend implements IMemoryBackend {
   }
 
   private getEntryFilePath(entry: MemoryEntry): string {
-    const date = entry.timestamp.toISOString().split('T')[0];
-    const time = entry.timestamp.toISOString().split('T')[1].replace(/:/g, '-').split('.')[0];
-    
+    const date = entry.timestamp.toISOString().split("T")[0];
+    const time = entry.timestamp
+      .toISOString()
+      .split("T")[1]
+      .replace(/:/g, "-")
+      .split(".")[0];
+
     return `${this.baseDir}/agents/${entry.agentId}/${date}/${time}_${entry.id}.md`;
   }
 
   private entryToMarkdown(entry: MemoryEntry): string {
     const lines: string[] = [
       `# Memory Entry: ${entry.id}`,
-      '',
+      "",
       `**Agent**: ${entry.agentId}`,
       `**Session**: ${entry.sessionId}`,
       `**Type**: ${entry.type}`,
       `**Timestamp**: ${entry.timestamp.toISOString()}`,
       `**Version**: ${entry.version}`,
-      '',
+      "",
     ];
 
     if (entry.parentId) {
-      lines.push(`**Parent**: ${entry.parentId}`, '');
+      lines.push(`**Parent**: ${entry.parentId}`, "");
     }
 
     if (entry.tags.length > 0) {
-      lines.push(`**Tags**: ${entry.tags.join(', ')}`, '');
+      lines.push(`**Tags**: ${entry.tags.join(", ")}`, "");
     }
 
-    lines.push('## Content', '', entry.content, '');
+    lines.push("## Content", "", entry.content, "");
 
     if (Object.keys(entry.context).length > 0) {
-      lines.push('## Context', '', '```json');
+      lines.push("## Context", "", "```json");
       lines.push(JSON.stringify(entry.context, null, 2));
-      lines.push('```', '');
+      lines.push("```", "");
     }
 
     if (entry.metadata && Object.keys(entry.metadata).length > 0) {
-      lines.push('## Metadata', '', '```json');
+      lines.push("## Metadata", "", "```json");
       lines.push(JSON.stringify(entry.metadata, null, 2));
-      lines.push('```', '');
+      lines.push("```", "");
     }
 
-    return lines.join('\n');
+    return lines.join("\n");
   }
 }

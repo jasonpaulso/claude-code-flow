@@ -2,12 +2,25 @@
  * Comprehensive test utilities for Claude-Flow
  */
 
-import { assertEquals, assertExists, assertRejects, assertThrows } from "https://deno.land/std@0.220.0/assert/mod.ts";
+import {
+  assertEquals,
+  assertExists,
+  assertRejects,
+  assertThrows,
+} from "https://deno.land/std@0.220.0/assert/mod.ts";
 import { delay } from "https://deno.land/std@0.220.0/async/delay.ts";
 import { stub, Spy } from "https://deno.land/std@0.220.0/testing/mock.ts";
 import { FakeTime } from "https://deno.land/std@0.220.0/testing/time.ts";
 
-export { assertEquals, assertExists, assertRejects, assertThrows, stub, delay, FakeTime };
+export {
+  assertEquals,
+  assertExists,
+  assertRejects,
+  assertThrows,
+  stub,
+  delay,
+  FakeTime,
+};
 export type { Spy };
 
 /**
@@ -19,9 +32,13 @@ export class AsyncTestUtils {
    */
   static async waitFor(
     condition: () => boolean | Promise<boolean>,
-    options: { timeout?: number; interval?: number; message?: string } = {}
+    options: { timeout?: number; interval?: number; message?: string } = {},
   ): Promise<void> {
-    const { timeout = 5000, interval = 100, message = 'Condition not met' } = options;
+    const {
+      timeout = 5000,
+      interval = 100,
+      message = "Condition not met",
+    } = options;
     const start = Date.now();
 
     while (Date.now() - start < timeout) {
@@ -39,15 +56,12 @@ export class AsyncTestUtils {
    */
   static async waitForAll(
     conditions: Array<() => boolean | Promise<boolean>>,
-    options: { timeout?: number; interval?: number } = {}
+    options: { timeout?: number; interval?: number } = {},
   ): Promise<void> {
-    await this.waitFor(
-      async () => {
-        const results = await Promise.all(conditions.map(c => c()));
-        return results.every(r => r);
-      },
-      options
-    );
+    await this.waitFor(async () => {
+      const results = await Promise.all(conditions.map((c) => c()));
+      return results.every((r) => r);
+    }, options);
   }
 
   /**
@@ -55,15 +69,12 @@ export class AsyncTestUtils {
    */
   static async waitForAny(
     conditions: Array<() => boolean | Promise<boolean>>,
-    options: { timeout?: number; interval?: number } = {}
+    options: { timeout?: number; interval?: number } = {},
   ): Promise<void> {
-    await this.waitFor(
-      async () => {
-        const results = await Promise.all(conditions.map(c => c()));
-        return results.some(r => r);
-      },
-      options
-    );
+    await this.waitFor(async () => {
+      const results = await Promise.all(conditions.map((c) => c()));
+      return results.some((r) => r);
+    }, options);
   }
 
   /**
@@ -72,11 +83,13 @@ export class AsyncTestUtils {
   static async withTimeout<T>(
     promise: Promise<T>,
     timeoutMs: number,
-    message?: string
+    message?: string,
   ): Promise<T> {
     const timeoutPromise = new Promise<never>((_, reject) => {
       setTimeout(() => {
-        reject(new Error(message || `Operation timed out after ${timeoutMs}ms`));
+        reject(
+          new Error(message || `Operation timed out after ${timeoutMs}ms`),
+        );
       }, timeoutMs);
     });
 
@@ -93,13 +106,13 @@ export class AsyncTestUtils {
       initialDelay?: number;
       maxDelay?: number;
       backoffFactor?: number;
-    } = {}
+    } = {},
   ): Promise<T> {
     const {
       maxAttempts = 3,
       initialDelay = 100,
       maxDelay = 5000,
-      backoffFactor = 2
+      backoffFactor = 2,
     } = options;
 
     let lastError: Error;
@@ -110,7 +123,7 @@ export class AsyncTestUtils {
         return await operation();
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
-        
+
         if (attempt === maxAttempts) {
           throw lastError;
         }
@@ -133,11 +146,22 @@ export class MemoryTestUtils {
    */
   static async monitorMemory<T>(
     operation: () => Promise<T>,
-    options: { sampleInterval?: number; maxSamples?: number } = {}
-  ): Promise<{ result: T; memoryStats: Array<{ timestamp: number; heapUsed: number; external: number }> }> {
+    options: { sampleInterval?: number; maxSamples?: number } = {},
+  ): Promise<{
+    result: T;
+    memoryStats: Array<{
+      timestamp: number;
+      heapUsed: number;
+      external: number;
+    }>;
+  }> {
     const { sampleInterval = 100, maxSamples = 100 } = options;
-    const memoryStats: Array<{ timestamp: number; heapUsed: number; external: number }> = [];
-    
+    const memoryStats: Array<{
+      timestamp: number;
+      heapUsed: number;
+      external: number;
+    }> = [];
+
     let monitoring = true;
     let sampleCount = 0;
 
@@ -172,7 +196,7 @@ export class MemoryTestUtils {
    */
   static async forceGC(): Promise<void> {
     // Deno doesn't expose GC directly, but we can try to encourage it
-    if ('gc' in globalThis) {
+    if ("gc" in globalThis) {
       (globalThis as any).gc();
     }
     await delay(10); // Give time for GC to run
@@ -183,7 +207,7 @@ export class MemoryTestUtils {
    */
   static async checkMemoryLeak<T>(
     operation: () => Promise<T>,
-    options: { threshold?: number; samples?: number } = {}
+    options: { threshold?: number; samples?: number } = {},
   ): Promise<{ result: T; memoryIncrease: number; leaked: boolean }> {
     const { threshold = 1024 * 1024, samples = 3 } = options; // 1MB threshold
 
@@ -220,7 +244,9 @@ export class PerformanceTestUtils {
   /**
    * Measure execution time of operation
    */
-  static async measureTime<T>(operation: () => Promise<T>): Promise<{ result: T; duration: number }> {
+  static async measureTime<T>(
+    operation: () => Promise<T>,
+  ): Promise<{ result: T; duration: number }> {
     const start = performance.now();
     const result = await operation();
     const duration = performance.now() - start;
@@ -236,7 +262,7 @@ export class PerformanceTestUtils {
       iterations?: number;
       warmupIterations?: number;
       concurrency?: number;
-    } = {}
+    } = {},
   ): Promise<{
     results: T[];
     stats: {
@@ -249,7 +275,11 @@ export class PerformanceTestUtils {
       p99: number;
     };
   }> {
-    const { iterations = 100, warmupIterations = 10, concurrency = 1 } = options;
+    const {
+      iterations = 100,
+      warmupIterations = 10,
+      concurrency = 1,
+    } = options;
 
     // Warmup
     for (let i = 0; i < warmupIterations; i++) {
@@ -267,7 +297,7 @@ export class PerformanceTestUtils {
       });
 
       const batchResults = await Promise.all(promises);
-      
+
       for (const { result, duration } of batchResults) {
         results.push(result);
         durations.push(duration);
@@ -287,16 +317,18 @@ export class PerformanceTestUtils {
     const median = sortedDurations[Math.floor(sortedDurations.length / 2)];
     const min = sortedDurations[0];
     const max = sortedDurations[sortedDurations.length - 1];
-    
-    const variance = durations.reduce((sum, d) => sum + Math.pow(d - mean, 2), 0) / durations.length;
+
+    const variance =
+      durations.reduce((sum, d) => sum + Math.pow(d - mean, 2), 0) /
+      durations.length;
     const stdDev = Math.sqrt(variance);
-    
+
     const p95 = sortedDurations[Math.floor(sortedDurations.length * 0.95)];
     const p99 = sortedDurations[Math.floor(sortedDurations.length * 0.99)];
 
     return {
       results,
-      stats: { mean, median, min, max, stdDev, p95, p99 }
+      stats: { mean, median, min, max, stdDev, p95, p99 },
     };
   }
 
@@ -310,7 +342,7 @@ export class PerformanceTestUtils {
       rampUpTime?: number; // ms
       maxConcurrency?: number;
       requestsPerSecond?: number;
-    } = {}
+    } = {},
   ): Promise<{
     totalRequests: number;
     successfulRequests: number;
@@ -323,13 +355,17 @@ export class PerformanceTestUtils {
       duration = 30000,
       rampUpTime = 5000,
       maxConcurrency = 10,
-      requestsPerSecond = 10
+      requestsPerSecond = 10,
     } = options;
 
-    const results: Array<{ success: boolean; duration: number; error?: Error }> = [];
+    const results: Array<{
+      success: boolean;
+      duration: number;
+      error?: Error;
+    }> = [];
     const startTime = Date.now();
     const endTime = startTime + duration;
-    
+
     let currentConcurrency = 1;
     const targetInterval = 1000 / requestsPerSecond;
 
@@ -343,7 +379,7 @@ export class PerformanceTestUtils {
         results.push({
           success: false,
           duration: 0,
-          error: error instanceof Error ? error : new Error(String(error))
+          error: error instanceof Error ? error : new Error(String(error)),
         });
       }
     };
@@ -356,7 +392,7 @@ export class PerformanceTestUtils {
       if (elapsed < rampUpTime) {
         currentConcurrency = Math.min(
           maxConcurrency,
-          1 + Math.floor((elapsed / 1000) * rampUpIncrement)
+          1 + Math.floor((elapsed / 1000) * rampUpIncrement),
         );
       } else {
         currentConcurrency = maxConcurrency;
@@ -367,9 +403,9 @@ export class PerformanceTestUtils {
         const requestPromise = runRequest().finally(() => {
           activeRequests.delete(requestPromise);
         });
-        
+
         activeRequests.add(requestPromise);
-        
+
         // Wait for interval
         await delay(targetInterval);
       }
@@ -380,14 +416,14 @@ export class PerformanceTestUtils {
 
     // Calculate results
     const totalRequests = results.length;
-    const successfulRequests = results.filter(r => r.success).length;
+    const successfulRequests = results.filter((r) => r.success).length;
     const failedRequests = totalRequests - successfulRequests;
-    const averageResponseTime = results
-      .filter(r => r.success)
-      .reduce((sum, r) => sum + r.duration, 0) / (successfulRequests || 1);
+    const averageResponseTime =
+      results.filter((r) => r.success).reduce((sum, r) => sum + r.duration, 0) /
+      (successfulRequests || 1);
     const actualDuration = Date.now() - startTime;
     const actualRequestsPerSecond = totalRequests / (actualDuration / 1000);
-    const errors = results.filter(r => r.error).map(r => r.error!);
+    const errors = results.filter((r) => r.error).map((r) => r.error!);
 
     return {
       totalRequests,
@@ -407,7 +443,7 @@ export class FileSystemTestUtils {
   /**
    * Create temporary directory for testing
    */
-  static async createTempDir(prefix = 'claude-flow-test-'): Promise<string> {
+  static async createTempDir(prefix = "claude-flow-test-"): Promise<string> {
     const tempDir = await Deno.makeTempDir({ prefix });
     return tempDir;
   }
@@ -417,9 +453,9 @@ export class FileSystemTestUtils {
    */
   static async createTempFile(
     content: string,
-    options: { suffix?: string; dir?: string } = {}
+    options: { suffix?: string; dir?: string } = {},
   ): Promise<string> {
-    const { suffix = '.tmp', dir } = options;
+    const { suffix = ".tmp", dir } = options;
     const tempFile = await Deno.makeTempFile({ suffix, dir });
     await Deno.writeTextFile(tempFile, content);
     return tempFile;
@@ -430,20 +466,20 @@ export class FileSystemTestUtils {
    */
   static async createFixtures(
     fixtures: Record<string, string>,
-    baseDir?: string
+    baseDir?: string,
   ): Promise<string> {
-    const fixtureDir = baseDir || await this.createTempDir('fixtures-');
-    
+    const fixtureDir = baseDir || (await this.createTempDir("fixtures-"));
+
     for (const [fileName, content] of Object.entries(fixtures)) {
       const filePath = `${fixtureDir}/${fileName}`;
-      const dirPath = filePath.substring(0, filePath.lastIndexOf('/'));
-      
+      const dirPath = filePath.substring(0, filePath.lastIndexOf("/"));
+
       try {
         await Deno.mkdir(dirPath, { recursive: true });
       } catch {
         // Directory already exists
       }
-      
+
       await Deno.writeTextFile(filePath, content);
     }
 
@@ -455,13 +491,13 @@ export class FileSystemTestUtils {
    */
   static async cleanup(paths: string[]): Promise<void> {
     await Promise.all(
-      paths.map(async path => {
+      paths.map(async (path) => {
         try {
           await Deno.remove(path, { recursive: true });
         } catch {
           // Ignore if already removed
         }
-      })
+      }),
     );
   }
 }
@@ -475,12 +511,14 @@ export class MockFactory {
    */
   static createMock<T extends Record<string, any>>(
     original: T,
-    overrides: Partial<T> = {}
-  ): T & { [K in keyof T]: T[K] extends (...args: any[]) => any ? Spy<T, K> : T[K] } {
+    overrides: Partial<T> = {},
+  ): T & {
+    [K in keyof T]: T[K] extends (...args: any[]) => any ? Spy<T, K> : T[K];
+  } {
     const mock = { ...original, ...overrides };
-    
+
     for (const [key, value] of Object.entries(mock)) {
-      if (typeof value === 'function') {
+      if (typeof value === "function") {
         mock[key] = stub(mock, key as keyof T, value);
       }
     }
@@ -492,11 +530,11 @@ export class MockFactory {
    * Create a spy that tracks calls and can be configured
    */
   static createSpy<T extends (...args: any[]) => any>(
-    implementation?: T
+    implementation?: T,
   ): Spy<any, any> & T {
     const obj = {};
-    const methodName = 'method';
-    
+    const methodName = "method";
+
     if (implementation) {
       obj[methodName] = implementation;
     } else {
@@ -512,12 +550,12 @@ export class MockFactory {
   static createFailingMock<T extends Record<string, any>>(
     original: T,
     failingMethods: (keyof T)[],
-    error: Error = new Error('Mock failure')
+    error: Error = new Error("Mock failure"),
   ): T {
     const mock = { ...original };
-    
+
     for (const method of failingMethods) {
-      if (typeof original[method] === 'function') {
+      if (typeof original[method] === "function") {
         mock[method] = stub(mock, method, () => {
           throw error;
         });
@@ -536,8 +574,9 @@ export class TestDataGenerator {
    * Generate random string
    */
   static randomString(length = 10): string {
-    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let result = '';
+    const chars =
+      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let result = "";
     for (let i = 0; i < length; i++) {
       result += chars.charAt(Math.floor(Math.random() * chars.length));
     }
@@ -580,7 +619,9 @@ export class TestDataGenerator {
   /**
    * Generate large dataset for performance testing
    */
-  static largeDataset(size: number): Array<{ id: string; name: string; value: number; data: string }> {
+  static largeDataset(
+    size: number,
+  ): Array<{ id: string; name: string; value: number; data: string }> {
     return Array.from({ length: size }, (_, i) => ({
       id: `item-${i}`,
       name: this.randomString(20),
@@ -600,12 +641,12 @@ export class TestAssertions {
   static async assertCompletesWithin<T>(
     operation: () => Promise<T>,
     timeoutMs: number,
-    message?: string
+    message?: string,
   ): Promise<T> {
     return AsyncTestUtils.withTimeout(
       operation(),
       timeoutMs,
-      message || `Operation should complete within ${timeoutMs}ms`
+      message || `Operation should complete within ${timeoutMs}ms`,
     );
   }
 
@@ -615,21 +656,21 @@ export class TestAssertions {
   static async assertThrowsAsync<T extends Error>(
     operation: () => Promise<any>,
     ErrorClass?: new (...args: any[]) => T,
-    msgIncludes?: string
+    msgIncludes?: string,
   ): Promise<T> {
     try {
       await operation();
-      throw new Error('Expected operation to throw, but it succeeded');
+      throw new Error("Expected operation to throw, but it succeeded");
     } catch (error) {
       if (ErrorClass && !(error instanceof ErrorClass)) {
         throw new Error(
-          `Expected error of type ${ErrorClass.name}, but got ${error.constructor.name}`
+          `Expected error of type ${ErrorClass.name}, but got ${error.constructor.name}`,
         );
       }
-      
+
       if (msgIncludes && !error.message.includes(msgIncludes)) {
         throw new Error(
-          `Expected error message to include "${msgIncludes}", but got: ${error.message}`
+          `Expected error message to include "${msgIncludes}", but got: ${error.message}`,
         );
       }
 
@@ -644,11 +685,11 @@ export class TestAssertions {
     actual: number,
     min: number,
     max: number,
-    message?: string
+    message?: string,
   ): void {
     if (actual < min || actual > max) {
       throw new Error(
-        message || `Expected ${actual} to be between ${min} and ${max}`
+        message || `Expected ${actual} to be between ${min} and ${max}`,
       );
     }
   }
@@ -659,15 +700,15 @@ export class TestAssertions {
   static assertSameElements<T>(
     actual: T[],
     expected: T[],
-    message?: string
+    message?: string,
   ): void {
     const actualSorted = [...actual].sort();
     const expectedSorted = [...expected].sort();
-    
+
     assertEquals(
       actualSorted,
       expectedSorted,
-      message || 'Arrays should contain same elements'
+      message || "Arrays should contain same elements",
     );
   }
 
@@ -677,16 +718,18 @@ export class TestAssertions {
   static assertSpyCalledWith(
     spy: Spy,
     expectedArgs: any[],
-    message?: string
+    message?: string,
   ): void {
-    const found = spy.calls.some(call => 
-      call.args.length === expectedArgs.length &&
-      call.args.every((arg, i) => arg === expectedArgs[i])
+    const found = spy.calls.some(
+      (call) =>
+        call.args.length === expectedArgs.length &&
+        call.args.every((arg, i) => arg === expectedArgs[i]),
     );
 
     if (!found) {
       throw new Error(
-        message || `Expected spy to be called with ${JSON.stringify(expectedArgs)}, but it wasn't`
+        message ||
+          `Expected spy to be called with ${JSON.stringify(expectedArgs)}, but it wasn't`,
       );
     }
   }

@@ -5,26 +5,32 @@ Claude-Flow supports configuration through environment variables, allowing you t
 ## General Configuration
 
 ### Core System
+
 - `CLAUDE_FLOW_MAX_AGENTS` - Maximum concurrent agents (default: 10)
 - `CLAUDE_FLOW_LOG_LEVEL` - Logging level: debug, info, warn, error (default: info)
 
 ### Terminal Management
+
 - `CLAUDE_FLOW_TERMINAL_TYPE` - Terminal type: auto, vscode, native (default: auto)
 
 ### Memory System
+
 - `CLAUDE_FLOW_MEMORY_BACKEND` - Memory backend: sqlite, markdown, hybrid (default: hybrid)
 
 ### MCP Server
+
 - `CLAUDE_FLOW_MCP_TRANSPORT` - Transport: stdio, http, websocket (default: stdio)
 - `CLAUDE_FLOW_MCP_PORT` - Port for HTTP/WebSocket transport (default: 3000)
 
 ## Swarm Configuration (NEW!)
 
 ### Basic Settings
+
 - `CLAUDE_FLOW_SWARM_MAX_AGENTS` - Maximum agents in swarm (1-100, default: 10)
 - `CLAUDE_FLOW_SWARM_TIMEOUT` - Timeout in minutes (1-1440, default: 60)
 
 ### Strategy Settings
+
 - `CLAUDE_FLOW_SWARM_STRATEGY` - Default strategy:
   - `auto` - Automatic strategy selection (default)
   - `research` - Research-focused workflows
@@ -35,6 +41,7 @@ Claude-Flow supports configuration through environment variables, allowing you t
   - `maintenance` - System maintenance
 
 ### Coordination Settings
+
 - `CLAUDE_FLOW_SWARM_MODE` - Coordination mode:
   - `centralized` - Single coordinator (default)
   - `distributed` - Multiple coordinators
@@ -43,12 +50,14 @@ Claude-Flow supports configuration through environment variables, allowing you t
   - `hybrid` - Mixed strategies
 
 ### Feature Flags
+
 - `CLAUDE_FLOW_SWARM_MONITORING` - Enable monitoring: true/false (default: true)
 - `CLAUDE_FLOW_SWARM_ENCRYPTION` - Enable encryption: true/false (default: false)
 
 ## Usage Examples
 
 ### Development Environment
+
 ```bash
 export CLAUDE_FLOW_LOG_LEVEL=debug
 export CLAUDE_FLOW_SWARM_MAX_AGENTS=5
@@ -60,6 +69,7 @@ export CLAUDE_FLOW_SWARM_MONITORING=true
 ```
 
 ### Production Environment
+
 ```bash
 export CLAUDE_FLOW_LOG_LEVEL=warn
 export CLAUDE_FLOW_SWARM_MAX_AGENTS=20
@@ -72,6 +82,7 @@ export CLAUDE_FLOW_SWARM_ENCRYPTION=true
 ```
 
 ### Research Environment
+
 ```bash
 export CLAUDE_FLOW_SWARM_STRATEGY=research
 export CLAUDE_FLOW_SWARM_MODE=mesh
@@ -82,6 +93,7 @@ export CLAUDE_FLOW_SWARM_TIMEOUT=120
 ```
 
 ### Testing Environment
+
 ```bash
 export CLAUDE_FLOW_LOG_LEVEL=debug
 export CLAUDE_FLOW_SWARM_STRATEGY=testing
@@ -97,7 +109,7 @@ Environment variables override default configuration but are overridden by:
 
 1. **Command-line arguments** (highest priority)
 2. **Configuration file settings**
-3. **Environment variables** 
+3. **Environment variables**
 4. **Default values** (lowest priority)
 
 ## Example Configuration Override

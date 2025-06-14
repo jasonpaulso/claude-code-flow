@@ -3,10 +3,10 @@
  * File-based storage using structured markdown files
  */
 
-import { promises as fs } from 'fs';
-import * as path from 'path';
-import * as yaml from 'js-yaml';
-import { MemoryItem, MemoryQuery, MemoryBackend, BackendStats } from '../types';
+import { promises as fs } from "fs";
+import * as path from "path";
+import * as yaml from "js-yaml";
+import { MemoryItem, MemoryQuery, MemoryBackend, BackendStats } from "../types";
 
 export interface MarkdownBackendConfig {
   rootPath: string;
@@ -22,7 +22,7 @@ export class MarkdownBackend implements MemoryBackend {
 
   constructor(config: MarkdownBackendConfig) {
     this.config = config;
-    this.indexPath = path.join(config.rootPath, '.memory-index.json');
+    this.indexPath = path.join(config.rootPath, ".memory-index.json");
   }
 
   async initialize(): Promise<void> {
@@ -31,16 +31,16 @@ export class MarkdownBackend implements MemoryBackend {
 
     // Create directory structure
     const dirs = [
-      'agent-sessions',
-      'shared-knowledge',
-      'shared-knowledge/calibration-values',
-      'shared-knowledge/test-patterns',
-      'shared-knowledge/failure-analysis',
-      'shared-knowledge/architectural-decisions',
-      'shared-knowledge/code-patterns',
-      'coordination',
-      'project-memory',
-      'github-integration'
+      "agent-sessions",
+      "shared-knowledge",
+      "shared-knowledge/calibration-values",
+      "shared-knowledge/test-patterns",
+      "shared-knowledge/failure-analysis",
+      "shared-knowledge/architectural-decisions",
+      "shared-knowledge/code-patterns",
+      "coordination",
+      "project-memory",
+      "github-integration",
     ];
 
     for (const dir of dirs) {
@@ -62,7 +62,7 @@ export class MarkdownBackend implements MemoryBackend {
     const content = this.itemToMarkdown(item);
 
     // Write file
-    await fs.writeFile(filePath, content, 'utf-8');
+    await fs.writeFile(filePath, content, "utf-8");
 
     // Update index
     this.updateIndex(item, filePath);
@@ -81,7 +81,7 @@ export class MarkdownBackend implements MemoryBackend {
     if (!entry) return null;
 
     try {
-      const content = await fs.readFile(entry.path, 'utf-8');
+      const content = await fs.readFile(entry.path, "utf-8");
       return this.markdownToItem(content, category, key);
     } catch (error) {
       // File might have been deleted
@@ -98,9 +98,9 @@ export class MarkdownBackend implements MemoryBackend {
       if (!this.matchesQuery(entry, query)) continue;
 
       try {
-        const content = await fs.readFile(entry.path, 'utf-8');
+        const content = await fs.readFile(entry.path, "utf-8");
         const item = this.markdownToItem(content, entry.category, entry.key);
-        
+
         // Apply custom filter
         if (!query.filter || query.filter(item)) {
           results.push(item);
@@ -116,8 +116,8 @@ export class MarkdownBackend implements MemoryBackend {
       results.sort((a, b) => {
         const aVal = this.getOrderValue(a, query.orderBy!);
         const bVal = this.getOrderValue(b, query.orderBy!);
-        const direction = query.orderDirection === 'desc' ? -1 : 1;
-        
+        const direction = query.orderDirection === "desc" ? -1 : 1;
+
         if (aVal < bVal) return -1 * direction;
         if (aVal > bVal) return 1 * direction;
         return 0;
@@ -141,18 +141,22 @@ export class MarkdownBackend implements MemoryBackend {
       await fs.unlink(entry.path);
       this.index.delete(indexKey);
       await this.saveIndex();
-      
+
       if (this.config.gitIntegration) {
         await this.gitRemove(entry.path);
       }
-      
+
       return true;
     } catch (error) {
       return false;
     }
   }
 
-  async update(category: string, key: string, updates: Partial<MemoryItem>): Promise<boolean> {
+  async update(
+    category: string,
+    key: string,
+    updates: Partial<MemoryItem>,
+  ): Promise<boolean> {
     const existing = await this.get(category, key);
     if (!existing) return false;
 
@@ -162,8 +166,8 @@ export class MarkdownBackend implements MemoryBackend {
       metadata: {
         ...existing.metadata,
         ...updates.metadata,
-        updated_at: Date.now()
-      }
+        updated_at: Date.now(),
+      },
     };
 
     await this.store(merged);
@@ -180,11 +184,11 @@ export class MarkdownBackend implements MemoryBackend {
     for (const entry of this.index.values()) {
       totalItems++;
       categories.add(entry.category);
-      
+
       try {
         const stat = await fs.stat(entry.path);
         sizeBytes += stat.size;
-        
+
         const timestamp = entry.metadata?.timestamp || stat.mtimeMs;
         if (!oldestItem || timestamp < oldestItem) oldestItem = timestamp;
         if (!newestItem || timestamp > newestItem) newestItem = timestamp;
@@ -198,7 +202,7 @@ export class MarkdownBackend implements MemoryBackend {
       categories: categories.size,
       sizeBytes,
       oldestItem,
-      newestItem
+      newestItem,
     };
   }
 
@@ -209,10 +213,13 @@ export class MarkdownBackend implements MemoryBackend {
   /**
    * Search through markdown files
    */
-  async search(searchTerm: string, options?: {
-    categories?: string[];
-    limit?: number;
-  }): Promise<MemoryItem[]> {
+  async search(
+    searchTerm: string,
+    options?: {
+      categories?: string[];
+      limit?: number;
+    },
+  ): Promise<MemoryItem[]> {
     const results: MemoryItem[] = [];
     const searchLower = searchTerm.toLowerCase();
     let count = 0;
@@ -224,8 +231,8 @@ export class MarkdownBackend implements MemoryBackend {
       }
 
       try {
-        const content = await fs.readFile(entry.path, 'utf-8');
-        
+        const content = await fs.readFile(entry.path, "utf-8");
+
         // Simple text search
         if (content.toLowerCase().includes(searchLower)) {
           const item = this.markdownToItem(content, entry.category, entry.key);
@@ -249,40 +256,40 @@ export class MarkdownBackend implements MemoryBackend {
    */
   private itemToMarkdown(item: MemoryItem): string {
     let content = `# ${item.key}\n\n`;
-    
+
     // Add frontmatter
     const frontmatter = {
       id: item.id,
       category: item.category,
       created: new Date(item.metadata?.timestamp || Date.now()).toISOString(),
-      version: item.metadata?.version || '1.0',
-      namespace: item.metadata?.namespace || 'default',
+      version: item.metadata?.version || "1.0",
+      namespace: item.metadata?.namespace || "default",
       tags: item.metadata?.tags || [],
-      ...item.metadata
+      ...item.metadata,
     };
 
-    content += '---\n';
-    content += yaml.dump(frontmatter, { 
+    content += "---\n";
+    content += yaml.dump(frontmatter, {
       indent: 2,
       lineWidth: -1,
-      noRefs: true
+      noRefs: true,
     });
-    content += '---\n\n';
+    content += "---\n\n";
 
     // Add content based on value type
-    if (typeof item.value === 'string') {
+    if (typeof item.value === "string") {
       content += item.value;
     } else if (this.config.prettyPrint) {
-      content += '```json\n';
+      content += "```json\n";
       content += JSON.stringify(item.value, null, 2);
-      content += '\n```';
+      content += "\n```";
     } else {
       content += JSON.stringify(item.value);
     }
 
     // Add vector embedding if present
     if (item.vectorEmbedding) {
-      content += '\n\n<!-- Vector Embedding -->\n';
+      content += "\n\n<!-- Vector Embedding -->\n";
       content += `<!-- ${JSON.stringify(item.vectorEmbedding)} -->`;
     }
 
@@ -292,7 +299,11 @@ export class MarkdownBackend implements MemoryBackend {
   /**
    * Convert Markdown content to MemoryItem
    */
-  private markdownToItem(content: string, category: string, key: string): MemoryItem {
+  private markdownToItem(
+    content: string,
+    category: string,
+    key: string,
+  ): MemoryItem {
     // Extract frontmatter
     const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
     let metadata: any = {};
@@ -309,11 +320,13 @@ export class MarkdownBackend implements MemoryBackend {
 
     // Extract vector embedding if present
     let vectorEmbedding: number[] | undefined;
-    const vectorMatch = bodyContent.match(/<!-- Vector Embedding -->\n<!-- (.+?) -->/);
+    const vectorMatch = bodyContent.match(
+      /<!-- Vector Embedding -->\n<!-- (.+?) -->/,
+    );
     if (vectorMatch) {
       try {
         vectorEmbedding = JSON.parse(vectorMatch[1]);
-        bodyContent = bodyContent.replace(vectorMatch[0], '').trim();
+        bodyContent = bodyContent.replace(vectorMatch[0], "").trim();
       } catch (error) {
         // Invalid vector data
       }
@@ -321,7 +334,7 @@ export class MarkdownBackend implements MemoryBackend {
 
     // Parse value
     let value: any = bodyContent;
-    
+
     // Try to parse JSON content
     const jsonMatch = bodyContent.match(/```json\n([\s\S]*?)\n```/);
     if (jsonMatch) {
@@ -330,7 +343,7 @@ export class MarkdownBackend implements MemoryBackend {
       } catch (error) {
         // Not valid JSON, keep as string
       }
-    } else if (bodyContent.startsWith('{') || bodyContent.startsWith('[')) {
+    } else if (bodyContent.startsWith("{") || bodyContent.startsWith("[")) {
       try {
         value = JSON.parse(bodyContent);
       } catch (error) {
@@ -345,10 +358,12 @@ export class MarkdownBackend implements MemoryBackend {
       value,
       metadata: {
         ...metadata,
-        timestamp: metadata.created ? new Date(metadata.created).getTime() : Date.now()
+        timestamp: metadata.created
+          ? new Date(metadata.created).getTime()
+          : Date.now(),
       },
       vectorEmbedding,
-      ttl: metadata.ttl
+      ttl: metadata.ttl,
     };
   }
 
@@ -356,17 +371,17 @@ export class MarkdownBackend implements MemoryBackend {
    * Get file path for a memory item
    */
   private getFilePath(item: MemoryItem): string {
-    const namespace = item.metadata?.namespace || 'default';
+    const namespace = item.metadata?.namespace || "default";
     const safeName = this.sanitizeFilename(item.key);
-    
+
     // Map categories to directory structure
     const categoryPath = this.getCategoryPath(item.category);
-    
+
     return path.join(
       this.config.rootPath,
       categoryPath,
       namespace,
-      `${safeName}.md`
+      `${safeName}.md`,
     );
   }
 
@@ -375,15 +390,15 @@ export class MarkdownBackend implements MemoryBackend {
    */
   private getCategoryPath(category: string): string {
     const mapping: Record<string, string> = {
-      'agent-session': 'agent-sessions',
-      'calibration': 'shared-knowledge/calibration-values',
-      'test-pattern': 'shared-knowledge/test-patterns',
-      'failure': 'shared-knowledge/failure-analysis',
-      'architecture': 'shared-knowledge/architectural-decisions',
-      'code-pattern': 'shared-knowledge/code-patterns',
-      'coordination': 'coordination',
-      'project': 'project-memory',
-      'github': 'github-integration'
+      "agent-session": "agent-sessions",
+      calibration: "shared-knowledge/calibration-values",
+      "test-pattern": "shared-knowledge/test-patterns",
+      failure: "shared-knowledge/failure-analysis",
+      architecture: "shared-knowledge/architectural-decisions",
+      "code-pattern": "shared-knowledge/code-patterns",
+      coordination: "coordination",
+      project: "project-memory",
+      github: "github-integration",
     };
 
     return mapping[category] || `shared-knowledge/${category}`;
@@ -394,8 +409,8 @@ export class MarkdownBackend implements MemoryBackend {
    */
   private sanitizeFilename(name: string): string {
     return name
-      .replace(/[<>:"/\\|?*]/g, '-')
-      .replace(/\s+/g, '-')
+      .replace(/[<>:"/\\|?*]/g, "-")
+      .replace(/\s+/g, "-")
       .toLowerCase()
       .substring(0, 255);
   }
@@ -405,7 +420,7 @@ export class MarkdownBackend implements MemoryBackend {
    */
   private async loadIndex(): Promise<void> {
     try {
-      const content = await fs.readFile(this.indexPath, 'utf-8');
+      const content = await fs.readFile(this.indexPath, "utf-8");
       const data = JSON.parse(content);
       this.index = new Map(Object.entries(data));
     } catch (error) {
@@ -419,11 +434,7 @@ export class MarkdownBackend implements MemoryBackend {
    */
   private async saveIndex(): Promise<void> {
     const data = Object.fromEntries(this.index);
-    await fs.writeFile(
-      this.indexPath,
-      JSON.stringify(data, null, 2),
-      'utf-8'
-    );
+    await fs.writeFile(this.indexPath, JSON.stringify(data, null, 2), "utf-8");
   }
 
   /**
@@ -446,13 +457,13 @@ export class MarkdownBackend implements MemoryBackend {
 
       if (entry.isDirectory()) {
         await this.scanDirectory(fullPath);
-      } else if (entry.name.endsWith('.md')) {
+      } else if (entry.name.endsWith(".md")) {
         try {
-          const content = await fs.readFile(fullPath, 'utf-8');
+          const content = await fs.readFile(fullPath, "utf-8");
           const relativePath = path.relative(this.config.rootPath, fullPath);
           const category = this.getCategoryFromPath(relativePath);
-          const key = path.basename(entry.name, '.md');
-          
+          const key = path.basename(entry.name, ".md");
+
           const item = this.markdownToItem(content, category, key);
           this.updateIndex(item, fullPath);
         } catch (error) {
@@ -467,23 +478,23 @@ export class MarkdownBackend implements MemoryBackend {
    */
   private getCategoryFromPath(relativePath: string): string {
     const parts = relativePath.split(path.sep);
-    
+
     // Map directory structure back to categories
-    if (parts[0] === 'agent-sessions') return 'agent-session';
-    if (parts[0] === 'coordination') return 'coordination';
-    if (parts[0] === 'project-memory') return 'project';
-    if (parts[0] === 'github-integration') return 'github';
-    
-    if (parts[0] === 'shared-knowledge') {
-      if (parts[1] === 'calibration-values') return 'calibration';
-      if (parts[1] === 'test-patterns') return 'test-pattern';
-      if (parts[1] === 'failure-analysis') return 'failure';
-      if (parts[1] === 'architectural-decisions') return 'architecture';
-      if (parts[1] === 'code-patterns') return 'code-pattern';
-      return parts[1] || 'general';
+    if (parts[0] === "agent-sessions") return "agent-session";
+    if (parts[0] === "coordination") return "coordination";
+    if (parts[0] === "project-memory") return "project";
+    if (parts[0] === "github-integration") return "github";
+
+    if (parts[0] === "shared-knowledge") {
+      if (parts[1] === "calibration-values") return "calibration";
+      if (parts[1] === "test-patterns") return "test-pattern";
+      if (parts[1] === "failure-analysis") return "failure";
+      if (parts[1] === "architectural-decisions") return "architecture";
+      if (parts[1] === "code-patterns") return "code-pattern";
+      return parts[1] || "general";
     }
-    
-    return 'general';
+
+    return "general";
   }
 
   /**
@@ -491,12 +502,12 @@ export class MarkdownBackend implements MemoryBackend {
    */
   private updateIndex(item: MemoryItem, filePath: string): void {
     const indexKey = `${item.category}:${item.key}`;
-    
+
     this.index.set(indexKey, {
       category: item.category,
       key: item.key,
       path: filePath,
-      metadata: item.metadata
+      metadata: item.metadata,
     });
   }
 
@@ -518,7 +529,7 @@ export class MarkdownBackend implements MemoryBackend {
 
     if (query.tags && entry.metadata?.tags) {
       const entryTags = entry.metadata.tags as string[];
-      if (!query.tags.some(tag => entryTags.includes(tag))) {
+      if (!query.tags.some((tag) => entryTags.includes(tag))) {
         return false;
       }
     }
@@ -538,11 +549,11 @@ export class MarkdownBackend implements MemoryBackend {
    */
   private getOrderValue(item: MemoryItem, orderBy: string): any {
     switch (orderBy) {
-      case 'timestamp':
+      case "timestamp":
         return item.metadata?.timestamp || 0;
-      case 'key':
+      case "key":
         return item.key;
-      case 'category':
+      case "category":
         return item.category;
       default:
         return 0;

@@ -5,10 +5,11 @@ This document describes the complete MCP implementation for Claude-Flow, providi
 ## Overview
 
 The MCP implementation includes:
+
 - **Full Protocol Compliance**: JSON-RPC 2.0 with MCP extensions
 - **Multiple Transports**: stdio, HTTP with WebSocket support
 - **Authentication & Authorization**: Token-based, Basic auth, and OAuth ready
-- **Session Management**: Client session tracking and lifecycle management  
+- **Session Management**: Client session tracking and lifecycle management
 - **Load Balancing**: Rate limiting, circuit breaker, and request queuing
 - **Comprehensive Tools**: Full Claude-Flow functionality exposure
 - **Error Handling**: Robust error reporting and recovery
@@ -36,6 +37,7 @@ The MCP implementation includes:
 The central server implementation that orchestrates all MCP functionality.
 
 **Key Features:**
+
 - Protocol version negotiation (2024-11-05)
 - Client capability negotiation
 - Tool registration and management
@@ -44,8 +46,9 @@ The central server implementation that orchestrates all MCP functionality.
 - Health monitoring and metrics
 
 **Usage:**
+
 ```typescript
-import { MCPServer } from './src/mcp/server.ts';
+import { MCPServer } from "./src/mcp/server.ts";
 
 const server = new MCPServer(config, eventBus, logger, orchestrator);
 await server.start();
@@ -58,6 +61,7 @@ await server.start();
 For command-line integration and process communication.
 
 **Features:**
+
 - JSON-RPC message parsing
 - Line-buffered communication
 - Notification support
@@ -68,6 +72,7 @@ For command-line integration and process communication.
 For remote API access and web integration.
 
 **Features:**
+
 - RESTful JSON-RPC endpoint (`/rpc`)
 - WebSocket support (`/ws`) for real-time notifications
 - CORS handling
@@ -79,6 +84,7 @@ For remote API access and web integration.
 Tracks client connections and manages their lifecycle.
 
 **Features:**
+
 - Session creation and initialization
 - Protocol version validation
 - Session expiration and cleanup
@@ -86,6 +92,7 @@ Tracks client connections and manages their lifecycle.
 - Authentication state management
 
 **Session Lifecycle:**
+
 1. **Create**: New session with transport type
 2. **Initialize**: Protocol handshake and capability negotiation
 3. **Authenticate**: Optional authentication (if enabled)
@@ -97,18 +104,20 @@ Tracks client connections and manages their lifecycle.
 Flexible authentication system supporting multiple methods.
 
 **Supported Methods:**
+
 - **Token**: Bearer token validation
 - **Basic**: Username/password authentication
 - **OAuth**: JWT token validation (extensible)
 
 **Permission System:**
+
 ```typescript
 // Built-in permissions
 const permissions = {
-  'system.*': 'All system operations',
-  'agents.spawn': 'Spawn new agents',
-  'tasks.create': 'Create tasks',
-  'memory.read': 'Read memory entries',
+  "system.*": "All system operations",
+  "agents.spawn": "Spawn new agents",
+  "tasks.create": "Create tasks",
+  "memory.read": "Read memory entries",
   // ... more permissions
 };
 ```
@@ -118,6 +127,7 @@ const permissions = {
 Production-ready request management and protection.
 
 **Features:**
+
 - **Rate Limiting**: Token bucket algorithm per session/global
 - **Circuit Breaker**: Automatic failure detection and recovery
 - **Request Queuing**: Backpressure handling
@@ -128,6 +138,7 @@ Production-ready request management and protection.
 Manages tool registration, validation, and execution.
 
 **Features:**
+
 - JSON Schema validation
 - Namespace-based organization (`namespace/tool`)
 - Input/output validation
@@ -139,6 +150,7 @@ Manages tool registration, validation, and execution.
 Complete set of tools exposing Claude-Flow functionality.
 
 **Tool Categories:**
+
 - **Agent Management**: spawn, list, terminate, info
 - **Task Management**: create, list, status, cancel, assign
 - **Memory Management**: query, store, delete, export, import
@@ -215,10 +227,10 @@ Complete set of tools exposing Claude-Flow functionality.
   "id": 1,
   "method": "initialize",
   "params": {
-    "protocolVersion": {"major": 2024, "minor": 11, "patch": 5},
+    "protocolVersion": { "major": 2024, "minor": 11, "patch": 5 },
     "capabilities": {
-      "tools": {"listChanged": true},
-      "logging": {"level": "info"}
+      "tools": { "listChanged": true },
+      "logging": { "level": "info" }
     },
     "clientInfo": {
       "name": "claude-client",
@@ -332,12 +344,12 @@ The MCP implementation follows JSON-RPC 2.0 error codes:
 
 ```typescript
 // Token-based authentication
-const authResult = await authManager.authenticate('bearer-token-123');
+const authResult = await authManager.authenticate("bearer-token-123");
 
 // Basic authentication
 const authResult = await authManager.authenticate({
-  username: 'user',
-  password: 'pass'
+  username: "user",
+  password: "pass",
 });
 ```
 
@@ -345,9 +357,9 @@ const authResult = await authManager.authenticate({
 
 ```typescript
 // Check permission before tool execution
-const hasPermission = authManager.authorize(session, 'agents.spawn');
+const hasPermission = authManager.authorize(session, "agents.spawn");
 if (!hasPermission) {
-  throw new Error('Insufficient permissions');
+  throw new Error("Insufficient permissions");
 }
 ```
 
@@ -357,7 +369,7 @@ if (!hasPermission) {
 // Automatic rate limiting per session
 const allowed = await loadBalancer.shouldAllowRequest(session, request);
 if (!allowed) {
-  throw new Error('Rate limit exceeded');
+  throw new Error("Rate limit exceeded");
 }
 ```
 
@@ -420,6 +432,7 @@ deno run --allow-all scripts/test-mcp.ts --filter server
 ### Test Coverage
 
 The test suite includes:
+
 - **Unit Tests**: Individual component testing
 - **Integration Tests**: End-to-end workflow testing
 - **Performance Tests**: Load and stress testing
@@ -493,18 +506,21 @@ CMD ["deno", "run", "--allow-all", "src/cli/index.ts", "start", "--mcp-transport
 ### Common Issues
 
 **Connection Refused**
+
 ```bash
 # Check if server is running
 curl -f http://localhost:3000/rpc || echo "Server not running"
 ```
 
 **Authentication Errors**
+
 ```bash
 # Verify token
 curl -H "Authorization: Bearer your-token" http://localhost:3000/rpc
 ```
 
 **Rate Limiting**
+
 ```bash
 # Check current limits
 curl http://localhost:3000/rpc -d '{"jsonrpc":"2.0","id":1,"method":"system/metrics"}'

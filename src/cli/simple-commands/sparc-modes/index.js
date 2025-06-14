@@ -1,42 +1,42 @@
 // index.js - SPARC mode orchestration loader
-import { getArchitectOrchestration } from './architect.js';
-import { getCodeOrchestration } from './code.js';
-import { getTddOrchestration } from './tdd.js';
-import { getDebugOrchestration } from './debug.js';
-import { getSecurityReviewOrchestration } from './security-review.js';
-import { getDocsWriterOrchestration } from './docs-writer.js';
-import { getIntegrationOrchestration } from './integration.js';
-import { getMonitoringOrchestration } from './monitoring.js';
-import { getOptimizationOrchestration } from './optimization.js';
-import { getSupabaseAdminOrchestration } from './supabase-admin.js';
-import { getSpecPseudocodeOrchestration } from './spec-pseudocode.js';
-import { getMcpOrchestration } from './mcp.js';
-import { getDevOpsOrchestration } from './devops.js';
-import { getAskOrchestration } from './ask.js';
-import { getTutorialOrchestration } from './tutorial.js';
-import { getSparcOrchestratorOrchestration } from './sparc-orchestrator.js';
-import { getGenericOrchestration } from './generic.js';
-import { getSwarmOrchestration } from './swarm.js';
+import { getArchitectOrchestration } from "./architect.js";
+import { getCodeOrchestration } from "./code.js";
+import { getTddOrchestration } from "./tdd.js";
+import { getDebugOrchestration } from "./debug.js";
+import { getSecurityReviewOrchestration } from "./security-review.js";
+import { getDocsWriterOrchestration } from "./docs-writer.js";
+import { getIntegrationOrchestration } from "./integration.js";
+import { getMonitoringOrchestration } from "./monitoring.js";
+import { getOptimizationOrchestration } from "./optimization.js";
+import { getSupabaseAdminOrchestration } from "./supabase-admin.js";
+import { getSpecPseudocodeOrchestration } from "./spec-pseudocode.js";
+import { getMcpOrchestration } from "./mcp.js";
+import { getDevOpsOrchestration } from "./devops.js";
+import { getAskOrchestration } from "./ask.js";
+import { getTutorialOrchestration } from "./tutorial.js";
+import { getSparcOrchestratorOrchestration } from "./sparc-orchestrator.js";
+import { getGenericOrchestration } from "./generic.js";
+import { getSwarmOrchestration } from "./swarm.js";
 
 // Mode orchestration mapping
 const modeOrchestrations = {
-  'architect': getArchitectOrchestration,
-  'code': getCodeOrchestration,
-  'tdd': getTddOrchestration,
-  'debug': getDebugOrchestration,
-  'security-review': getSecurityReviewOrchestration,
-  'docs-writer': getDocsWriterOrchestration,
-  'integration': getIntegrationOrchestration,
-  'post-deployment-monitoring-mode': getMonitoringOrchestration,
-  'refinement-optimization-mode': getOptimizationOrchestration,
-  'supabase-admin': getSupabaseAdminOrchestration,
-  'spec-pseudocode': getSpecPseudocodeOrchestration,
-  'mcp': getMcpOrchestration,
-  'devops': getDevOpsOrchestration,
-  'ask': getAskOrchestration,
-  'tutorial': getTutorialOrchestration,
-  'sparc': getSparcOrchestratorOrchestration,
-  'swarm': getSwarmOrchestration,
+  architect: getArchitectOrchestration,
+  code: getCodeOrchestration,
+  tdd: getTddOrchestration,
+  debug: getDebugOrchestration,
+  "security-review": getSecurityReviewOrchestration,
+  "docs-writer": getDocsWriterOrchestration,
+  integration: getIntegrationOrchestration,
+  "post-deployment-monitoring-mode": getMonitoringOrchestration,
+  "refinement-optimization-mode": getOptimizationOrchestration,
+  "supabase-admin": getSupabaseAdminOrchestration,
+  "spec-pseudocode": getSpecPseudocodeOrchestration,
+  mcp: getMcpOrchestration,
+  devops: getDevOpsOrchestration,
+  ask: getAskOrchestration,
+  tutorial: getTutorialOrchestration,
+  sparc: getSparcOrchestratorOrchestration,
+  swarm: getSwarmOrchestration,
 };
 
 /**
@@ -46,13 +46,17 @@ const modeOrchestrations = {
  * @param {string} memoryNamespace - The memory namespace
  * @returns {string} The orchestration template
  */
-export function getModeOrchestration(modeSlug, taskDescription, memoryNamespace) {
+export function getModeOrchestration(
+  modeSlug,
+  taskDescription,
+  memoryNamespace,
+) {
   const orchestrationFunction = modeOrchestrations[modeSlug];
-  
+
   if (orchestrationFunction) {
     return orchestrationFunction(taskDescription, memoryNamespace);
   }
-  
+
   // Return generic orchestration for unknown modes
   return getGenericOrchestration(taskDescription, memoryNamespace);
 }
@@ -65,10 +69,14 @@ export function getModeOrchestration(modeSlug, taskDescription, memoryNamespace)
  * @returns {string} The complete SPARC prompt
  */
 export function createSparcPrompt(mode, taskDescription, memoryNamespace) {
-  const orchestration = getModeOrchestration(mode.slug, taskDescription, memoryNamespace);
+  const orchestration = getModeOrchestration(
+    mode.slug,
+    taskDescription,
+    memoryNamespace,
+  );
   // Get the actual working directory where the command was run from
-  const cwd = Deno.env.get('PWD') || Deno.cwd();
-  
+  const cwd = Deno.env.get("PWD") || Deno.cwd();
+
   return `# ${mode.name} - Task Execution
 
 ## 🎯 Your Mission

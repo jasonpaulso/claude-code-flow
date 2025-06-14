@@ -48,6 +48,7 @@ claude-flow swarm new "Test task" --dry-run
 ## How It Works
 
 The installation creates a global symlink to the `claude-flow-launcher` script, which:
+
 1. Wraps Deno execution to avoid stack overflow issues
 2. Provides a clean CLI interface
 3. Handles all path resolution automatically
@@ -84,6 +85,7 @@ rm $(which claude-flow)
 If `claude-flow` is not found after installation:
 
 1. Check npm's global bin directory is in your PATH:
+
    ```bash
    npm bin -g
    echo $PATH

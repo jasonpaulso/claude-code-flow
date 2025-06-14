@@ -12,17 +12,17 @@ claude-flow [global-options] <command> [command-options]
 
 ### Global Flags
 
-| Option | Short | Description | Default |
-|--------|-------|-------------|---------|
-| `--config <path>` | `-c` | Path to configuration file | `./claude-flow.config.json` |
-| `--verbose` | `-v` | Enable verbose logging | `false` |
-| `--quiet` | `-q` | Suppress non-essential output | `false` |
-| `--log-level <level>` | | Set log level (debug, info, warn, error) | `info` |
-| `--no-color` | | Disable colored output | `false` |
-| `--json` | | Output in JSON format where applicable | `false` |
-| `--profile <name>` | | Use named configuration profile | |
-| `--help` | `-h` | Show help information | |
-| `--version` | `-V` | Show version information | |
+| Option                | Short | Description                              | Default                     |
+| --------------------- | ----- | ---------------------------------------- | --------------------------- |
+| `--config <path>`     | `-c`  | Path to configuration file               | `./claude-flow.config.json` |
+| `--verbose`           | `-v`  | Enable verbose logging                   | `false`                     |
+| `--quiet`             | `-q`  | Suppress non-essential output            | `false`                     |
+| `--log-level <level>` |       | Set log level (debug, info, warn, error) | `info`                      |
+| `--no-color`          |       | Disable colored output                   | `false`                     |
+| `--json`              |       | Output in JSON format where applicable   | `false`                     |
+| `--profile <name>`    |       | Use named configuration profile          |                             |
+| `--help`              | `-h`  | Show help information                    |                             |
+| `--version`           | `-V`  | Show version information                 |                             |
 
 ### Examples
 
@@ -49,16 +49,16 @@ claude-flow start [options]
 
 #### Options
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--daemon`, `-d` | Run as daemon in background | `false` |
-| `--port <port>`, `-p` | MCP server port | `3000` |
-| `--mcp-transport <type>` | MCP transport (stdio, http, websocket) | `stdio` |
-| `--workers <count>` | Number of worker processes | `auto` |
-| `--memory-limit <mb>` | Memory limit in MB | `512` |
-| `--health-check-port <port>` | Health check HTTP port | `8080` |
-| `--pid-file <path>` | Write process ID to file | |
-| `--log-file <path>` | Log file path (daemon mode) | |
+| Option                       | Description                            | Default |
+| ---------------------------- | -------------------------------------- | ------- |
+| `--daemon`, `-d`             | Run as daemon in background            | `false` |
+| `--port <port>`, `-p`        | MCP server port                        | `3000`  |
+| `--mcp-transport <type>`     | MCP transport (stdio, http, websocket) | `stdio` |
+| `--workers <count>`          | Number of worker processes             | `auto`  |
+| `--memory-limit <mb>`        | Memory limit in MB                     | `512`   |
+| `--health-check-port <port>` | Health check HTTP port                 | `8080`  |
+| `--pid-file <path>`          | Write process ID to file               |         |
+| `--log-file <path>`          | Log file path (daemon mode)            |         |
 
 #### Examples
 
@@ -110,25 +110,26 @@ claude-flow agent spawn <type> [options]
 ```
 
 **Agent Types:**
+
 - `researcher` - Research and information gathering
-- `analyst` - Data analysis and pattern recognition  
+- `analyst` - Data analysis and pattern recognition
 - `implementer` - Code writing and implementation
 - `coordinator` - Task coordination and management
 - `custom` - User-defined agent type
 
 **Options:**
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--name <name>` | Human-readable agent name | Auto-generated |
-| `--description <desc>` | Agent description | |
-| `--config <json>` | Agent-specific configuration | `{}` |
-| `--capabilities <list>` | Comma-separated capability list | Type defaults |
-| `--memory-namespace <ns>` | Memory namespace for isolation | `default` |
-| `--max-tasks <count>` | Maximum concurrent tasks | `5` |
-| `--timeout <ms>` | Default task timeout in milliseconds | `300000` |
-| `--auto-assign` | Enable automatic task assignment | `false` |
-| `--tags <list>` | Comma-separated tags | |
+| Option                    | Description                          | Default        |
+| ------------------------- | ------------------------------------ | -------------- |
+| `--name <name>`           | Human-readable agent name            | Auto-generated |
+| `--description <desc>`    | Agent description                    |                |
+| `--config <json>`         | Agent-specific configuration         | `{}`           |
+| `--capabilities <list>`   | Comma-separated capability list      | Type defaults  |
+| `--memory-namespace <ns>` | Memory namespace for isolation       | `default`      |
+| `--max-tasks <count>`     | Maximum concurrent tasks             | `5`            |
+| `--timeout <ms>`          | Default task timeout in milliseconds | `300000`       |
+| `--auto-assign`           | Enable automatic task assignment     | `false`        |
+| `--tags <list>`           | Comma-separated tags                 |                |
 
 **Examples:**
 
@@ -158,14 +159,14 @@ claude-flow agent list [options]
 
 **Options:**
 
-| Option | Description |
-|--------|-------------|
+| Option              | Description                                       |
+| ------------------- | ------------------------------------------------- |
 | `--status <status>` | Filter by status (active, idle, busy, terminated) |
-| `--type <type>` | Filter by agent type |
-| `--namespace <ns>` | Filter by memory namespace |
-| `--sort <field>` | Sort by field (name, created, type, status) |
-| `--format <fmt>` | Output format (table, json, csv) |
-| `--limit <count>` | Limit number of results |
+| `--type <type>`     | Filter by agent type                              |
+| `--namespace <ns>`  | Filter by memory namespace                        |
+| `--sort <field>`    | Sort by field (name, created, type, status)       |
+| `--format <fmt>`    | Output format (table, json, csv)                  |
+| `--limit <count>`   | Limit number of results                           |
 
 **Examples:**
 
@@ -188,12 +189,12 @@ claude-flow agent info <agent-id> [options]
 
 **Options:**
 
-| Option | Description |
-|--------|-------------|
-| `--detailed` | Show detailed information |
-| `--stats` | Include performance statistics |
-| `--memory` | Include memory usage |
-| `--tasks` | Include current tasks |
+| Option       | Description                    |
+| ------------ | ------------------------------ |
+| `--detailed` | Show detailed information      |
+| `--stats`    | Include performance statistics |
+| `--memory`   | Include memory usage           |
+| `--tasks`    | Include current tasks          |
 
 **Example:**
 
@@ -209,10 +210,10 @@ claude-flow agent terminate <agent-id> [options]
 
 **Options:**
 
-| Option | Description |
-|--------|-------------|
-| `--force` | Force termination without cleanup |
-| `--reason <text>` | Termination reason |
+| Option              | Description                         |
+| ------------------- | ----------------------------------- |
+| `--force`           | Force termination without cleanup   |
+| `--reason <text>`   | Termination reason                  |
 | `--preserve-memory` | Keep agent memory after termination |
 
 **Example:**
@@ -229,13 +230,13 @@ claude-flow agent update <agent-id> [options]
 
 **Options:**
 
-| Option | Description |
-|--------|-------------|
-| `--name <name>` | Update agent name |
-| `--description <desc>` | Update description |
-| `--config <json>` | Update configuration |
-| `--capabilities <list>` | Update capabilities |
-| `--max-tasks <count>` | Update task limit |
+| Option                  | Description          |
+| ----------------------- | -------------------- |
+| `--name <name>`         | Update agent name    |
+| `--description <desc>`  | Update description   |
+| `--config <json>`       | Update configuration |
+| `--capabilities <list>` | Update capabilities  |
+| `--max-tasks <count>`   | Update task limit    |
 
 ---
 
@@ -254,6 +255,7 @@ claude-flow task create <type> <description> [options]
 ```
 
 **Task Types:**
+
 - `research` - Information gathering and research
 - `analysis` - Data analysis and insights
 - `implementation` - Code writing and development
@@ -265,19 +267,19 @@ claude-flow task create <type> <description> [options]
 
 **Options:**
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--assign-to <agent-id>` | Assign to specific agent | Auto-assign |
-| `--priority <level>` | Priority (low, normal, high, urgent) | `normal` |
-| `--deadline <datetime>` | Task deadline (ISO 8601) | |
-| `--dependencies <list>` | Comma-separated task dependencies | |
-| `--timeout <ms>` | Task timeout in milliseconds | `300000` |
-| `--retry-count <count>` | Maximum retry attempts | `3` |
-| `--tags <list>` | Comma-separated tags | |
-| `--metadata <json>` | Additional metadata as JSON | `{}` |
-| `--input-file <path>` | Input file for task | |
-| `--output-dir <path>` | Output directory | |
-| `--parallel` | Allow parallel execution | `false` |
+| Option                   | Description                          | Default     |
+| ------------------------ | ------------------------------------ | ----------- |
+| `--assign-to <agent-id>` | Assign to specific agent             | Auto-assign |
+| `--priority <level>`     | Priority (low, normal, high, urgent) | `normal`    |
+| `--deadline <datetime>`  | Task deadline (ISO 8601)             |             |
+| `--dependencies <list>`  | Comma-separated task dependencies    |             |
+| `--timeout <ms>`         | Task timeout in milliseconds         | `300000`    |
+| `--retry-count <count>`  | Maximum retry attempts               | `3`         |
+| `--tags <list>`          | Comma-separated tags                 |             |
+| `--metadata <json>`      | Additional metadata as JSON          | `{}`        |
+| `--input-file <path>`    | Input file for task                  |             |
+| `--output-dir <path>`    | Output directory                     |             |
+| `--parallel`             | Allow parallel execution             | `false`     |
 
 **Examples:**
 
@@ -306,18 +308,18 @@ claude-flow task list [options]
 
 **Options:**
 
-| Option | Description |
-|--------|-------------|
-| `--status <status>` | Filter by status (pending, running, completed, failed, cancelled) |
-| `--type <type>` | Filter by task type |
-| `--agent <agent-id>` | Filter by assigned agent |
-| `--priority <level>` | Filter by priority |
-| `--tags <list>` | Filter by tags |
-| `--since <datetime>` | Tasks created since date |
-| `--until <datetime>` | Tasks created until date |
-| `--sort <field>` | Sort by field (created, priority, deadline, status) |
-| `--format <fmt>` | Output format (table, json, csv) |
-| `--limit <count>` | Limit results |
+| Option               | Description                                                       |
+| -------------------- | ----------------------------------------------------------------- |
+| `--status <status>`  | Filter by status (pending, running, completed, failed, cancelled) |
+| `--type <type>`      | Filter by task type                                               |
+| `--agent <agent-id>` | Filter by assigned agent                                          |
+| `--priority <level>` | Filter by priority                                                |
+| `--tags <list>`      | Filter by tags                                                    |
+| `--since <datetime>` | Tasks created since date                                          |
+| `--until <datetime>` | Tasks created until date                                          |
+| `--sort <field>`     | Sort by field (created, priority, deadline, status)               |
+| `--format <fmt>`     | Output format (table, json, csv)                                  |
+| `--limit <count>`    | Limit results                                                     |
 
 #### `status` - Task Status
 
@@ -327,12 +329,12 @@ claude-flow task status <task-id> [options]
 
 **Options:**
 
-| Option | Description |
-|--------|-------------|
-| `--watch` | Watch for status changes |
+| Option       | Description               |
+| ------------ | ------------------------- |
+| `--watch`    | Watch for status changes  |
 | `--detailed` | Show detailed information |
-| `--logs` | Include execution logs |
-| `--output` | Show task output |
+| `--logs`     | Include execution logs    |
+| `--output`   | Show task output          |
 
 #### `cancel` - Cancel Task
 
@@ -342,10 +344,10 @@ claude-flow task cancel <task-id> [options]
 
 **Options:**
 
-| Option | Description |
-|--------|-------------|
+| Option            | Description         |
+| ----------------- | ------------------- |
 | `--reason <text>` | Cancellation reason |
-| `--force` | Force cancellation |
+| `--force`         | Force cancellation  |
 
 #### `retry` - Retry Failed Task
 
@@ -355,10 +357,10 @@ claude-flow task retry <task-id> [options]
 
 **Options:**
 
-| Option | Description |
-|--------|-------------|
-| `--reset-retries` | Reset retry counter |
-| `--new-agent` | Assign to different agent |
+| Option            | Description               |
+| ----------------- | ------------------------- |
+| `--reset-retries` | Reset retry counter       |
+| `--new-agent`     | Assign to different agent |
 
 ---
 
@@ -378,19 +380,19 @@ claude-flow memory query [options]
 
 **Options:**
 
-| Option | Description |
-|--------|-------------|
-| `--category <cat>` | Filter by category |
-| `--namespace <ns>` | Filter by namespace |
-| `--tags <list>` | Filter by tags |
-| `--content <text>` | Search content |
-| `--agent <agent-id>` | Filter by agent |
-| `--since <datetime>` | Items since date |
-| `--until <datetime>` | Items until date |
-| `--limit <count>` | Limit results |
-| `--format <fmt>` | Output format (table, json, markdown) |
-| `--vector-search <text>` | Semantic vector search |
-| `--similarity <threshold>` | Similarity threshold (0-1) |
+| Option                     | Description                           |
+| -------------------------- | ------------------------------------- |
+| `--category <cat>`         | Filter by category                    |
+| `--namespace <ns>`         | Filter by namespace                   |
+| `--tags <list>`            | Filter by tags                        |
+| `--content <text>`         | Search content                        |
+| `--agent <agent-id>`       | Filter by agent                       |
+| `--since <datetime>`       | Items since date                      |
+| `--until <datetime>`       | Items until date                      |
+| `--limit <count>`          | Limit results                         |
+| `--format <fmt>`           | Output format (table, json, markdown) |
+| `--vector-search <text>`   | Semantic vector search                |
+| `--similarity <threshold>` | Similarity threshold (0-1)            |
 
 **Examples:**
 
@@ -417,12 +419,12 @@ claude-flow memory stats [options]
 
 **Options:**
 
-| Option | Description |
-|--------|-------------|
-| `--detailed` | Show detailed statistics |
-| `--by-agent` | Group by agent |
-| `--by-category` | Group by category |
-| `--by-namespace` | Group by namespace |
+| Option           | Description              |
+| ---------------- | ------------------------ |
+| `--detailed`     | Show detailed statistics |
+| `--by-agent`     | Group by agent           |
+| `--by-category`  | Group by category        |
+| `--by-namespace` | Group by namespace       |
 
 #### `export` - Export Memory
 
@@ -432,13 +434,13 @@ claude-flow memory export <file> [options]
 
 **Options:**
 
-| Option | Description |
-|--------|-------------|
-| `--format <fmt>` | Export format (json, markdown, csv) |
-| `--category <cat>` | Export specific category |
-| `--namespace <ns>` | Export specific namespace |
-| `--compress` | Compress output file |
-| `--include-vectors` | Include vector embeddings |
+| Option              | Description                         |
+| ------------------- | ----------------------------------- |
+| `--format <fmt>`    | Export format (json, markdown, csv) |
+| `--category <cat>`  | Export specific category            |
+| `--namespace <ns>`  | Export specific namespace           |
+| `--compress`        | Compress output file                |
+| `--include-vectors` | Include vector embeddings           |
 
 #### `import` - Import Memory
 
@@ -448,12 +450,12 @@ claude-flow memory import <file> [options]
 
 **Options:**
 
-| Option | Description |
-|--------|-------------|
-| `--format <fmt>` | Import format (json, markdown, csv) |
-| `--namespace <ns>` | Target namespace |
-| `--merge` | Merge with existing data |
-| `--validate` | Validate before import |
+| Option             | Description                         |
+| ------------------ | ----------------------------------- |
+| `--format <fmt>`   | Import format (json, markdown, csv) |
+| `--namespace <ns>` | Target namespace                    |
+| `--merge`          | Merge with existing data            |
+| `--validate`       | Validate before import              |
 
 #### `cleanup` - Clean Memory
 
@@ -463,12 +465,12 @@ claude-flow memory cleanup [options]
 
 **Options:**
 
-| Option | Description |
-|--------|-------------|
+| Option                | Description                    |
+| --------------------- | ------------------------------ |
 | `--older-than <days>` | Remove items older than N days |
-| `--category <cat>` | Clean specific category |
-| `--dry-run` | Show what would be removed |
-| `--vacuum` | Optimize database |
+| `--category <cat>`    | Clean specific category        |
+| `--dry-run`           | Show what would be removed     |
+| `--vacuum`            | Optimize database              |
 
 ---
 
@@ -488,11 +490,11 @@ claude-flow config init [file] [options]
 
 **Options:**
 
-| Option | Description |
-|--------|-------------|
-| `--template <name>` | Use configuration template |
-| `--force` | Overwrite existing file |
-| `--minimal` | Create minimal configuration |
+| Option              | Description                  |
+| ------------------- | ---------------------------- |
+| `--template <name>` | Use configuration template   |
+| `--force`           | Overwrite existing file      |
+| `--minimal`         | Create minimal configuration |
 
 #### `show` - Show Configuration
 
@@ -502,10 +504,10 @@ claude-flow config show [options]
 
 **Options:**
 
-| Option | Description |
-|--------|-------------|
-| `--format <fmt>` | Output format (json, yaml, table) |
-| `--section <name>` | Show specific section |
+| Option             | Description                       |
+| ------------------ | --------------------------------- |
+| `--format <fmt>`   | Output format (json, yaml, table) |
+| `--section <name>` | Show specific section             |
 
 #### `get` - Get Config Value
 
@@ -557,13 +559,13 @@ claude-flow workflow execute <file> [options]
 
 **Options:**
 
-| Option | Description |
-|--------|-------------|
-| `--validate` | Validate workflow before execution |
-| `--dry-run` | Show execution plan without running |
-| `--timeout <ms>` | Overall workflow timeout |
-| `--parallel` | Enable parallel task execution |
-| `--continue-on-error` | Continue workflow on task failure |
+| Option                | Description                         |
+| --------------------- | ----------------------------------- |
+| `--validate`          | Validate workflow before execution  |
+| `--dry-run`           | Show execution plan without running |
+| `--timeout <ms>`      | Overall workflow timeout            |
+| `--parallel`          | Enable parallel task execution      |
+| `--continue-on-error` | Continue workflow on task failure   |
 
 #### `status` - Workflow Status
 
@@ -584,6 +586,7 @@ claude-flow workflow template <subcommand>
 ```
 
 **Subcommands:**
+
 - `list` - List available templates
 - `create <name>` - Create new template
 - `apply <name>` - Apply template to create workflow
@@ -600,12 +603,12 @@ claude-flow status [options]
 
 **Options:**
 
-| Option | Description |
-|--------|-------------|
-| `--detailed` | Show detailed status |
-| `--watch` | Watch for changes |
+| Option           | Description                 |
+| ---------------- | --------------------------- |
+| `--detailed`     | Show detailed status        |
+| `--watch`        | Watch for changes           |
 | `--format <fmt>` | Output format (table, json) |
-| `--health-check` | Run full health check |
+| `--health-check` | Run full health check       |
 
 ---
 
@@ -619,11 +622,11 @@ claude-flow monitor [options]
 
 **Options:**
 
-| Option | Short | Description | Default |
-|--------|-------|-------------|---------|
-| `--interval` | `-i` | Update interval in seconds | `2` |
-| `--compact` | `-c` | Compact view mode (hide lists) | `false` |
-| `--focus` | `-f` | Focus on specific component | |
+| Option       | Short | Description                    | Default |
+| ------------ | ----- | ------------------------------ | ------- |
+| `--interval` | `-i`  | Update interval in seconds     | `2`     |
+| `--compact`  | `-c`  | Compact view mode (hide lists) | `false` |
+| `--focus`    | `-f`  | Focus on specific component    |         |
 
 **Examples:**
 
@@ -659,18 +662,18 @@ claude-flow claude spawn <task> [options]
 
 **Options:**
 
-| Option | Short | Description | Default |
-|--------|-------|-------------|---------|
-| `--tools` | `-t` | Comma-separated list of allowed tools | `View,Edit,Replace,GlobTool,GrepTool,LS,Bash` |
-| `--no-permissions` | | Use --dangerously-skip-permissions flag | `false` |
-| `--config` | `-c` | MCP config file path | |
-| `--mode` | `-m` | Development mode (full/backend-only/frontend-only/api-only) | `full` |
-| `--parallel` | | Enable parallel execution with BatchTool | `false` |
-| `--research` | | Enable web research with WebFetchTool | `false` |
-| `--coverage` | | Test coverage target percentage | `80` |
-| `--commit` | | Commit frequency (phase/feature/manual) | `phase` |
-| `--verbose` | `-v` | Enable verbose output | `false` |
-| `--dry-run` | `-d` | Show what would be executed without running | `false` |
+| Option             | Short | Description                                                 | Default                                       |
+| ------------------ | ----- | ----------------------------------------------------------- | --------------------------------------------- |
+| `--tools`          | `-t`  | Comma-separated list of allowed tools                       | `View,Edit,Replace,GlobTool,GrepTool,LS,Bash` |
+| `--no-permissions` |       | Use --dangerously-skip-permissions flag                     | `false`                                       |
+| `--config`         | `-c`  | MCP config file path                                        |                                               |
+| `--mode`           | `-m`  | Development mode (full/backend-only/frontend-only/api-only) | `full`                                        |
+| `--parallel`       |       | Enable parallel execution with BatchTool                    | `false`                                       |
+| `--research`       |       | Enable web research with WebFetchTool                       | `false`                                       |
+| `--coverage`       |       | Test coverage target percentage                             | `80`                                          |
+| `--commit`         |       | Commit frequency (phase/feature/manual)                     | `phase`                                       |
+| `--verbose`        | `-v`  | Enable verbose output                                       | `false`                                       |
+| `--dry-run`        | `-d`  | Show what would be executed without running                 | `false`                                       |
 
 **Examples:**
 
@@ -705,12 +708,14 @@ Execute multiple Claude instances from a JSON workflow file.
 {
   "name": "Workflow Name",
   "parallel": true,
-  "tasks": [{
-    "id": "task-1",
-    "description": "Task description",
-    "tools": ["View", "Edit"],
-    "skipPermissions": true
-  }]
+  "tasks": [
+    {
+      "id": "task-1",
+      "description": "Task description",
+      "tools": ["View", "Edit"],
+      "skipPermissions": true
+    }
+  ]
 }
 ```
 
@@ -764,11 +769,11 @@ claude-flow repl [options]
 
 **Options:**
 
-| Option | Description |
-|--------|-------------|
-| `--no-banner` | Skip welcome banner |
-| `--history-file <path>` | Custom history file |
-| `--auto-complete` | Enable command auto-completion |
+| Option                  | Description                    |
+| ----------------------- | ------------------------------ |
+| `--no-banner`           | Skip welcome banner            |
+| `--history-file <path>` | Custom history file            |
+| `--auto-complete`       | Enable command auto-completion |
 
 **REPL Commands:**
 
@@ -786,29 +791,29 @@ claude-flow> exit
 
 Claude-Flow recognizes these environment variables:
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `CLAUDE_FLOW_CONFIG` | Default configuration file path | `./claude-flow.config.json` |
-| `CLAUDE_FLOW_LOG_LEVEL` | Default log level | `info` |
-| `CLAUDE_FLOW_NO_COLOR` | Disable colored output | `false` |
-| `CLAUDE_FLOW_DEBUG` | Enable debug mode | `false` |
-| `CLAUDE_FLOW_HOME` | Application home directory | `~/.claude-flow` |
-| `CLAUDE_FLOW_CACHE_DIR` | Cache directory | `$CLAUDE_FLOW_HOME/cache` |
-| `CLAUDE_FLOW_DATA_DIR` | Data directory | `$CLAUDE_FLOW_HOME/data` |
+| Variable                | Description                     | Default                     |
+| ----------------------- | ------------------------------- | --------------------------- |
+| `CLAUDE_FLOW_CONFIG`    | Default configuration file path | `./claude-flow.config.json` |
+| `CLAUDE_FLOW_LOG_LEVEL` | Default log level               | `info`                      |
+| `CLAUDE_FLOW_NO_COLOR`  | Disable colored output          | `false`                     |
+| `CLAUDE_FLOW_DEBUG`     | Enable debug mode               | `false`                     |
+| `CLAUDE_FLOW_HOME`      | Application home directory      | `~/.claude-flow`            |
+| `CLAUDE_FLOW_CACHE_DIR` | Cache directory                 | `$CLAUDE_FLOW_HOME/cache`   |
+| `CLAUDE_FLOW_DATA_DIR`  | Data directory                  | `$CLAUDE_FLOW_HOME/data`    |
 
 ## Exit Codes
 
 Claude-Flow uses standard exit codes:
 
-| Code | Meaning |
-|------|---------|
-| `0` | Success |
-| `1` | General error |
-| `2` | Configuration error |
-| `3` | Connection error |
-| `4` | Permission error |
-| `5` | Resource not found |
-| `6` | Timeout error |
+| Code  | Meaning                      |
+| ----- | ---------------------------- |
+| `0`   | Success                      |
+| `1`   | General error                |
+| `2`   | Configuration error          |
+| `3`   | Connection error             |
+| `4`   | Permission error             |
+| `5`   | Resource not found           |
+| `6`   | Timeout error                |
 | `130` | Interrupted by user (Ctrl+C) |
 
 ## Shell Completion

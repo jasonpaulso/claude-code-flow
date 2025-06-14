@@ -4,7 +4,14 @@
  */
 
 import { parse } from "https://deno.land/std@0.224.0/flags/mod.ts";
-import { red, green, yellow, blue, bold, cyan } from "https://deno.land/std@0.224.0/fmt/colors.ts";
+import {
+  red,
+  green,
+  yellow,
+  blue,
+  bold,
+  cyan,
+} from "https://deno.land/std@0.224.0/fmt/colors.ts";
 import { ensureDir } from "https://deno.land/std@0.224.0/fs/mod.ts";
 import { join } from "https://deno.land/std@0.224.0/path/mod.ts";
 
@@ -68,7 +75,10 @@ class CLI {
     },
   ];
 
-  constructor(private name: string, private description: string) {}
+  constructor(
+    private name: string,
+    private description: string,
+  ) {}
 
   command(cmd: Command): this {
     this.commands.set(cmd.name, cmd);
@@ -96,7 +106,7 @@ class CLI {
     }
 
     const commandName = flags._[0]?.toString() || "";
-    
+
     if (!commandName || flags.help || flags.h) {
       this.showHelp();
       return;
@@ -122,7 +132,10 @@ class CLI {
         console.log(yellow(`Command '${commandName}' has no action defined`));
       }
     } catch (error) {
-      console.error(red(`Error executing command '${commandName}':`), (error as Error).message);
+      console.error(
+        red(`Error executing command '${commandName}':`),
+        (error as Error).message,
+      );
       if (flags.verbose) {
         console.error(error);
       }
@@ -130,7 +143,9 @@ class CLI {
     }
   }
 
-  private async loadConfig(configPath?: string): Promise<Record<string, unknown> | undefined> {
+  private async loadConfig(
+    configPath?: string,
+  ): Promise<Record<string, unknown> | undefined> {
     const path = configPath || "claude-flow.config.json";
     try {
       const content = await Deno.readTextFile(path);
@@ -225,14 +240,16 @@ Created by rUv - Built with ❤️ for the Claude community
   private formatCommands(): string {
     const commands = Array.from(new Set(this.commands.values()));
     return commands
-      .map(cmd => `  ${cmd.name.padEnd(20)} ${cmd.description}`)
+      .map((cmd) => `  ${cmd.name.padEnd(20)} ${cmd.description}`)
       .join("\n");
   }
 
   private formatOptions(options: Option[]): string {
     return options
-      .map(opt => {
-        const flags = opt.short ? `-${opt.short}, --${opt.name}` : `    --${opt.name}`;
+      .map((opt) => {
+        const flags = opt.short
+          ? `-${opt.short}, --${opt.name}`
+          : `    --${opt.name}`;
         return `  ${flags.padEnd(25)} ${opt.description}`;
       })
       .join("\n");

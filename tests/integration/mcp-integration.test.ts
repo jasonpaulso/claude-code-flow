@@ -11,10 +11,10 @@ import {
   assertExists,
   assertRejects,
   spy,
-} from '../test.utils.ts';
-import { EventBus } from '../../src/core/event-bus.ts';
-import { Logger } from '../../src/core/logger.ts';
-import { MockMCPServer, MockMCPTransport } from '../mocks/index.ts';
+} from "../test.utils.ts";
+import { EventBus } from "../../src/core/event-bus.ts";
+import { Logger } from "../../src/core/logger.ts";
+import { MockMCPServer, MockMCPTransport } from "../mocks/index.ts";
 import {
   MCPTool,
   MCPRequest,
@@ -24,11 +24,11 @@ import {
   MCPToolCall,
   MCPToolResult,
   AgentProfile,
-} from '../../src/utils/types.ts';
-import { cleanupTestEnv, setupTestEnv } from '../test.config.ts';
-import { generateId, delay } from '../../src/utils/helpers.ts';
+} from "../../src/utils/types.ts";
+import { cleanupTestEnv, setupTestEnv } from "../test.config.ts";
+import { generateId, delay } from "../../src/utils/helpers.ts";
 
-describe('MCP Integration', () => {
+describe("MCP Integration", () => {
   let mcpServer: MockMCPServer;
   let mcpTransport: MockMCPTransport;
   let eventBus: EventBus;
@@ -39,9 +39,9 @@ describe('MCP Integration', () => {
 
     eventBus = new EventBus();
     logger = new Logger({
-      level: 'debug',
-      format: 'text',
-      destination: 'console',
+      level: "debug",
+      format: "text",
+      destination: "console",
     });
 
     mcpTransport = new MockMCPTransport();
@@ -53,35 +53,37 @@ describe('MCP Integration', () => {
     await cleanupTestEnv();
   });
 
-  describe('tool registration and execution', () => {
-    it('should register and execute MCP tools', async () => {
+  describe("tool registration and execution", () => {
+    it("should register and execute MCP tools", async () => {
       await mcpServer.initialize();
 
       // Register a test tool
       const testTool: MCPTool = {
-        name: 'echo_tool',
-        description: 'Echoes input back with timestamp',
+        name: "echo_tool",
+        description: "Echoes input back with timestamp",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {
-            message: { type: 'string' },
-            uppercase: { type: 'boolean', default: false },
+            message: { type: "string" },
+            uppercase: { type: "boolean", default: false },
           },
-          required: ['message'],
+          required: ["message"],
         },
         handler: async (input: any, context?: MCPContext) => {
           const { message, uppercase = false } = input;
           const result = uppercase ? message.toUpperCase() : message;
-          
+
           if (context?.logger) {
             context.logger.info(`Echo tool executed: ${result}`);
           }
-          
+
           return {
-            content: [{
-              type: 'text',
-              text: `Echo: ${result} (${new Date().toISOString()})`,
-            }],
+            content: [
+              {
+                type: "text",
+                text: `Echo: ${result} (${new Date().toISOString()})`,
+              },
+            ],
           };
         },
       };
@@ -91,20 +93,20 @@ describe('MCP Integration', () => {
       // Verify tool registration
       const tools = await mcpServer.listTools();
       assertEquals(tools.length, 1);
-      assertEquals(tools[0].name, 'echo_tool');
+      assertEquals(tools[0].name, "echo_tool");
 
       // Create tool call request
       const toolCall: MCPToolCall = {
-        name: 'echo_tool',
+        name: "echo_tool",
         arguments: {
-          message: 'Hello, MCP!',
+          message: "Hello, MCP!",
           uppercase: true,
         },
       };
 
       const context: MCPContext = {
-        sessionId: generateId('session'),
-        agentId: 'test-agent',
+        sessionId: generateId("session"),
+        agentId: "test-agent",
         logger,
       };
 
@@ -113,35 +115,35 @@ describe('MCP Integration', () => {
 
       assertExists(result);
       assertEquals(result.content.length, 1);
-      assertEquals(result.content[0].type, 'text');
-      assertEquals(result.content[0].text?.includes('HELLO, MCP!'), true);
+      assertEquals(result.content[0].type, "text");
+      assertEquals(result.content[0].text?.includes("HELLO, MCP!"), true);
     });
 
-    it('should handle tool execution errors gracefully', async () => {
+    it("should handle tool execution errors gracefully", async () => {
       await mcpServer.initialize();
 
       // Register a tool that throws an error
       const errorTool: MCPTool = {
-        name: 'error_tool',
-        description: 'A tool that always throws an error',
+        name: "error_tool",
+        description: "A tool that always throws an error",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {},
         },
         handler: async () => {
-          throw new Error('Tool execution failed');
+          throw new Error("Tool execution failed");
         },
       };
 
       await mcpServer.registerTool(errorTool);
 
       const toolCall: MCPToolCall = {
-        name: 'error_tool',
+        name: "error_tool",
         arguments: {},
       };
 
       const context: MCPContext = {
-        sessionId: generateId('session'),
+        sessionId: generateId("session"),
         logger,
       };
 
@@ -149,31 +151,36 @@ describe('MCP Integration', () => {
 
       assertEquals(result.isError, true);
       assertEquals(result.content.length, 1);
-      assertEquals(result.content[0].type, 'text');
-      assertEquals(result.content[0].text?.includes('Tool execution failed'), true);
+      assertEquals(result.content[0].type, "text");
+      assertEquals(
+        result.content[0].text?.includes("Tool execution failed"),
+        true,
+      );
     });
 
-    it('should validate tool input schemas', async () => {
+    it("should validate tool input schemas", async () => {
       await mcpServer.initialize();
 
       const strictTool: MCPTool = {
-        name: 'strict_tool',
-        description: 'Tool with strict input validation',
+        name: "strict_tool",
+        description: "Tool with strict input validation",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {
-            requiredParam: { type: 'string' },
-            numericParam: { type: 'number', minimum: 0 },
+            requiredParam: { type: "string" },
+            numericParam: { type: "number", minimum: 0 },
           },
-          required: ['requiredParam'],
+          required: ["requiredParam"],
           additionalProperties: false,
         },
         handler: async (input: any) => {
           return {
-            content: [{
-              type: 'text',
-              text: `Processed: ${input.requiredParam}`,
-            }],
+            content: [
+              {
+                type: "text",
+                text: `Processed: ${input.requiredParam}`,
+              },
+            ],
           };
         },
       };
@@ -182,7 +189,7 @@ describe('MCP Integration', () => {
 
       // Test invalid input (missing required parameter)
       const invalidCall: MCPToolCall = {
-        name: 'strict_tool',
+        name: "strict_tool",
         arguments: {
           numericParam: 5,
           // Missing requiredParam
@@ -190,46 +197,50 @@ describe('MCP Integration', () => {
       };
 
       const context: MCPContext = {
-        sessionId: generateId('session'),
+        sessionId: generateId("session"),
         logger,
       };
 
       const result = await mcpServer.executeTool(invalidCall, context);
 
       assertEquals(result.isError, true);
-      assertEquals(result.content[0].text?.includes('validation'), true);
+      assertEquals(result.content[0].text?.includes("validation"), true);
     });
   });
 
-  describe('multi-agent MCP coordination', () => {
-    it('should coordinate tool access across multiple agents', async () => {
+  describe("multi-agent MCP coordination", () => {
+    it("should coordinate tool access across multiple agents", async () => {
       await mcpServer.initialize();
 
       // Register a shared resource tool
       let resourceCount = 0;
       const resourceTool: MCPTool = {
-        name: 'shared_resource',
-        description: 'Manages a shared resource counter',
+        name: "shared_resource",
+        description: "Manages a shared resource counter",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {
-            action: { type: 'string', enum: ['increment', 'get'] },
+            action: { type: "string", enum: ["increment", "get"] },
           },
-          required: ['action'],
+          required: ["action"],
         },
         handler: async (input: any, context?: MCPContext) => {
           const { action } = input;
-          
-          if (action === 'increment') {
+
+          if (action === "increment") {
             resourceCount++;
-            context?.logger?.info(`Resource incremented by ${context.agentId}: ${resourceCount}`);
+            context?.logger?.info(
+              `Resource incremented by ${context.agentId}: ${resourceCount}`,
+            );
           }
-          
+
           return {
-            content: [{
-              type: 'text',
-              text: `Resource count: ${resourceCount}`,
-            }],
+            content: [
+              {
+                type: "text",
+                text: `Resource count: ${resourceCount}`,
+              },
+            ],
           };
         },
       };
@@ -237,26 +248,26 @@ describe('MCP Integration', () => {
       await mcpServer.registerTool(resourceTool);
 
       // Simulate multiple agents accessing the tool
-      const agents = ['agent-1', 'agent-2', 'agent-3'];
+      const agents = ["agent-1", "agent-2", "agent-3"];
       const operations = agents.map(async (agentId) => {
         const context: MCPContext = {
-          sessionId: generateId('session'),
+          sessionId: generateId("session"),
           agentId,
           logger,
         };
 
         // Each agent increments the resource
         const incrementCall: MCPToolCall = {
-          name: 'shared_resource',
-          arguments: { action: 'increment' },
+          name: "shared_resource",
+          arguments: { action: "increment" },
         };
 
         await mcpServer.executeTool(incrementCall, context);
 
         // Then gets the current value
         const getCall: MCPToolCall = {
-          name: 'shared_resource',
-          arguments: { action: 'get' },
+          name: "shared_resource",
+          arguments: { action: "get" },
         };
 
         return mcpServer.executeTool(getCall, context);
@@ -266,7 +277,7 @@ describe('MCP Integration', () => {
 
       // Verify all operations completed
       assertEquals(results.length, 3);
-      results.forEach(result => {
+      results.forEach((result) => {
         assertEquals(result.isError, false);
         assertExists(result.content[0].text);
       });
@@ -275,21 +286,25 @@ describe('MCP Integration', () => {
       assertEquals(resourceCount, 3);
     });
 
-    it('should handle tool registration conflicts', async () => {
+    it("should handle tool registration conflicts", async () => {
       await mcpServer.initialize();
 
       const tool1: MCPTool = {
-        name: 'conflicting_tool',
-        description: 'First version of tool',
-        inputSchema: { type: 'object' },
-        handler: async () => ({ content: [{ type: 'text', text: 'Version 1' }] }),
+        name: "conflicting_tool",
+        description: "First version of tool",
+        inputSchema: { type: "object" },
+        handler: async () => ({
+          content: [{ type: "text", text: "Version 1" }],
+        }),
       };
 
       const tool2: MCPTool = {
-        name: 'conflicting_tool',
-        description: 'Second version of tool',
-        inputSchema: { type: 'object' },
-        handler: async () => ({ content: [{ type: 'text', text: 'Version 2' }] }),
+        name: "conflicting_tool",
+        description: "Second version of tool",
+        inputSchema: { type: "object" },
+        handler: async () => ({
+          content: [{ type: "text", text: "Version 2" }],
+        }),
       };
 
       // Register first tool
@@ -299,60 +314,65 @@ describe('MCP Integration', () => {
       await assertRejects(
         () => mcpServer.registerTool(tool2),
         Error,
-        'Tool already registered'
+        "Tool already registered",
       );
 
       // Verify only first tool is registered
       const tools = await mcpServer.listTools();
       assertEquals(tools.length, 1);
-      assertEquals(tools[0].description, 'First version of tool');
+      assertEquals(tools[0].description, "First version of tool");
     });
   });
 
-  describe('request-response protocol', () => {
-    it('should handle JSON-RPC requests and responses', async () => {
+  describe("request-response protocol", () => {
+    it("should handle JSON-RPC requests and responses", async () => {
       await mcpServer.initialize();
 
       // Register a calculation tool
       const calcTool: MCPTool = {
-        name: 'calculator',
-        description: 'Performs basic arithmetic',
+        name: "calculator",
+        description: "Performs basic arithmetic",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {
-            operation: { type: 'string', enum: ['add', 'subtract', 'multiply', 'divide'] },
-            a: { type: 'number' },
-            b: { type: 'number' },
+            operation: {
+              type: "string",
+              enum: ["add", "subtract", "multiply", "divide"],
+            },
+            a: { type: "number" },
+            b: { type: "number" },
           },
-          required: ['operation', 'a', 'b'],
+          required: ["operation", "a", "b"],
         },
         handler: async (input: any) => {
           const { operation, a, b } = input;
           let result: number;
 
           switch (operation) {
-            case 'add':
+            case "add":
               result = a + b;
               break;
-            case 'subtract':
+            case "subtract":
               result = a - b;
               break;
-            case 'multiply':
+            case "multiply":
               result = a * b;
               break;
-            case 'divide':
-              if (b === 0) throw new Error('Division by zero');
+            case "divide":
+              if (b === 0) throw new Error("Division by zero");
               result = a / b;
               break;
             default:
-              throw new Error('Unknown operation');
+              throw new Error("Unknown operation");
           }
 
           return {
-            content: [{
-              type: 'text',
-              text: `${a} ${operation} ${b} = ${result}`,
-            }],
+            content: [
+              {
+                type: "text",
+                text: `${a} ${operation} ${b} = ${result}`,
+              },
+            ],
           };
         },
       };
@@ -361,13 +381,13 @@ describe('MCP Integration', () => {
 
       // Create JSON-RPC request
       const request: MCPRequest = {
-        jsonrpc: '2.0',
-        id: generateId('request'),
-        method: 'tools/call',
+        jsonrpc: "2.0",
+        id: generateId("request"),
+        method: "tools/call",
         params: {
-          name: 'calculator',
+          name: "calculator",
           arguments: {
-            operation: 'multiply',
+            operation: "multiply",
             a: 6,
             b: 7,
           },
@@ -378,40 +398,40 @@ describe('MCP Integration', () => {
       const response = await mcpServer.handleRequest(request);
 
       // Verify response structure
-      assertEquals(response.jsonrpc, '2.0');
+      assertEquals(response.jsonrpc, "2.0");
       assertEquals(response.id, request.id);
       assertExists(response.result);
       assertEquals(response.error, undefined);
 
       // Verify calculation result
       const toolResult = response.result as MCPToolResult;
-      assertEquals(toolResult.content[0].text, '6 multiply 7 = 42');
+      assertEquals(toolResult.content[0].text, "6 multiply 7 = 42");
     });
 
-    it('should handle malformed requests', async () => {
+    it("should handle malformed requests", async () => {
       await mcpServer.initialize();
 
       // Invalid JSON-RPC request (missing required fields)
       const invalidRequest = {
-        method: 'tools/call',
+        method: "tools/call",
         // Missing jsonrpc and id
       } as MCPRequest;
 
       const response = await mcpServer.handleRequest(invalidRequest);
 
       // Should return error response
-      assertEquals(response.jsonrpc, '2.0');
+      assertEquals(response.jsonrpc, "2.0");
       assertExists(response.error);
       assertEquals(response.error!.code, -32600); // Invalid Request
     });
 
-    it('should handle unknown methods', async () => {
+    it("should handle unknown methods", async () => {
       await mcpServer.initialize();
 
       const unknownRequest: MCPRequest = {
-        jsonrpc: '2.0',
-        id: 'test',
-        method: 'unknown/method',
+        jsonrpc: "2.0",
+        id: "test",
+        method: "unknown/method",
         params: {},
       };
 
@@ -421,26 +441,28 @@ describe('MCP Integration', () => {
     });
   });
 
-  describe('transport layer integration', () => {
-    it('should communicate through transport layer', async () => {
+  describe("transport layer integration", () => {
+    it("should communicate through transport layer", async () => {
       await mcpServer.initialize();
 
       // Register echo tool
       const echoTool: MCPTool = {
-        name: 'echo',
-        description: 'Echo tool for transport testing',
+        name: "echo",
+        description: "Echo tool for transport testing",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {
-            message: { type: 'string' },
+            message: { type: "string" },
           },
-          required: ['message'],
+          required: ["message"],
         },
         handler: async (input: any) => ({
-          content: [{
-            type: 'text',
-            text: input.message,
-          }],
+          content: [
+            {
+              type: "text",
+              text: input.message,
+            },
+          ],
         }),
       };
 
@@ -448,12 +470,12 @@ describe('MCP Integration', () => {
 
       // Simulate transport layer sending request
       const message = JSON.stringify({
-        jsonrpc: '2.0',
+        jsonrpc: "2.0",
         id: 1,
-        method: 'tools/call',
+        method: "tools/call",
         params: {
-          name: 'echo',
-          arguments: { message: 'Hello from transport!' },
+          name: "echo",
+          arguments: { message: "Hello from transport!" },
         },
       });
 
@@ -465,74 +487,78 @@ describe('MCP Integration', () => {
       // Verify transport received response
       assertEquals(mcpTransport.sent.length, 1);
       const response = JSON.parse(mcpTransport.sent[0]);
-      assertEquals(response.jsonrpc, '2.0');
+      assertEquals(response.jsonrpc, "2.0");
       assertEquals(response.id, 1);
-      assertEquals(response.result.content[0].text, 'Hello from transport!');
+      assertEquals(response.result.content[0].text, "Hello from transport!");
     });
 
-    it('should handle transport errors', async () => {
+    it("should handle transport errors", async () => {
       await mcpServer.initialize();
 
       // Mock transport error
       mcpTransport.send = spy(() => {
-        throw new Error('Transport connection failed');
+        throw new Error("Transport connection failed");
       });
 
       const request: MCPRequest = {
-        jsonrpc: '2.0',
-        id: 'error-test',
-        method: 'tools/list',
+        jsonrpc: "2.0",
+        id: "error-test",
+        method: "tools/list",
       };
 
       // Should handle transport error gracefully
       await assertRejects(
         () => mcpServer.handleRequest(request),
         Error,
-        'Transport connection failed'
+        "Transport connection failed",
       );
     });
   });
 
-  describe('agent profile integration', () => {
-    it('should associate MCP tools with agent capabilities', async () => {
+  describe("agent profile integration", () => {
+    it("should associate MCP tools with agent capabilities", async () => {
       await mcpServer.initialize();
 
       // Register tools for different agent types
       const researchTool: MCPTool = {
-        name: 'web_search',
-        description: 'Search the web for information',
+        name: "web_search",
+        description: "Search the web for information",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {
-            query: { type: 'string' },
-            maxResults: { type: 'number', default: 10 },
+            query: { type: "string" },
+            maxResults: { type: "number", default: 10 },
           },
-          required: ['query'],
+          required: ["query"],
         },
         handler: async (input: any) => ({
-          content: [{
-            type: 'text',
-            text: `Search results for: ${input.query}`,
-          }],
+          content: [
+            {
+              type: "text",
+              text: `Search results for: ${input.query}`,
+            },
+          ],
         }),
       };
 
       const codeTool: MCPTool = {
-        name: 'code_analyzer',
-        description: 'Analyze code for issues',
+        name: "code_analyzer",
+        description: "Analyze code for issues",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {
-            code: { type: 'string' },
-            language: { type: 'string' },
+            code: { type: "string" },
+            language: { type: "string" },
           },
-          required: ['code'],
+          required: ["code"],
         },
         handler: async (input: any) => ({
-          content: [{
-            type: 'text',
-            text: `Code analysis for ${input.language || 'unknown'} language`,
-          }],
+          content: [
+            {
+              type: "text",
+              text: `Code analysis for ${input.language || "unknown"} language`,
+            },
+          ],
         }),
       };
 
@@ -541,88 +567,99 @@ describe('MCP Integration', () => {
 
       // Create agent profiles with specific capabilities
       const researcherProfile: AgentProfile = {
-        id: 'researcher',
-        name: 'Research Agent',
-        type: 'researcher',
-        capabilities: ['web_search', 'data_analysis'],
-        systemPrompt: 'You are a research agent',
+        id: "researcher",
+        name: "Research Agent",
+        type: "researcher",
+        capabilities: ["web_search", "data_analysis"],
+        systemPrompt: "You are a research agent",
         maxConcurrentTasks: 3,
         priority: 1,
       };
 
       const implementerProfile: AgentProfile = {
-        id: 'implementer',
-        name: 'Implementation Agent',
-        type: 'implementer',
-        capabilities: ['code_analyzer', 'terminal', 'file_operations'],
-        systemPrompt: 'You are an implementation agent',
+        id: "implementer",
+        name: "Implementation Agent",
+        type: "implementer",
+        capabilities: ["code_analyzer", "terminal", "file_operations"],
+        systemPrompt: "You are an implementation agent",
         maxConcurrentTasks: 2,
         priority: 2,
       };
 
       // Test researcher using research tool
       const researchContext: MCPContext = {
-        sessionId: generateId('session'),
+        sessionId: generateId("session"),
         agentId: researcherProfile.id,
         logger,
       };
 
       const searchCall: MCPToolCall = {
-        name: 'web_search',
-        arguments: { query: 'Deno best practices' },
+        name: "web_search",
+        arguments: { query: "Deno best practices" },
       };
 
-      const searchResult = await mcpServer.executeTool(searchCall, researchContext);
+      const searchResult = await mcpServer.executeTool(
+        searchCall,
+        researchContext,
+      );
       assertEquals(searchResult.isError, false);
-      assertEquals(searchResult.content[0].text?.includes('Deno best practices'), true);
+      assertEquals(
+        searchResult.content[0].text?.includes("Deno best practices"),
+        true,
+      );
 
       // Test implementer using code tool
       const implementerContext: MCPContext = {
-        sessionId: generateId('session'),
+        sessionId: generateId("session"),
         agentId: implementerProfile.id,
         logger,
       };
 
       const codeCall: MCPToolCall = {
-        name: 'code_analyzer',
+        name: "code_analyzer",
         arguments: {
           code: 'function hello() { console.log("hello"); }',
-          language: 'javascript',
+          language: "javascript",
         },
       };
 
-      const codeResult = await mcpServer.executeTool(codeCall, implementerContext);
+      const codeResult = await mcpServer.executeTool(
+        codeCall,
+        implementerContext,
+      );
       assertEquals(codeResult.isError, false);
-      assertEquals(codeResult.content[0].text?.includes('javascript'), true);
+      assertEquals(codeResult.content[0].text?.includes("javascript"), true);
     });
   });
 
-  describe('performance and reliability', () => {
-    it('should handle concurrent tool executions', async () => {
+  describe("performance and reliability", () => {
+    it("should handle concurrent tool executions", async () => {
       await mcpServer.initialize();
 
       // Register a performance test tool
       let executionCount = 0;
       const perfTool: MCPTool = {
-        name: 'performance_test',
-        description: 'Tool for performance testing',
+        name: "performance_test",
+        description: "Tool for performance testing",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {
-            delay: { type: 'number', default: 100 },
-            id: { type: 'string' },
+            delay: { type: "number", default: 100 },
+            id: { type: "string" },
           },
-          required: ['id'],
+          required: ["id"],
         },
         handler: async (input: any) => {
           executionCount++;
           await delay(input.delay || 100);
-          
+
           return {
-            content: [{
-              type: 'text',
-              text: `Execution ${input.id} completed (total: ${executionCount})`,
-            }],
+            content: [
+              {
+                type: "text",
+                text: `Execution ${input.id} completed (total: ${executionCount})`,
+              },
+            ],
           };
         },
       };
@@ -632,13 +669,13 @@ describe('MCP Integration', () => {
       // Execute multiple tool calls concurrently
       const concurrentCalls = Array.from({ length: 10 }, (_, i) => {
         const context: MCPContext = {
-          sessionId: generateId('session'),
+          sessionId: generateId("session"),
           agentId: `agent-${i}`,
           logger,
         };
 
         const toolCall: MCPToolCall = {
-          name: 'performance_test',
+          name: "performance_test",
           arguments: {
             id: `call-${i}`,
             delay: 50,
@@ -653,28 +690,30 @@ describe('MCP Integration', () => {
       // Verify all executions completed
       assertEquals(results.length, 10);
       assertEquals(executionCount, 10);
-      
+
       results.forEach((result, index) => {
         assertEquals(result.isError, false);
         assertEquals(result.content[0].text?.includes(`call-${index}`), true);
       });
     });
 
-    it('should handle tool execution timeouts', async () => {
+    it("should handle tool execution timeouts", async () => {
       await mcpServer.initialize();
 
       // Register a slow tool
       const slowTool: MCPTool = {
-        name: 'slow_tool',
-        description: 'A tool that takes a long time',
-        inputSchema: { type: 'object' },
+        name: "slow_tool",
+        description: "A tool that takes a long time",
+        inputSchema: { type: "object" },
         handler: async () => {
           await delay(5000); // 5 second delay
           return {
-            content: [{
-              type: 'text',
-              text: 'Slow operation completed',
-            }],
+            content: [
+              {
+                type: "text",
+                text: "Slow operation completed",
+              },
+            ],
           };
         },
       };
@@ -682,13 +721,13 @@ describe('MCP Integration', () => {
       await mcpServer.registerTool(slowTool);
 
       const context: MCPContext = {
-        sessionId: generateId('session'),
-        agentId: 'timeout-test',
+        sessionId: generateId("session"),
+        agentId: "timeout-test",
         logger,
       };
 
       const toolCall: MCPToolCall = {
-        name: 'slow_tool',
+        name: "slow_tool",
         arguments: {},
       };
 
@@ -699,10 +738,10 @@ describe('MCP Integration', () => {
 
       // Should complete quickly (timeout mechanism)
       assertEquals(elapsed < 2000, true);
-      
+
       // Should indicate timeout error if implemented
       if (result.isError) {
-        assertEquals(result.content[0].text?.includes('timeout'), true);
+        assertEquals(result.content[0].text?.includes("timeout"), true);
       }
     });
   });

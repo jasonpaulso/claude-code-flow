@@ -3,9 +3,9 @@
  * Uses basic stdin reading for compatibility
  */
 
-import { colors } from '@cliffy/ansi/colors';
-import { ProcessManager } from './process-manager.ts';
-import { ProcessInfo, ProcessStatus, SystemStats } from './types.ts';
+import { colors } from "@cliffy/ansi/colors";
+import { ProcessManager } from "./process-manager.ts";
+import { ProcessInfo, ProcessStatus, SystemStats } from "./types.ts";
 
 export class ProcessUI {
   private processManager: ProcessManager;
@@ -18,22 +18,30 @@ export class ProcessUI {
   }
 
   private setupEventListeners(): void {
-    this.processManager.on('statusChanged', ({ processId, status }: { processId: string; status: ProcessStatus }) => {
-      if (this.running) {
-        this.render();
-      }
-    });
+    this.processManager.on(
+      "statusChanged",
+      ({ processId, status }: { processId: string; status: ProcessStatus }) => {
+        if (this.running) {
+          this.render();
+        }
+      },
+    );
 
-    this.processManager.on('processError', ({ processId, error }: { processId: string; error: Error }) => {
-      if (this.running) {
-        console.log(colors.red(`\nProcess ${processId} error: ${error.message}`));
-      }
-    });
+    this.processManager.on(
+      "processError",
+      ({ processId, error }: { processId: string; error: Error }) => {
+        if (this.running) {
+          console.log(
+            colors.red(`\nProcess ${processId} error: ${error.message}`),
+          );
+        }
+      },
+    );
   }
 
   async start(): Promise<void> {
     this.running = true;
-    
+
     // Clear screen
     console.clear();
 
@@ -43,18 +51,18 @@ export class ProcessUI {
     // Simple input loop
     const decoder = new TextDecoder();
     const encoder = new TextEncoder();
-    
+
     while (this.running) {
       // Show prompt
-      await Deno.stdout.write(encoder.encode('\nCommand: '));
-      
+      await Deno.stdout.write(encoder.encode("\nCommand: "));
+
       // Read single character
       const buf = new Uint8Array(1024);
       const n = await Deno.stdin.read(buf);
       if (n === null) break;
-      
+
       const input = decoder.decode(buf.subarray(0, n)).trim();
-      
+
       if (input.length > 0) {
         await this.handleCommand(input);
       }
@@ -68,35 +76,35 @@ export class ProcessUI {
 
   private async handleCommand(input: string): Promise<void> {
     const processes = this.processManager.getAllProcesses();
-    
+
     switch (input.toLowerCase()) {
-      case 'q':
-      case 'quit':
-      case 'exit':
+      case "q":
+      case "quit":
+      case "exit":
         await this.handleExit();
         break;
-        
-      case 'a':
-      case 'all':
+
+      case "a":
+      case "all":
         await this.startAll();
         break;
-        
-      case 'z':
-      case 'stop-all':
+
+      case "z":
+      case "stop-all":
         await this.stopAll();
         break;
-        
-      case 'r':
-      case 'refresh':
+
+      case "r":
+      case "refresh":
         this.render();
         break;
-        
-      case 'h':
-      case 'help':
-      case '?':
+
+      case "h":
+      case "help":
+      case "?":
         this.showHelp();
         break;
-        
+
       default:
         // Check if it's a number (process selection)
         const num = parseInt(input);
@@ -116,129 +124,142 @@ export class ProcessUI {
     const stats = this.processManager.getSystemStats();
 
     // Header
-    console.log(colors.cyan.bold('🧠 Claude-Flow Process Manager'));
-    console.log(colors.gray('─'.repeat(60)));
-    
+    console.log(colors.cyan.bold("🧠 Claude-Flow Process Manager"));
+    console.log(colors.gray("─".repeat(60)));
+
     // System stats
-    console.log(colors.white('System Status:'), 
-      colors.green(`${stats.runningProcesses}/${stats.totalProcesses} running`));
-    
+    console.log(
+      colors.white("System Status:"),
+      colors.green(`${stats.runningProcesses}/${stats.totalProcesses} running`),
+    );
+
     if (stats.errorProcesses > 0) {
-      console.log(colors.red(`⚠️  ${stats.errorProcesses} processes with errors`));
+      console.log(
+        colors.red(`⚠️  ${stats.errorProcesses} processes with errors`),
+      );
     }
-    
+
     console.log();
 
     // Process list
-    console.log(colors.white.bold('Processes:'));
-    console.log(colors.gray('─'.repeat(60)));
-    
+    console.log(colors.white.bold("Processes:"));
+    console.log(colors.gray("─".repeat(60)));
+
     processes.forEach((process, index) => {
       const num = `[${index + 1}]`.padEnd(4);
       const status = this.getStatusDisplay(process.status);
       const name = process.name.padEnd(25);
-      
+
       console.log(`${colors.gray(num)} ${status} ${colors.white(name)}`);
-      
+
       if (process.metrics?.lastError) {
         console.log(colors.red(`       Error: ${process.metrics.lastError}`));
       }
     });
 
     // Footer
-    console.log(colors.gray('─'.repeat(60)));
-    console.log(colors.gray('Commands: [1-9] Select process [a] Start All [z] Stop All'));
-    console.log(colors.gray('[r] Refresh [h] Help [q] Quit'));
+    console.log(colors.gray("─".repeat(60)));
+    console.log(
+      colors.gray("Commands: [1-9] Select process [a] Start All [z] Stop All"),
+    );
+    console.log(colors.gray("[r] Refresh [h] Help [q] Quit"));
   }
 
   private async showProcessMenu(process: ProcessInfo): Promise<void> {
     console.log();
     console.log(colors.cyan.bold(`Selected: ${process.name}`));
-    console.log(colors.gray('─'.repeat(40)));
-    
+    console.log(colors.gray("─".repeat(40)));
+
     if (process.status === ProcessStatus.STOPPED) {
-      console.log('[s] Start');
+      console.log("[s] Start");
     } else if (process.status === ProcessStatus.RUNNING) {
-      console.log('[x] Stop');
-      console.log('[r] Restart');
+      console.log("[x] Stop");
+      console.log("[r] Restart");
     }
-    
-    console.log('[d] Details');
-    console.log('[c] Cancel');
-    
+
+    console.log("[d] Details");
+    console.log("[c] Cancel");
+
     const decoder = new TextDecoder();
     const encoder = new TextEncoder();
-    
-    await Deno.stdout.write(encoder.encode('\nAction: '));
-    
+
+    await Deno.stdout.write(encoder.encode("\nAction: "));
+
     const buf = new Uint8Array(1024);
     const n = await Deno.stdin.read(buf);
     if (n === null) return;
-    
+
     const action = decoder.decode(buf.subarray(0, n)).trim().toLowerCase();
-    
+
     switch (action) {
-      case 's':
+      case "s":
         if (process.status === ProcessStatus.STOPPED) {
           await this.startProcess(process.id);
         }
         break;
-      case 'x':
+      case "x":
         if (process.status === ProcessStatus.RUNNING) {
           await this.stopProcess(process.id);
         }
         break;
-      case 'r':
+      case "r":
         if (process.status === ProcessStatus.RUNNING) {
           await this.restartProcess(process.id);
         }
         break;
-      case 'd':
+      case "d":
         this.showProcessDetails(process);
         await this.waitForKey();
         break;
     }
-    
+
     this.render();
   }
 
   private showProcessDetails(process: ProcessInfo): void {
     console.log();
     console.log(colors.cyan.bold(`📋 Process Details: ${process.name}`));
-    console.log(colors.gray('─'.repeat(60)));
-    
-    console.log(colors.white('ID:'), process.id);
-    console.log(colors.white('Type:'), process.type);
-    console.log(colors.white('Status:'), this.getStatusDisplay(process.status), process.status);
-    
+    console.log(colors.gray("─".repeat(60)));
+
+    console.log(colors.white("ID:"), process.id);
+    console.log(colors.white("Type:"), process.type);
+    console.log(
+      colors.white("Status:"),
+      this.getStatusDisplay(process.status),
+      process.status,
+    );
+
     if (process.pid) {
-      console.log(colors.white('PID:'), process.pid);
+      console.log(colors.white("PID:"), process.pid);
     }
-    
+
     if (process.startTime) {
       const uptime = Date.now() - process.startTime;
-      console.log(colors.white('Uptime:'), this.formatUptime(uptime));
+      console.log(colors.white("Uptime:"), this.formatUptime(uptime));
     }
-    
+
     if (process.metrics) {
       console.log();
-      console.log(colors.white.bold('Metrics:'));
+      console.log(colors.white.bold("Metrics:"));
       if (process.metrics.cpu !== undefined) {
-        console.log(colors.white('CPU:'), `${process.metrics.cpu.toFixed(1)}%`);
+        console.log(colors.white("CPU:"), `${process.metrics.cpu.toFixed(1)}%`);
       }
       if (process.metrics.memory !== undefined) {
-        console.log(colors.white('Memory:'), `${process.metrics.memory.toFixed(0)} MB`);
+        console.log(
+          colors.white("Memory:"),
+          `${process.metrics.memory.toFixed(0)} MB`,
+        );
       }
       if (process.metrics.restarts !== undefined) {
-        console.log(colors.white('Restarts:'), process.metrics.restarts);
+        console.log(colors.white("Restarts:"), process.metrics.restarts);
       }
       if (process.metrics.lastError) {
-        console.log(colors.red('Last Error:'), process.metrics.lastError);
+        console.log(colors.red("Last Error:"), process.metrics.lastError);
       }
     }
-    
+
     console.log();
-    console.log(colors.gray('Press any key to continue...'));
+    console.log(colors.gray("Press any key to continue..."));
   }
 
   private async waitForKey(): Promise<void> {
@@ -249,19 +270,19 @@ export class ProcessUI {
   private getStatusDisplay(status: ProcessStatus): string {
     switch (status) {
       case ProcessStatus.RUNNING:
-        return colors.green('●');
+        return colors.green("●");
       case ProcessStatus.STOPPED:
-        return colors.gray('○');
+        return colors.gray("○");
       case ProcessStatus.STARTING:
-        return colors.yellow('◐');
+        return colors.yellow("◐");
       case ProcessStatus.STOPPING:
-        return colors.yellow('◑');
+        return colors.yellow("◑");
       case ProcessStatus.ERROR:
-        return colors.red('✗');
+        return colors.red("✗");
       case ProcessStatus.CRASHED:
-        return colors.red('☠');
+        return colors.red("☠");
       default:
-        return colors.gray('?');
+        return colors.gray("?");
     }
   }
 
@@ -284,24 +305,24 @@ export class ProcessUI {
 
   private showHelp(): void {
     console.log();
-    console.log(colors.cyan.bold('🧠 Claude-Flow Process Manager - Help'));
-    console.log(colors.gray('─'.repeat(60)));
+    console.log(colors.cyan.bold("🧠 Claude-Flow Process Manager - Help"));
+    console.log(colors.gray("─".repeat(60)));
     console.log();
-    console.log(colors.white.bold('Commands:'));
-    console.log('  1-9     - Select process by number');
-    console.log('  a       - Start all processes');
-    console.log('  z       - Stop all processes');
-    console.log('  r       - Refresh display');
-    console.log('  h/?     - Show this help');
-    console.log('  q       - Quit');
+    console.log(colors.white.bold("Commands:"));
+    console.log("  1-9     - Select process by number");
+    console.log("  a       - Start all processes");
+    console.log("  z       - Stop all processes");
+    console.log("  r       - Refresh display");
+    console.log("  h/?     - Show this help");
+    console.log("  q       - Quit");
     console.log();
-    console.log(colors.white.bold('Process Actions:'));
-    console.log('  s       - Start selected process');
-    console.log('  x       - Stop selected process');
-    console.log('  r       - Restart selected process');
-    console.log('  d       - Show process details');
+    console.log(colors.white.bold("Process Actions:"));
+    console.log("  s       - Start selected process");
+    console.log("  x       - Stop selected process");
+    console.log("  r       - Restart selected process");
+    console.log("  d       - Show process details");
     console.log();
-    console.log(colors.gray('Press any key to continue...'));
+    console.log(colors.gray("Press any key to continue..."));
   }
 
   private async startProcess(processId: string): Promise<void> {
@@ -310,7 +331,11 @@ export class ProcessUI {
       await this.processManager.startProcess(processId);
       console.log(colors.green(`✓ Started ${processId}`));
     } catch (error) {
-      console.log(colors.red(`✗ Failed to start ${processId}: ${(error as Error).message}`));
+      console.log(
+        colors.red(
+          `✗ Failed to start ${processId}: ${(error as Error).message}`,
+        ),
+      );
     }
     await this.waitForKey();
   }
@@ -321,7 +346,11 @@ export class ProcessUI {
       await this.processManager.stopProcess(processId);
       console.log(colors.green(`✓ Stopped ${processId}`));
     } catch (error) {
-      console.log(colors.red(`✗ Failed to stop ${processId}: ${(error as Error).message}`));
+      console.log(
+        colors.red(
+          `✗ Failed to stop ${processId}: ${(error as Error).message}`,
+        ),
+      );
     }
     await this.waitForKey();
   }
@@ -332,18 +361,24 @@ export class ProcessUI {
       await this.processManager.restartProcess(processId);
       console.log(colors.green(`✓ Restarted ${processId}`));
     } catch (error) {
-      console.log(colors.red(`✗ Failed to restart ${processId}: ${(error as Error).message}`));
+      console.log(
+        colors.red(
+          `✗ Failed to restart ${processId}: ${(error as Error).message}`,
+        ),
+      );
     }
     await this.waitForKey();
   }
 
   private async startAll(): Promise<void> {
     try {
-      console.log(colors.yellow('Starting all processes...'));
+      console.log(colors.yellow("Starting all processes..."));
       await this.processManager.startAll();
-      console.log(colors.green('✓ All processes started'));
+      console.log(colors.green("✓ All processes started"));
     } catch (error) {
-      console.log(colors.red(`✗ Failed to start all: ${(error as Error).message}`));
+      console.log(
+        colors.red(`✗ Failed to start all: ${(error as Error).message}`),
+      );
     }
     await this.waitForKey();
     this.render();
@@ -351,11 +386,13 @@ export class ProcessUI {
 
   private async stopAll(): Promise<void> {
     try {
-      console.log(colors.yellow('Stopping all processes...'));
+      console.log(colors.yellow("Stopping all processes..."));
       await this.processManager.stopAll();
-      console.log(colors.green('✓ All processes stopped'));
+      console.log(colors.green("✓ All processes stopped"));
     } catch (error) {
-      console.log(colors.red(`✗ Failed to stop all: ${(error as Error).message}`));
+      console.log(
+        colors.red(`✗ Failed to stop all: ${(error as Error).message}`),
+      );
     }
     await this.waitForKey();
     this.render();
@@ -363,22 +400,27 @@ export class ProcessUI {
 
   private async handleExit(): Promise<void> {
     const processes = this.processManager.getAllProcesses();
-    const hasRunning = processes.some(p => p.status === ProcessStatus.RUNNING);
-    
+    const hasRunning = processes.some(
+      (p) => p.status === ProcessStatus.RUNNING,
+    );
+
     if (hasRunning) {
       console.log();
-      console.log(colors.yellow('⚠️  Some processes are still running.'));
-      console.log('Stop all processes before exiting? [y/N]: ');
-      
+      console.log(colors.yellow("⚠️  Some processes are still running."));
+      console.log("Stop all processes before exiting? [y/N]: ");
+
       const decoder = new TextDecoder();
       const buf = new Uint8Array(1024);
       const n = await Deno.stdin.read(buf);
-      
-      if (n && decoder.decode(buf.subarray(0, n)).trim().toLowerCase() === 'y') {
+
+      if (
+        n &&
+        decoder.decode(buf.subarray(0, n)).trim().toLowerCase() === "y"
+      ) {
         await this.stopAll();
       }
     }
-    
+
     await this.stop();
   }
 }

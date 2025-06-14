@@ -2,9 +2,9 @@
  * Tool registry for MCP
  */
 
-import { MCPTool } from '../utils/types.ts';
-import { ILogger } from '../core/logger.ts';
-import { MCPError } from '../utils/errors.ts';
+import { MCPTool } from "../utils/types.ts";
+import { ILogger } from "../core/logger.ts";
+import { MCPError } from "../utils/errors.ts";
 
 /**
  * Tool registry implementation
@@ -26,7 +26,7 @@ export class ToolRegistry {
     this.validateTool(tool);
 
     this.tools.set(tool.name, tool);
-    this.logger.debug('Tool registered', { name: tool.name });
+    this.logger.debug("Tool registered", { name: tool.name });
   }
 
   /**
@@ -38,7 +38,7 @@ export class ToolRegistry {
     }
 
     this.tools.delete(name);
-    this.logger.debug('Tool unregistered', { name });
+    this.logger.debug("Tool unregistered", { name });
   }
 
   /**
@@ -52,7 +52,7 @@ export class ToolRegistry {
    * Lists all registered tools
    */
   listTools(): Array<{ name: string; description: string }> {
-    return Array.from(this.tools.values()).map(tool => ({
+    return Array.from(this.tools.values()).map((tool) => ({
       name: tool.name,
       description: tool.description,
     }));
@@ -74,7 +74,7 @@ export class ToolRegistry {
       throw new MCPError(`Tool not found: ${name}`);
     }
 
-    this.logger.debug('Executing tool', { name, input });
+    this.logger.debug("Executing tool", { name, input });
 
     try {
       // Validate input against schema
@@ -83,10 +83,10 @@ export class ToolRegistry {
       // Execute tool handler
       const result = await tool.handler(input);
 
-      this.logger.debug('Tool executed successfully', { name });
+      this.logger.debug("Tool executed successfully", { name });
       return result;
     } catch (error) {
-      this.logger.error('Tool execution failed', { name, error });
+      this.logger.error("Tool execution failed", { name, error });
       throw error;
     }
   }
@@ -95,25 +95,25 @@ export class ToolRegistry {
    * Validates tool definition
    */
   private validateTool(tool: MCPTool): void {
-    if (!tool.name || typeof tool.name !== 'string') {
-      throw new MCPError('Tool name must be a non-empty string');
+    if (!tool.name || typeof tool.name !== "string") {
+      throw new MCPError("Tool name must be a non-empty string");
     }
 
-    if (!tool.description || typeof tool.description !== 'string') {
-      throw new MCPError('Tool description must be a non-empty string');
+    if (!tool.description || typeof tool.description !== "string") {
+      throw new MCPError("Tool description must be a non-empty string");
     }
 
-    if (typeof tool.handler !== 'function') {
-      throw new MCPError('Tool handler must be a function');
+    if (typeof tool.handler !== "function") {
+      throw new MCPError("Tool handler must be a function");
     }
 
-    if (!tool.inputSchema || typeof tool.inputSchema !== 'object') {
-      throw new MCPError('Tool inputSchema must be an object');
+    if (!tool.inputSchema || typeof tool.inputSchema !== "object") {
+      throw new MCPError("Tool inputSchema must be an object");
     }
 
     // Validate tool name format (namespace/name)
-    if (!tool.name.includes('/')) {
-      throw new MCPError('Tool name must be in format: namespace/name');
+    if (!tool.name.includes("/")) {
+      throw new MCPError("Tool name must be in format: namespace/name");
     }
   }
 
@@ -124,9 +124,9 @@ export class ToolRegistry {
     // Simple validation - in production, use a JSON Schema validator
     const schema = tool.inputSchema as any;
 
-    if (schema.type === 'object' && schema.properties) {
-      if (typeof input !== 'object' || input === null) {
-        throw new MCPError('Input must be an object');
+    if (schema.type === "object" && schema.properties) {
+      if (typeof input !== "object" || input === null) {
+        throw new MCPError("Input must be an object");
       }
 
       const inputObj = input as Record<string, unknown>;
@@ -161,17 +161,19 @@ export class ToolRegistry {
    */
   private checkType(value: unknown, type: string): boolean {
     switch (type) {
-      case 'string':
-        return typeof value === 'string';
-      case 'number':
-        return typeof value === 'number';
-      case 'boolean':
-        return typeof value === 'boolean';
-      case 'object':
-        return typeof value === 'object' && value !== null && !Array.isArray(value);
-      case 'array':
+      case "string":
+        return typeof value === "string";
+      case "number":
+        return typeof value === "number";
+      case "boolean":
+        return typeof value === "boolean";
+      case "object":
+        return (
+          typeof value === "object" && value !== null && !Array.isArray(value)
+        );
+      case "array":
         return Array.isArray(value);
-      case 'null':
+      case "null":
         return value === null;
       default:
         return true;

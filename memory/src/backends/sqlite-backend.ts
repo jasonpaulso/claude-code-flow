@@ -3,8 +3,8 @@
  * High-performance SQLite storage with proper indexing and FTS5
  */
 
-import Database from 'better-sqlite3';
-import { MemoryItem, MemoryQuery, MemoryBackend, BackendStats } from '../types';
+import Database from "better-sqlite3";
+import { MemoryItem, MemoryQuery, MemoryBackend, BackendStats } from "../types";
 
 export interface SqliteBackendConfig {
   path: string;
@@ -27,18 +27,18 @@ export class SqliteBackend implements MemoryBackend {
     this.config = config;
     this.db = new Database(config.path, {
       readonly: config.readonly || false,
-      verbose: config.verbose ? console.log : undefined
+      verbose: config.verbose ? console.log : undefined,
     });
 
     // Enable WAL mode for better concurrency
     if (config.wal !== false) {
-      this.db.pragma('journal_mode = WAL');
+      this.db.pragma("journal_mode = WAL");
     }
 
     // Performance optimizations
-    this.db.pragma('synchronous = NORMAL');
-    this.db.pragma('cache_size = 10000');
-    this.db.pragma('temp_store = MEMORY');
+    this.db.pragma("synchronous = NORMAL");
+    this.db.pragma("cache_size = 10000");
+    this.db.pragma("temp_store = MEMORY");
   }
 
   async initialize(): Promise<void> {
@@ -143,8 +143,8 @@ export class SqliteBackend implements MemoryBackend {
 
   async store(item: MemoryItem): Promise<void> {
     const now = Date.now();
-    const namespace = item.metadata?.namespace || 'default';
-    
+    const namespace = item.metadata?.namespace || "default";
+
     // Store in main table
     this.prepared.insert!.run(
       item.id,
@@ -152,65 +152,75 @@ export class SqliteBackend implements MemoryBackend {
       item.key,
       JSON.stringify(item.value),
       item.metadata ? JSON.stringify(item.metadata) : null,
-      item.vectorEmbedding ? Buffer.from(new Float32Array(item.vectorEmbedding).buffer) : null,
+      item.vectorEmbedding
+        ? Buffer.from(new Float32Array(item.vectorEmbedding).buffer)
+        : null,
       item.ttl || null,
       now,
       now,
-      item.metadata?.version || '1.0',
-      namespace
+      item.metadata?.version || "1.0",
+      namespace,
     );
 
     // Store version history
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       INSERT INTO memory_versions (item_id, category, key, value, metadata, version, timestamp, operation)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      item.id,
-      item.category,
-      item.key,
-      JSON.stringify(item.value),
-      item.metadata ? JSON.stringify(item.metadata) : null,
-      item.metadata?.version || '1.0',
-      now,
-      'store'
-    );
+    `,
+      )
+      .run(
+        item.id,
+        item.category,
+        item.key,
+        JSON.stringify(item.value),
+        item.metadata ? JSON.stringify(item.metadata) : null,
+        item.metadata?.version || "1.0",
+        now,
+        "store",
+      );
   }
 
-  async get(category: string, key: string, namespace: string = 'default'): Promise<MemoryItem | null> {
+  async get(
+    category: string,
+    key: string,
+    namespace: string = "default",
+  ): Promise<MemoryItem | null> {
     const row = this.prepared.get!.get(category, key, namespace) as any;
-    
+
     if (!row) return null;
 
     return this.rowToMemoryItem(row);
   }
 
   async query(query: MemoryQuery): Promise<MemoryItem[]> {
-    let sql = 'SELECT * FROM memory_items WHERE 1=1';
+    let sql = "SELECT * FROM memory_items WHERE 1=1";
     const params: any[] = [];
 
     // Build WHERE clause
     if (query.categories && query.categories.length > 0) {
-      sql += ` AND category IN (${query.categories.map(() => '?').join(',')})`;
+      sql += ` AND category IN (${query.categories.map(() => "?").join(",")})`;
       params.push(...query.categories);
     }
 
     if (query.keys && query.keys.length > 0) {
-      sql += ` AND key IN (${query.keys.map(() => '?').join(',')})`;
+      sql += ` AND key IN (${query.keys.map(() => "?").join(",")})`;
       params.push(...query.keys);
     }
 
     if (query.namespace) {
-      sql += ' AND namespace = ?';
+      sql += " AND namespace = ?";
       params.push(query.namespace);
     }
 
     if (query.startTime) {
-      sql += ' AND created_at >= ?';
+      sql += " AND created_at >= ?";
       params.push(query.startTime);
     }
 
     if (query.endTime) {
-      sql += ' AND created_at <= ?';
+      sql += " AND created_at <= ?";
       params.push(query.endTime);
     }
 
@@ -220,8 +230,8 @@ export class SqliteBackend implements MemoryBackend {
       sql = `
         SELECT DISTINCT ON (item_id) * FROM memory_versions 
         WHERE timestamp <= ? 
-        ${query.categories ? `AND category IN (${query.categories.map(() => '?').join(',')})` : ''}
-        ${query.keys ? `AND key IN (${query.keys.map(() => '?').join(',')})` : ''}
+        ${query.categories ? `AND category IN (${query.categories.map(() => "?").join(",")})` : ""}
+        ${query.keys ? `AND key IN (${query.keys.map(() => "?").join(",")})` : ""}
         ORDER BY item_id, timestamp DESC
       `;
       params.unshift(query.asOf);
@@ -229,17 +239,17 @@ export class SqliteBackend implements MemoryBackend {
 
     // Add ordering
     if (query.orderBy) {
-      sql += ` ORDER BY ${query.orderBy} ${query.orderDirection || 'ASC'}`;
+      sql += ` ORDER BY ${query.orderBy} ${query.orderDirection || "ASC"}`;
     }
 
     // Add limit and offset
     if (query.limit) {
-      sql += ' LIMIT ?';
+      sql += " LIMIT ?";
       params.push(query.limit);
     }
 
     if (query.offset) {
-      sql += ' OFFSET ?';
+      sql += " OFFSET ?";
       params.push(query.offset);
     }
 
@@ -256,7 +266,11 @@ export class SqliteBackend implements MemoryBackend {
     return items;
   }
 
-  async delete(category: string, key: string, namespace: string = 'default'): Promise<boolean> {
+  async delete(
+    category: string,
+    key: string,
+    namespace: string = "default",
+  ): Promise<boolean> {
     // Get item before deletion for version history
     const item = await this.get(category, key, namespace);
     if (!item) return false;
@@ -266,28 +280,36 @@ export class SqliteBackend implements MemoryBackend {
 
     // Record deletion in version history
     if (result.changes > 0) {
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         INSERT INTO memory_versions (item_id, category, key, value, metadata, version, timestamp, operation)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        item.id,
-        category,
-        key,
-        JSON.stringify(item.value),
-        item.metadata ? JSON.stringify(item.metadata) : null,
-        item.metadata?.version || '1.0',
-        Date.now(),
-        'delete'
-      );
+      `,
+        )
+        .run(
+          item.id,
+          category,
+          key,
+          JSON.stringify(item.value),
+          item.metadata ? JSON.stringify(item.metadata) : null,
+          item.metadata?.version || "1.0",
+          Date.now(),
+          "delete",
+        );
     }
 
     return result.changes > 0;
   }
 
-  async update(category: string, key: string, updates: Partial<MemoryItem>): Promise<boolean> {
-    const namespace = updates.metadata?.namespace || 'default';
+  async update(
+    category: string,
+    key: string,
+    updates: Partial<MemoryItem>,
+  ): Promise<boolean> {
+    const namespace = updates.metadata?.namespace || "default";
     const existing = await this.get(category, key, namespace);
-    
+
     if (!existing) return false;
 
     const merged = {
@@ -296,8 +318,8 @@ export class SqliteBackend implements MemoryBackend {
       metadata: {
         ...existing.metadata,
         ...updates.metadata,
-        updated_at: Date.now()
-      }
+        updated_at: Date.now(),
+      },
     };
 
     const result = this.prepared.update!.run(
@@ -307,14 +329,16 @@ export class SqliteBackend implements MemoryBackend {
       merged.metadata.version,
       category,
       key,
-      namespace
+      namespace,
     );
 
     return result.changes > 0;
   }
 
   async getStats(): Promise<BackendStats> {
-    const stats = this.db.prepare(`
+    const stats = this.db
+      .prepare(
+        `
       SELECT 
         COUNT(*) as totalItems,
         COUNT(DISTINCT category) as categories,
@@ -322,14 +346,16 @@ export class SqliteBackend implements MemoryBackend {
         MIN(created_at) as oldestItem,
         MAX(created_at) as newestItem
       FROM memory_items
-    `).get() as any;
+    `,
+      )
+      .get() as any;
 
     return {
       totalItems: stats.totalItems || 0,
       categories: stats.categories || 0,
       sizeBytes: stats.sizeBytes || 0,
       oldestItem: stats.oldestItem,
-      newestItem: stats.newestItem
+      newestItem: stats.newestItem,
     };
   }
 
@@ -340,10 +366,13 @@ export class SqliteBackend implements MemoryBackend {
   /**
    * Run full-text search
    */
-  async search(searchTerm: string, options?: {
-    categories?: string[];
-    limit?: number;
-  }): Promise<MemoryItem[]> {
+  async search(
+    searchTerm: string,
+    options?: {
+      categories?: string[];
+      limit?: number;
+    },
+  ): Promise<MemoryItem[]> {
     let sql = `
       SELECT mi.* FROM memory_items mi
       JOIN memory_items_fts fts ON mi.rowid = fts.rowid
@@ -352,14 +381,14 @@ export class SqliteBackend implements MemoryBackend {
     const params: any[] = [searchTerm];
 
     if (options?.categories && options.categories.length > 0) {
-      sql += ` AND mi.category IN (${options.categories.map(() => '?').join(',')})`;
+      sql += ` AND mi.category IN (${options.categories.map(() => "?").join(",")})`;
       params.push(...options.categories);
     }
 
-    sql += ' ORDER BY rank';
+    sql += " ORDER BY rank";
 
     if (options?.limit) {
-      sql += ' LIMIT ?';
+      sql += " LIMIT ?";
       params.push(options.limit);
     }
 
@@ -373,7 +402,7 @@ export class SqliteBackend implements MemoryBackend {
    * Vacuum database to reclaim space
    */
   async vacuum(): Promise<void> {
-    this.db.exec('VACUUM');
+    this.db.exec("VACUUM");
   }
 
   /**
@@ -386,9 +415,10 @@ export class SqliteBackend implements MemoryBackend {
       key: row.key,
       value: JSON.parse(row.value),
       metadata: row.metadata ? JSON.parse(row.metadata) : undefined,
-      vectorEmbedding: row.vector_embedding ? 
-        Array.from(new Float32Array(row.vector_embedding.buffer)) : undefined,
-      ttl: row.ttl || undefined
+      vectorEmbedding: row.vector_embedding
+        ? Array.from(new Float32Array(row.vector_embedding.buffer))
+        : undefined,
+      ttl: row.ttl || undefined,
     };
   }
 }

@@ -2,22 +2,26 @@
  * Integration tests for terminal functionality
  */
 
-import { assertEquals, assertExists, assertRejects } from 'https://deno.land/std@0.220.0/assert/mod.ts';
-import { TerminalManager } from '../../src/terminal/manager.ts';
-import { NativeAdapter } from '../../src/terminal/adapters/native.ts';
-import { VSCodeAdapter } from '../../src/terminal/adapters/vscode.ts';
-import { TerminalPool } from '../../src/terminal/pool.ts';
-import { TerminalSession } from '../../src/terminal/session.ts';
-import { EventBus } from '../../src/core/event-bus.ts';
-import { Logger } from '../../src/core/logger.ts';
-import { TerminalConfig, AgentProfile } from '../../src/utils/types.ts';
-import { delay } from '../../src/utils/helpers.ts';
+import {
+  assertEquals,
+  assertExists,
+  assertRejects,
+} from "https://deno.land/std@0.220.0/assert/mod.ts";
+import { TerminalManager } from "../../src/terminal/manager.ts";
+import { NativeAdapter } from "../../src/terminal/adapters/native.ts";
+import { VSCodeAdapter } from "../../src/terminal/adapters/vscode.ts";
+import { TerminalPool } from "../../src/terminal/pool.ts";
+import { TerminalSession } from "../../src/terminal/session.ts";
+import { EventBus } from "../../src/core/event-bus.ts";
+import { Logger } from "../../src/core/logger.ts";
+import { TerminalConfig, AgentProfile } from "../../src/utils/types.ts";
+import { delay } from "../../src/utils/helpers.ts";
 
 /**
  * Test fixtures
  */
 const createTestConfig = (): TerminalConfig => ({
-  type: 'native',
+  type: "native",
   poolSize: 2,
   recycleAfter: 3,
   healthCheckInterval: 5000,
@@ -27,9 +31,9 @@ const createTestConfig = (): TerminalConfig => ({
 const createTestProfile = (id: string): AgentProfile => ({
   id,
   name: `Test Agent ${id}`,
-  type: 'custom',
-  capabilities: ['execute', 'test'],
-  systemPrompt: 'You are a test agent',
+  type: "custom",
+  capabilities: ["execute", "test"],
+  systemPrompt: "You are a test agent",
   maxConcurrentTasks: 1,
   priority: 1,
   metadata: {
@@ -42,8 +46,12 @@ const createTestProfile = (id: string): AgentProfile => ({
 /**
  * Native adapter tests
  */
-Deno.test('NativeAdapter - creates and destroys terminals', async () => {
-  const logger = new Logger({ level: 'debug', format: 'text', destination: 'console' });
+Deno.test("NativeAdapter - creates and destroys terminals", async () => {
+  const logger = new Logger({
+    level: "debug",
+    format: "text",
+    destination: "console",
+  });
   const adapter = new NativeAdapter(logger);
 
   await adapter.initialize();
@@ -56,7 +64,7 @@ Deno.test('NativeAdapter - creates and destroys terminals', async () => {
 
   // Execute command
   const output = await terminal.executeCommand('echo "Hello World"');
-  assertEquals(output.trim(), 'Hello World');
+  assertEquals(output.trim(), "Hello World");
 
   // Destroy terminal
   await adapter.destroyTerminal(terminal);
@@ -65,24 +73,28 @@ Deno.test('NativeAdapter - creates and destroys terminals', async () => {
   await adapter.shutdown();
 });
 
-Deno.test('NativeAdapter - handles multiple shells', async () => {
-  const logger = new Logger({ level: 'debug', format: 'text', destination: 'console' });
+Deno.test("NativeAdapter - handles multiple shells", async () => {
+  const logger = new Logger({
+    level: "debug",
+    format: "text",
+    destination: "console",
+  });
   const adapter = new NativeAdapter(logger);
 
   await adapter.initialize();
 
   const terminal = await adapter.createTerminal();
-  
+
   // Test shell-specific commands
   const platform = Deno.build.os;
-  if (platform === 'windows') {
+  if (platform === "windows") {
     // Windows specific test
-    const output = await terminal.executeCommand('echo %CLAUDE_FLOW_TERMINAL%');
-    assertEquals(output.trim(), 'true');
+    const output = await terminal.executeCommand("echo %CLAUDE_FLOW_TERMINAL%");
+    assertEquals(output.trim(), "true");
   } else {
     // Unix-like specific test
-    const output = await terminal.executeCommand('echo $CLAUDE_FLOW_TERMINAL');
-    assertEquals(output.trim(), 'true');
+    const output = await terminal.executeCommand("echo $CLAUDE_FLOW_TERMINAL");
+    assertEquals(output.trim(), "true");
   }
 
   await adapter.destroyTerminal(terminal);
@@ -92,8 +104,12 @@ Deno.test('NativeAdapter - handles multiple shells', async () => {
 /**
  * Terminal pool tests
  */
-Deno.test('TerminalPool - manages terminal lifecycle', async () => {
-  const logger = new Logger({ level: 'debug', format: 'text', destination: 'console' });
+Deno.test("TerminalPool - manages terminal lifecycle", async () => {
+  const logger = new Logger({
+    level: "debug",
+    format: "text",
+    destination: "console",
+  });
   const adapter = new NativeAdapter(logger);
   await adapter.initialize();
 
@@ -103,7 +119,7 @@ Deno.test('TerminalPool - manages terminal lifecycle', async () => {
   // Acquire terminals
   const term1 = await pool.acquire();
   const term2 = await pool.acquire();
-  
+
   assertExists(term1);
   assertExists(term2);
   assertEquals(term1.id !== term2.id, true);
@@ -121,8 +137,12 @@ Deno.test('TerminalPool - manages terminal lifecycle', async () => {
   await adapter.shutdown();
 });
 
-Deno.test('TerminalPool - recycles terminals after use count', async () => {
-  const logger = new Logger({ level: 'debug', format: 'text', destination: 'console' });
+Deno.test("TerminalPool - recycles terminals after use count", async () => {
+  const logger = new Logger({
+    level: "debug",
+    format: "text",
+    destination: "console",
+  });
   const adapter = new NativeAdapter(logger);
   await adapter.initialize();
 
@@ -136,7 +156,7 @@ Deno.test('TerminalPool - recycles terminals after use count', async () => {
   await pool.release(terminal);
   const term2 = await pool.acquire();
   assertEquals(term2.id, originalId); // Should get same terminal
-  
+
   await pool.release(term2);
   const term3 = await pool.acquire();
   assertEquals(term3.id !== originalId, true); // Should get new terminal after recycling
@@ -148,20 +168,24 @@ Deno.test('TerminalPool - recycles terminals after use count', async () => {
 /**
  * Terminal session tests
  */
-Deno.test('TerminalSession - manages command execution', async () => {
-  const logger = new Logger({ level: 'debug', format: 'text', destination: 'console' });
+Deno.test("TerminalSession - manages command execution", async () => {
+  const logger = new Logger({
+    level: "debug",
+    format: "text",
+    destination: "console",
+  });
   const adapter = new NativeAdapter(logger);
   await adapter.initialize();
 
   const terminal = await adapter.createTerminal();
-  const profile = createTestProfile('test-1');
+  const profile = createTestProfile("test-1");
   const session = new TerminalSession(terminal, profile, 5000, logger);
 
   await session.initialize();
 
   // Execute command
   const output = await session.executeCommand('echo "Session test"');
-  assertEquals(output.trim(), 'Session test');
+  assertEquals(output.trim(), "Session test");
 
   // Check command history
   const history = session.getCommandHistory();
@@ -176,13 +200,17 @@ Deno.test('TerminalSession - manages command execution', async () => {
   await adapter.shutdown();
 });
 
-Deno.test('TerminalSession - handles output streaming', async () => {
-  const logger = new Logger({ level: 'debug', format: 'text', destination: 'console' });
+Deno.test("TerminalSession - handles output streaming", async () => {
+  const logger = new Logger({
+    level: "debug",
+    format: "text",
+    destination: "console",
+  });
   const adapter = new NativeAdapter(logger);
   await adapter.initialize();
 
   const terminal = await adapter.createTerminal();
-  const profile = createTestProfile('test-2');
+  const profile = createTestProfile("test-2");
   const session = new TerminalSession(terminal, profile, 5000, logger);
 
   await session.initialize();
@@ -210,22 +238,29 @@ Deno.test('TerminalSession - handles output streaming', async () => {
 /**
  * Terminal manager tests
  */
-Deno.test('TerminalManager - complete workflow', async () => {
+Deno.test("TerminalManager - complete workflow", async () => {
   const eventBus = new EventBus();
-  const logger = new Logger({ level: 'debug', format: 'text', destination: 'console' });
+  const logger = new Logger({
+    level: "debug",
+    format: "text",
+    destination: "console",
+  });
   const config = createTestConfig();
-  
+
   const manager = new TerminalManager(config, eventBus, logger);
   await manager.initialize();
 
   // Spawn terminal for agent
-  const profile = createTestProfile('manager-test');
+  const profile = createTestProfile("manager-test");
   const terminalId = await manager.spawnTerminal(profile);
   assertExists(terminalId);
 
   // Execute command
-  const output = await manager.executeCommand(terminalId, 'echo "Manager test"');
-  assertEquals(output.trim(), 'Manager test');
+  const output = await manager.executeCommand(
+    terminalId,
+    'echo "Manager test"',
+  );
+  assertEquals(output.trim(), "Manager test");
 
   // Get active sessions
   const sessions = manager.getActiveSessions();
@@ -239,7 +274,7 @@ Deno.test('TerminalManager - complete workflow', async () => {
 
   // Terminate terminal
   await manager.terminateTerminal(terminalId);
-  
+
   // Verify cleanup
   const sessionsAfter = manager.getActiveSessions();
   assertEquals(sessionsAfter.length, 0);
@@ -247,22 +282,26 @@ Deno.test('TerminalManager - complete workflow', async () => {
   await manager.shutdown();
 });
 
-Deno.test('TerminalManager - handles maintenance', async () => {
+Deno.test("TerminalManager - handles maintenance", async () => {
   const eventBus = new EventBus();
-  const logger = new Logger({ level: 'debug', format: 'text', destination: 'console' });
+  const logger = new Logger({
+    level: "debug",
+    format: "text",
+    destination: "console",
+  });
   const config = createTestConfig();
-  
+
   const manager = new TerminalManager(config, eventBus, logger);
   await manager.initialize();
 
   // Track maintenance events
   let maintenanceEvent: any;
-  eventBus.on('terminal:maintenance', (event) => {
+  eventBus.on("terminal:maintenance", (event) => {
     maintenanceEvent = event;
   });
 
   // Spawn terminal
-  const profile = createTestProfile('maintenance-test');
+  const profile = createTestProfile("maintenance-test");
   const terminalId = await manager.spawnTerminal(profile);
 
   // Perform maintenance
@@ -279,44 +318,49 @@ Deno.test('TerminalManager - handles maintenance', async () => {
 /**
  * Error handling tests
  */
-Deno.test('TerminalManager - handles spawn errors gracefully', async () => {
+Deno.test("TerminalManager - handles spawn errors gracefully", async () => {
   const eventBus = new EventBus();
-  const logger = new Logger({ level: 'debug', format: 'text', destination: 'console' });
+  const logger = new Logger({
+    level: "debug",
+    format: "text",
+    destination: "console",
+  });
   const config: TerminalConfig = {
     ...createTestConfig(),
     poolSize: 0, // Force pool exhaustion
   };
-  
+
   const manager = new TerminalManager(config, eventBus, logger);
   await manager.initialize();
 
-  const profile = createTestProfile('error-test');
-  
+  const profile = createTestProfile("error-test");
+
   // Should throw when pool is exhausted
-  await assertRejects(
-    async () => await manager.spawnTerminal(profile),
-    Error,
-  );
+  await assertRejects(async () => await manager.spawnTerminal(profile), Error);
 
   await manager.shutdown();
 });
 
-Deno.test('TerminalSession - handles command timeout', async () => {
-  const logger = new Logger({ level: 'debug', format: 'text', destination: 'console' });
+Deno.test("TerminalSession - handles command timeout", async () => {
+  const logger = new Logger({
+    level: "debug",
+    format: "text",
+    destination: "console",
+  });
   const adapter = new NativeAdapter(logger);
   await adapter.initialize();
 
   const terminal = await adapter.createTerminal();
-  const profile = createTestProfile('timeout-test');
+  const profile = createTestProfile("timeout-test");
   const session = new TerminalSession(terminal, profile, 1000, logger); // 1 second timeout
 
   await session.initialize();
 
   // Execute command that takes too long
   await assertRejects(
-    async () => await session.executeCommand('sleep 2'),
+    async () => await session.executeCommand("sleep 2"),
     Error,
-    'timeout',
+    "timeout",
   );
 
   await session.cleanup();
@@ -327,13 +371,17 @@ Deno.test('TerminalSession - handles command timeout', async () => {
 /**
  * Cross-platform tests
  */
-Deno.test('Terminal - handles cross-platform commands', async () => {
-  const logger = new Logger({ level: 'debug', format: 'text', destination: 'console' });
+Deno.test("Terminal - handles cross-platform commands", async () => {
+  const logger = new Logger({
+    level: "debug",
+    format: "text",
+    destination: "console",
+  });
   const adapter = new NativeAdapter(logger);
   await adapter.initialize();
 
   const terminal = await adapter.createTerminal();
-  
+
   // Platform-agnostic commands
   const outputs = await Promise.all([
     terminal.executeCommand('echo "Test 1"'),
@@ -341,9 +389,9 @@ Deno.test('Terminal - handles cross-platform commands', async () => {
     terminal.executeCommand('echo "Test 3"'),
   ]);
 
-  assertEquals(outputs[0].trim(), 'Test 1');
-  assertEquals(outputs[1].trim(), 'Test 2');
-  assertEquals(outputs[2].trim(), 'Test 3');
+  assertEquals(outputs[0].trim(), "Test 1");
+  assertEquals(outputs[1].trim(), "Test 2");
+  assertEquals(outputs[2].trim(), "Test 3");
 
   await adapter.destroyTerminal(terminal);
   await adapter.shutdown();
@@ -352,9 +400,13 @@ Deno.test('Terminal - handles cross-platform commands', async () => {
 /**
  * VSCode adapter tests (only run when in VSCode context)
  */
-if (typeof (globalThis as any).vscode !== 'undefined') {
-  Deno.test('VSCodeAdapter - integrates with VSCode terminals', async () => {
-    const logger = new Logger({ level: 'debug', format: 'text', destination: 'console' });
+if (typeof (globalThis as any).vscode !== "undefined") {
+  Deno.test("VSCodeAdapter - integrates with VSCode terminals", async () => {
+    const logger = new Logger({
+      level: "debug",
+      format: "text",
+      destination: "console",
+    });
     const adapter = new VSCodeAdapter(logger);
 
     await adapter.initialize();
@@ -364,7 +416,7 @@ if (typeof (globalThis as any).vscode !== 'undefined') {
     assertExists(terminal.id);
 
     const output = await terminal.executeCommand('echo "VSCode test"');
-    assertEquals(output.trim(), 'VSCode test');
+    assertEquals(output.trim(), "VSCode test");
 
     await adapter.destroyTerminal(terminal);
     await adapter.shutdown();

@@ -52,37 +52,43 @@ export class ClaudeFlowError extends Error {
 
 export class SwarmError extends ClaudeFlowError {
   constructor(message: string, context: ErrorContext = {}) {
-    super(message, 'SWARM_ERROR', context);
+    super(message, "SWARM_ERROR", context);
   }
 }
 
 export class TaskExecutionError extends ClaudeFlowError {
   constructor(message: string, context: ErrorContext = {}) {
-    super(message, 'TASK_EXECUTION_ERROR', { ...context, retryable: true });
+    super(message, "TASK_EXECUTION_ERROR", { ...context, retryable: true });
   }
 }
 
 export class MemoryError extends ClaudeFlowError {
   constructor(message: string, context: ErrorContext = {}) {
-    super(message, 'MEMORY_ERROR', context);
+    super(message, "MEMORY_ERROR", context);
   }
 }
 
 export class MCPError extends ClaudeFlowError {
-  constructor(message: string, context: ErrorContext & { method?: string; mcpError?: any } = {}) {
-    super(message, 'MCP_ERROR', { ...context, retryable: true });
+  constructor(
+    message: string,
+    context: ErrorContext & { method?: string; mcpError?: any } = {},
+  ) {
+    super(message, "MCP_ERROR", { ...context, retryable: true });
   }
 }
 
 export class TerminalError extends ClaudeFlowError {
-  constructor(message: string, context: ErrorContext & { terminalId?: string } = {}) {
-    super(message, 'TERMINAL_ERROR', context);
+  constructor(
+    message: string,
+    context: ErrorContext & { terminalId?: string } = {},
+  ) {
+    super(message, "TERMINAL_ERROR", context);
   }
 }
 
 export class CoordinationError extends ClaudeFlowError {
   constructor(message: string, context: ErrorContext = {}) {
-    super(message, 'COORDINATION_ERROR', context);
+    super(message, "COORDINATION_ERROR", context);
   }
 }
 
@@ -99,7 +105,7 @@ export interface RetryOptions {
 export class ErrorRecovery {
   static async retryOperation<T>(
     operation: () => Promise<T>,
-    options: RetryOptions
+    options: RetryOptions,
   ): Promise<T> {
     let lastError: Error | undefined;
 
@@ -121,19 +127,22 @@ export class ErrorRecovery {
 
         // Wait before retry with exponential backoff
         const delay = options.backoffMs * Math.pow(2, attempt - 1);
-        await new Promise(resolve => setTimeout(resolve, delay));
+        await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
 
     throw new ClaudeFlowError(
       `Operation '${options.operation}' failed after ${options.maxAttempts} attempts`,
-      'RETRY_EXHAUSTED',
+      "RETRY_EXHAUSTED",
       {
         ...(lastError && { originalError: lastError }),
         userMessage: `Unable to complete ${options.operation} after multiple attempts. Please check system resources and try again.`,
         retryable: true,
-        metadata: { attempts: options.maxAttempts, operation: options.operation }
-      }
+        metadata: {
+          attempts: options.maxAttempts,
+          operation: options.operation,
+        },
+      },
     );
   }
 
@@ -152,7 +161,7 @@ export class ErrorRecovery {
       /rate limit/i,
     ];
 
-    return retryablePatterns.some(pattern => pattern.test(error.message));
+    return retryablePatterns.some((pattern) => pattern.test(error.message));
   }
 
   static isRecoverable(error: Error): boolean {
@@ -170,7 +179,7 @@ export class ErrorRecovery {
       /authorization/i,
     ];
 
-    return !fatalPatterns.some(pattern => pattern.test(error.message));
+    return !fatalPatterns.some((pattern) => pattern.test(error.message));
   }
 }
 
@@ -180,23 +189,23 @@ export class ErrorRecovery {
 export class ErrorMessages {
   private static readonly messageMap: Record<string, string> = {
     // Swarm errors
-    'SWARM_ERROR': 'Unable to start or manage the agent swarm',
-    'TASK_EXECUTION_ERROR': 'Task could not be completed successfully',
-    
+    SWARM_ERROR: "Unable to start or manage the agent swarm",
+    TASK_EXECUTION_ERROR: "Task could not be completed successfully",
+
     // Memory errors
-    'MEMORY_ERROR': 'Unable to save or retrieve information',
-    
+    MEMORY_ERROR: "Unable to save or retrieve information",
+
     // MCP errors
-    'MCP_ERROR': 'AI service communication failed',
-    
+    MCP_ERROR: "AI service communication failed",
+
     // Terminal errors
-    'TERMINAL_ERROR': 'Terminal connection or command execution failed',
-    
+    TERMINAL_ERROR: "Terminal connection or command execution failed",
+
     // Coordination errors
-    'COORDINATION_ERROR': 'Agent coordination system encountered an issue',
-    
+    COORDINATION_ERROR: "Agent coordination system encountered an issue",
+
     // Retry errors
-    'RETRY_EXHAUSTED': 'Operation failed after multiple attempts',
+    RETRY_EXHAUSTED: "Operation failed after multiple attempts",
   };
 
   static getUserMessage(error: Error): string {
@@ -209,12 +218,12 @@ export class ErrorMessages {
     }
 
     // Fallback for unknown errors
-    return 'An unexpected error occurred. Please try again or contact support if the problem persists.';
+    return "An unexpected error occurred. Please try again or contact support if the problem persists.";
   }
 
   static getActionableMessage(error: Error): string {
     const baseMessage = this.getUserMessage(error);
-    
+
     if (error instanceof ClaudeFlowError && error.retryable) {
       return `${baseMessage} You can try the operation again.`;
     }

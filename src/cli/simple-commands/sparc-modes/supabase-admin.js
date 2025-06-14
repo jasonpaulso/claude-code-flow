@@ -1,5 +1,8 @@
 // supabase-admin.js - Supabase Admin mode orchestration template
-export function getSupabaseAdminOrchestration(taskDescription, memoryNamespace) {
+export function getSupabaseAdminOrchestration(
+  taskDescription,
+  memoryNamespace,
+) {
   return `
 ## Task Orchestration Steps - Supabase MCP Mode
 

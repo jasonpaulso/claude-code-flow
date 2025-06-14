@@ -47,3 +47,4 @@ test-full-init
 
 swarm-runs
 init
+bin/

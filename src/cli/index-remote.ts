@@ -4,7 +4,7 @@
  * This version can be run directly from GitHub
  */
 
-const VERSION = '1.0.43';
+const VERSION = "1.0.43";
 
 // Simple color functions
 const colors = {
@@ -57,74 +57,84 @@ For more info: https://github.com/ruvnet/claude-code-flow
 }
 
 function printSuccess(message: string) {
-  console.log(colors.green('✅ ' + message));
+  console.log(colors.green("✅ " + message));
 }
 
 function printError(message: string) {
-  console.log(colors.red('❌ ' + message));
+  console.log(colors.red("❌ " + message));
 }
 
 function printWarning(message: string) {
-  console.log(colors.yellow('⚠️  ' + message));
+  console.log(colors.yellow("⚠️  " + message));
 }
 
 async function main() {
   const args = Deno.args;
-  const command = args[0] || 'help';
+  const command = args[0] || "help";
   const subArgs = args.slice(1);
 
   switch (command) {
-    case '--help':
-    case '-h':
-    case 'help':
+    case "--help":
+    case "-h":
+    case "help":
       printHelp();
       break;
-      
-    case '--version':
-    case '-v':
-    case 'version':
+
+    case "--version":
+    case "-v":
+    case "version":
       console.log(`Claude-Flow v${VERSION}`);
       break;
-      
-    case 'init':
-      printSuccess('Initializing Claude Code integration files...');
-      console.log('📝 This command would create:');
-      console.log('   - CLAUDE.md (Claude Code configuration)');
-      console.log('   - memory-bank.md (Memory system documentation)');
-      console.log('   - coordination.md (Agent coordination documentation)');
-      console.log('   - Memory folder structure');
-      console.log('\n💡 To run locally, clone the repo and use:');
-      console.log('   git clone https://github.com/ruvnet/claude-code-flow.git');
-      console.log('   cd claude-code-flow');
-      console.log('   npm install -g claude-flow');
-      console.log('   claude-flow init');
+
+    case "init":
+      printSuccess("Initializing Claude Code integration files...");
+      console.log("📝 This command would create:");
+      console.log("   - CLAUDE.md (Claude Code configuration)");
+      console.log("   - memory-bank.md (Memory system documentation)");
+      console.log("   - coordination.md (Agent coordination documentation)");
+      console.log("   - Memory folder structure");
+      console.log("\n💡 To run locally, clone the repo and use:");
+      console.log(
+        "   git clone https://github.com/ruvnet/claude-code-flow.git",
+      );
+      console.log("   cd claude-code-flow");
+      console.log("   npm install -g claude-flow");
+      console.log("   claude-flow init");
       break;
-      
-    case 'install':
-      console.log(colors.blue('📦 Installing Claude-Flow...'));
-      console.log('\nRun these commands to install:');
-      console.log(colors.gray('  # Using npm (recommended)'));
-      console.log('  npm install -g claude-flow');
-      console.log('');
-      console.log(colors.gray('  # Or using Deno'));
-      console.log('  deno install --allow-all --name claude-flow \\');
-      console.log('    https://raw.githubusercontent.com/ruvnet/claude-code-flow/main/src/cli/index.ts');
-      console.log('');
-      console.log(colors.gray('  # Or clone and build from source'));
-      console.log('  git clone https://github.com/ruvnet/claude-code-flow.git');
-      console.log('  cd claude-code-flow');
-      console.log('  deno task build');
+
+    case "install":
+      console.log(colors.blue("📦 Installing Claude-Flow..."));
+      console.log("\nRun these commands to install:");
+      console.log(colors.gray("  # Using npm (recommended)"));
+      console.log("  npm install -g claude-flow");
+      console.log("");
+      console.log(colors.gray("  # Or using Deno"));
+      console.log("  deno install --allow-all --name claude-flow \\");
+      console.log(
+        "    https://raw.githubusercontent.com/ruvnet/claude-code-flow/main/src/cli/index.ts",
+      );
+      console.log("");
+      console.log(colors.gray("  # Or clone and build from source"));
+      console.log("  git clone https://github.com/ruvnet/claude-code-flow.git");
+      console.log("  cd claude-code-flow");
+      console.log("  deno task build");
       break;
-      
+
     default:
       printWarning(`Command '${command}' requires local installation.`);
-      console.log('\n📥 To use all features, install Claude-Flow:');
-      console.log('   npm install -g claude-flow');
-      console.log('\n🌐 Or run directly with Deno:');
-      console.log('   deno install --allow-all --name claude-flow \\');
-      console.log('     https://raw.githubusercontent.com/ruvnet/claude-code-flow/main/src/cli/index.ts');
-      console.log('\n📚 Documentation: https://github.com/ruvnet/claude-code-flow');
-      console.log('💬 Issues: https://github.com/ruvnet/claude-code-flow/issues');
+      console.log("\n📥 To use all features, install Claude-Flow:");
+      console.log("   npm install -g claude-flow");
+      console.log("\n🌐 Or run directly with Deno:");
+      console.log("   deno install --allow-all --name claude-flow \\");
+      console.log(
+        "     https://raw.githubusercontent.com/ruvnet/claude-code-flow/main/src/cli/index.ts",
+      );
+      console.log(
+        "\n📚 Documentation: https://github.com/ruvnet/claude-code-flow",
+      );
+      console.log(
+        "💬 Issues: https://github.com/ruvnet/claude-code-flow/issues",
+      );
       break;
   }
 }

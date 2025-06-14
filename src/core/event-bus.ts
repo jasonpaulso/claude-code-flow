@@ -2,8 +2,8 @@
  * Event bus implementation for Claude-Flow
  */
 
-import { SystemEvents, EventMap } from '../utils/types.ts';
-import { TypedEventEmitter } from '../utils/helpers.ts';
+import { SystemEvents, EventMap } from "../utils/types.ts";
+import { TypedEventEmitter } from "../utils/helpers.ts";
 
 export interface IEventBus {
   emit(event: string, data?: unknown): void;
@@ -32,21 +32,26 @@ class TypedEventBus extends TypedEventEmitter<EventMap> {
     if (this.debug) {
       console.debug(`[EventBus] Emitting event: ${String(event)}`, data);
     }
-    
+
     // Track event metrics
     const count = this.eventCounts.get(event) || 0;
     this.eventCounts.set(event, count + 1);
     this.lastEventTimes.set(event, Date.now());
-    
+
     super.emit(event, data);
   }
 
   /**
    * Get event statistics
    */
-  getEventStats(): { event: string; count: number; lastEmitted: Date | null }[] {
-    const stats: { event: string; count: number; lastEmitted: Date | null }[] = [];
-    
+  getEventStats(): {
+    event: string;
+    count: number;
+    lastEmitted: Date | null;
+  }[] {
+    const stats: { event: string; count: number; lastEmitted: Date | null }[] =
+      [];
+
     for (const [event, count] of this.eventCounts.entries()) {
       const lastTime = this.lastEventTimes.get(event);
       stats.push({
@@ -55,7 +60,7 @@ class TypedEventBus extends TypedEventEmitter<EventMap> {
         lastEmitted: lastTime ? new Date(lastTime) : null,
       });
     }
-    
+
     return stats.sort((a, b) => b.count - a.count);
   }
 
@@ -163,7 +168,11 @@ export class EventBus implements IEventBus {
   /**
    * Get event statistics
    */
-  getEventStats(): { event: string; count: number; lastEmitted: Date | null }[] {
+  getEventStats(): {
+    event: string;
+    count: number;
+    lastEmitted: Date | null;
+  }[] {
     return this.typedBus.getEventStats();
   }
 

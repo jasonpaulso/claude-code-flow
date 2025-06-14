@@ -18,35 +18,35 @@ The SPARC Memory Bank is a sophisticated, distributed memory management system d
 ## Quick Start
 
 ```typescript
-import { MemoryManager } from '@sparc/memory-bank';
+import { MemoryManager } from "@sparc/memory-bank";
 
 // Initialize with SQLite backend
 const memory = new MemoryManager({
-  backend: 'sqlite',
-  storage: { path: './memory.db' },
+  backend: "sqlite",
+  storage: { path: "./memory.db" },
   cache: { enabled: true, maxSize: 100 * 1024 * 1024 }, // 100MB
-  indexing: { vectorSearch: true }
+  indexing: { vectorSearch: true },
 });
 
 // Store a memory item
 const item = await memory.store({
-  id: 'task-001',
-  category: 'implementation',
-  content: 'Implemented user authentication system',
-  tags: ['auth', 'security', 'backend'],
+  id: "task-001",
+  category: "implementation",
+  content: "Implemented user authentication system",
+  tags: ["auth", "security", "backend"],
   metadata: {
-    assignee: 'alice',
-    priority: 'high',
-    completion: 0.8
-  }
+    assignee: "alice",
+    priority: "high",
+    completion: 0.8,
+  },
 });
 
 // Query memories
 const results = await memory.query({
-  category: 'implementation',
-  tags: ['auth'],
-  fullText: 'authentication',
-  limit: 10
+  category: "implementation",
+  tags: ["auth"],
+  fullText: "authentication",
+  limit: 10,
 });
 ```
 
@@ -80,18 +80,18 @@ Memory items are the fundamental unit of storage in the SPARC Memory Bank:
 
 ```typescript
 interface MemoryItem {
-  id: string;                           // Unique identifier
-  category: string;                     // Logical grouping
-  content: string;                      // Main content
-  tags: string[];                       // Searchable tags
-  namespace?: string;                   // Isolation boundary
-  metadata?: Record<string, unknown>;   // Additional data
-  embedding?: number[];                 // Vector representation
-  version: number;                      // CRDT version
-  vectorClock: Record<string, number>;  // Conflict resolution
-  created: Date;                        // Creation timestamp
-  updated: Date;                        // Last modification
-  checksum: string;                     // Integrity verification
+  id: string; // Unique identifier
+  category: string; // Logical grouping
+  content: string; // Main content
+  tags: string[]; // Searchable tags
+  namespace?: string; // Isolation boundary
+  metadata?: Record<string, unknown>; // Additional data
+  embedding?: number[]; // Vector representation
+  version: number; // CRDT version
+  vectorClock: Record<string, number>; // Conflict resolution
+  created: Date; // Creation timestamp
+  updated: Date; // Last modification
+  checksum: string; // Integrity verification
 }
 ```
 
@@ -104,6 +104,7 @@ interface MemoryItem {
 ### Caching
 
 Intelligent caching layer with multiple eviction strategies:
+
 - **LRU**: Least Recently Used (default)
 - **LFU**: Least Frequently Used
 - **FIFO**: First In, First Out
@@ -112,6 +113,7 @@ Intelligent caching layer with multiple eviction strategies:
 ### Vector Search
 
 Semantic similarity search using vector embeddings:
+
 - Automatic embedding generation
 - Cosine similarity matching
 - Configurable similarity thresholds

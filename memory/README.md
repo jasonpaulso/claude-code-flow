@@ -22,38 +22,38 @@ npm install @claude-flow/memory
 ## Quick Start
 
 ```typescript
-import { MemoryManager } from '@claude-flow/memory';
+import { MemoryManager } from "@claude-flow/memory";
 
 // Initialize with SQLite backend
 const memory = new MemoryManager({
-  backend: 'sqlite',
+  backend: "sqlite",
   backendConfig: {
-    path: './memory.db'
+    path: "./memory.db",
   },
   cacheConfig: {
     maxSize: 1000,
     ttl: 3600000, // 1 hour
-    strategy: 'lru'
-  }
+    strategy: "lru",
+  },
 });
 
 await memory.initialize();
 
 // Store a memory item
 await memory.store({
-  category: 'knowledge',
-  key: 'important-fact',
-  value: { data: 'Claude-Flow is awesome!' },
+  category: "knowledge",
+  key: "important-fact",
+  value: { data: "Claude-Flow is awesome!" },
   metadata: {
-    tags: ['important', 'claude-flow'],
-    confidence: 0.95
-  }
+    tags: ["important", "claude-flow"],
+    confidence: 0.95,
+  },
 });
 
 // Query memory
 const results = await memory.query({
-  categories: ['knowledge'],
-  tags: ['important']
+  categories: ["knowledge"],
+  tags: ["important"],
 });
 
 // Close when done
@@ -76,6 +76,7 @@ await memory.close();
 #### SQLite Backend
 
 Optimized for performance with:
+
 - Full-text search using FTS5
 - Efficient indexing on all query fields
 - Version history for time-travel queries
@@ -83,18 +84,19 @@ Optimized for performance with:
 
 ```typescript
 const memory = new MemoryManager({
-  backend: 'sqlite',
+  backend: "sqlite",
   backendConfig: {
-    path: './memory.db',
+    path: "./memory.db",
     wal: true,
-    verbose: true
-  }
+    verbose: true,
+  },
 });
 ```
 
 #### Markdown Backend
 
 Human-readable storage with:
+
 - Organized directory structure
 - YAML frontmatter metadata
 - Git-friendly format
@@ -102,12 +104,12 @@ Human-readable storage with:
 
 ```typescript
 const memory = new MemoryManager({
-  backend: 'markdown',
+  backend: "markdown",
   backendConfig: {
-    rootPath: './memory',
+    rootPath: "./memory",
     prettyPrint: true,
-    gitIntegration: true
-  }
+    gitIntegration: true,
+  },
 });
 ```
 
@@ -120,13 +122,13 @@ const memory = new MemoryManager({
 ```typescript
 const memory = new MemoryManager({
   cacheConfig: {
-    maxSize: 1000,      // Maximum items
-    ttl: 3600000,       // Time to live (ms)
-    strategy: 'lru',    // or 'lfu', 'fifo'
+    maxSize: 1000, // Maximum items
+    ttl: 3600000, // Time to live (ms)
+    strategy: "lru", // or 'lfu', 'fifo'
     onEvict: (key, value) => {
       console.log(`Evicted: ${key}`);
-    }
-  }
+    },
+  },
 });
 ```
 
@@ -166,21 +168,20 @@ Isolate memory by namespace with permissions:
 ```typescript
 // Create namespace
 const namespace = await namespaceManager.createNamespace({
-  name: 'Project Alpha',
+  name: "Project Alpha",
   permissions: {
-    read: ['user1', 'user2'],
-    write: ['user1'],
-    delete: ['admin'],
-    admin: ['admin']
-  }
+    read: ["user1", "user2"],
+    write: ["user1"],
+    delete: ["admin"],
+    admin: ["admin"],
+  },
 });
 
 // Create session
-const sessionId = namespaceManager.createSession(
-  namespace.id,
-  'user1',
-  ['read', 'write']
-);
+const sessionId = namespaceManager.createSession(namespace.id, "user1", [
+  "read",
+  "write",
+]);
 
 // Store in namespace
 await memory.store(item, namespace.id);
@@ -193,18 +194,18 @@ Synchronize memory across multiple nodes:
 ```typescript
 const memory = new MemoryManager({
   replicationConfig: {
-    mode: 'peer-to-peer',
+    mode: "peer-to-peer",
     nodes: [
-      { id: 'node1', url: 'http://node1:3000' },
-      { id: 'node2', url: 'http://node2:3000' }
+      { id: "node1", url: "http://node1:3000" },
+      { id: "node2", url: "http://node2:3000" },
     ],
     syncInterval: 60000,
-    conflictResolution: 'last-write-wins'
-  }
+    conflictResolution: "last-write-wins",
+  },
 });
 
 // Manual sync
-await replicationManager.syncWithNode('node1');
+await replicationManager.syncWithNode("node1");
 ```
 
 ### Time-Travel Queries
@@ -214,13 +215,13 @@ Query historical states:
 ```typescript
 // Query as of 1 hour ago
 const historicalItems = await memory.query({
-  asOf: Date.now() - 3600000
+  asOf: Date.now() - 3600000,
 });
 
 // Query time range
 const rangeItems = await memory.query({
   startTime: yesterday,
-  endTime: today
+  endTime: today,
 });
 ```
 
@@ -260,8 +261,8 @@ The memory system uses Conflict-free Replicated Data Types (CRDTs) for automatic
 
 ```typescript
 // Concurrent updates are automatically resolved
-const item1 = { id: 'x', value: { a: 1, b: 2 } };
-const item2 = { id: 'x', value: { b: 3, c: 4 } };
+const item1 = { id: "x", value: { a: 1, b: 2 } };
+const item2 = { id: "x", value: { b: 3, c: 4 } };
 
 // Result: { a: 1, b: 3, c: 4 }
 ```
@@ -271,6 +272,7 @@ const item2 = { id: 'x', value: { b: 3, c: 4 } };
 ### Indexing
 
 Indexes are automatically maintained for:
+
 - Categories
 - Keys
 - Tags
@@ -283,13 +285,13 @@ Indexes are automatically maintained for:
 ```typescript
 // Efficient queries with multiple filters
 const results = await memory.query({
-  categories: ['users', 'accounts'],
-  tags: ['active', 'premium'],
-  namespace: 'production',
-  orderBy: 'timestamp',
-  orderDirection: 'desc',
+  categories: ["users", "accounts"],
+  tags: ["active", "premium"],
+  namespace: "production",
+  orderBy: "timestamp",
+  orderDirection: "desc",
   limit: 100,
-  offset: 0
+  offset: 0,
 });
 ```
 
@@ -297,10 +299,13 @@ const results = await memory.query({
 
 ```typescript
 // Batch import for better performance
-await memory.import({
-  version: '1.0',
-  items: largeArrayOfItems
-}, { merge: true });
+await memory.import(
+  {
+    version: "1.0",
+    items: largeArrayOfItems,
+  },
+  { merge: true },
+);
 ```
 
 ## Testing
@@ -316,6 +321,7 @@ npm run test:coverage   # Coverage report
 ## Examples
 
 See the [examples](./examples) directory for:
+
 - Basic usage
 - Advanced querying
 - Vector search
@@ -359,8 +365,8 @@ interface MemoryQuery {
   asOf?: number;
   limit?: number;
   offset?: number;
-  orderBy?: 'timestamp' | 'key' | 'category';
-  orderDirection?: 'asc' | 'desc';
+  orderBy?: "timestamp" | "key" | "category";
+  orderDirection?: "asc" | "desc";
   vectorSearch?: VectorSearchOptions;
   filter?: (item: MemoryItem) => boolean;
 }

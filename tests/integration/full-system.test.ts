@@ -12,18 +12,18 @@ import {
   assertExists,
   assertRejects,
   spy,
-} from '../test.utils.ts';
-import { Orchestrator } from '../../src/core/orchestrator.ts';
-import { TerminalManager } from '../../src/terminal/manager.ts';
-import { EventBus } from '../../src/core/event-bus.ts';
-import { Logger } from '../../src/core/logger.ts';
-import { ConfigManager } from '../../src/core/config.ts';
+} from "../test.utils.ts";
+import { Orchestrator } from "../../src/core/orchestrator.ts";
+import { TerminalManager } from "../../src/terminal/manager.ts";
+import { EventBus } from "../../src/core/event-bus.ts";
+import { Logger } from "../../src/core/logger.ts";
+import { ConfigManager } from "../../src/core/config.ts";
 import {
   MockMemoryManager,
   MockCoordinationManager,
   MockMCPServer,
   MockMCPTransport,
-} from '../mocks/index.ts';
+} from "../mocks/index.ts";
 import {
   Config,
   AgentProfile,
@@ -32,11 +32,11 @@ import {
   MCPTool,
   MCPContext,
   MCPToolCall,
-} from '../../src/utils/types.ts';
-import { cleanupTestEnv, setupTestEnv } from '../test.config.ts';
-import { generateId, delay } from '../../src/utils/helpers.ts';
+} from "../../src/utils/types.ts";
+import { cleanupTestEnv, setupTestEnv } from "../test.config.ts";
+import { generateId, delay } from "../../src/utils/helpers.ts";
 
-describe('Full System Integration', () => {
+describe("Full System Integration", () => {
   let orchestrator: Orchestrator;
   let terminalManager: TerminalManager;
   let eventBus: EventBus;
@@ -57,9 +57,9 @@ describe('Full System Integration', () => {
     // Override with test-specific settings
     config.orchestrator.maxConcurrentAgents = 3;
     config.terminal.poolSize = 3;
-    config.memory.backend = 'sqlite';
-    config.mcp.transport = 'stdio';
-    config.logging.level = 'debug';
+    config.memory.backend = "sqlite";
+    config.mcp.transport = "stdio";
+    config.logging.level = "debug";
 
     // Initialize core components
     eventBus = new EventBus();
@@ -79,7 +79,7 @@ describe('Full System Integration', () => {
       logger,
       terminalManager,
       memoryManager,
-      coordinationManager
+      coordinationManager,
     );
 
     await orchestrator.initialize();
@@ -92,71 +92,78 @@ describe('Full System Integration', () => {
     await cleanupTestEnv();
   });
 
-  describe('complete workflow scenarios', () => {
-    it('should execute a complete research and implementation workflow', async () => {
+  describe("complete workflow scenarios", () => {
+    it("should execute a complete research and implementation workflow", async () => {
       // Register MCP tools for different agent types
       const researchTool: MCPTool = {
-        name: 'research_topic',
-        description: 'Research a specific topic',
+        name: "research_topic",
+        description: "Research a specific topic",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {
-            topic: { type: 'string' },
-            depth: { type: 'string', enum: ['basic', 'detailed'], default: 'basic' },
+            topic: { type: "string" },
+            depth: {
+              type: "string",
+              enum: ["basic", "detailed"],
+              default: "basic",
+            },
           },
-          required: ['topic'],
+          required: ["topic"],
         },
         handler: async (input: any, context?: MCPContext) => {
-          const findings = input.depth === 'detailed' 
-            ? `Detailed research findings on ${input.topic}: In-depth analysis shows...`
-            : `Basic research on ${input.topic}: Overview indicates...`;
+          const findings =
+            input.depth === "detailed"
+              ? `Detailed research findings on ${input.topic}: In-depth analysis shows...`
+              : `Basic research on ${input.topic}: Overview indicates...`;
 
           // Store research in memory
           if (context?.agentId) {
             await memoryManager.storeEntry({
-              id: generateId('memory'),
+              id: generateId("memory"),
               agentId: context.agentId,
               sessionId: context.sessionId,
-              type: 'insight',
+              type: "insight",
               content: findings,
               context: { topic: input.topic, depth: input.depth },
               timestamp: new Date(),
-              tags: ['research', input.topic],
+              tags: ["research", input.topic],
               version: 1,
             });
           }
 
           return {
-            content: [{
-              type: 'text',
-              text: findings,
-            }],
+            content: [
+              {
+                type: "text",
+                text: findings,
+              },
+            ],
           };
         },
       };
 
       const implementTool: MCPTool = {
-        name: 'implement_solution',
-        description: 'Implement a solution based on research',
+        name: "implement_solution",
+        description: "Implement a solution based on research",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {
-            solution: { type: 'string' },
-            language: { type: 'string' },
-            research_id: { type: 'string' },
+            solution: { type: "string" },
+            language: { type: "string" },
+            research_id: { type: "string" },
           },
-          required: ['solution', 'language'],
+          required: ["solution", "language"],
         },
         handler: async (input: any, context?: MCPContext) => {
           // Retrieve research from memory if provided
-          let researchContext = '';
+          let researchContext = "";
           if (input.research_id && context?.sessionId) {
             const researchEntries = await memoryManager.queryEntries({
               sessionId: context.sessionId,
-              type: 'insight',
-              tags: ['research'],
+              type: "insight",
+              tags: ["research"],
             });
-            
+
             if (researchEntries.length > 0) {
               researchContext = `Based on research: ${researchEntries[0].content}`;
             }
@@ -175,27 +182,29 @@ function solution() {
           // Store implementation artifact
           if (context?.agentId) {
             await memoryManager.storeEntry({
-              id: generateId('memory'),
+              id: generateId("memory"),
               agentId: context.agentId,
               sessionId: context.sessionId,
-              type: 'artifact',
+              type: "artifact",
               content: implementation,
-              context: { 
+              context: {
                 language: input.language,
                 solution: input.solution,
                 research_id: input.research_id,
               },
               timestamp: new Date(),
-              tags: ['implementation', input.language],
+              tags: ["implementation", input.language],
               version: 1,
             });
           }
 
           return {
-            content: [{
-              type: 'text',
-              text: implementation,
-            }],
+            content: [
+              {
+                type: "text",
+                text: implementation,
+              },
+            ],
           };
         },
       };
@@ -205,42 +214,44 @@ function solution() {
 
       // Create agent profiles
       const researcherProfile: AgentProfile = {
-        id: 'researcher-agent',
-        name: 'Research Specialist',
-        type: 'researcher',
-        capabilities: ['research_topic', 'analysis'],
-        systemPrompt: 'You are an expert researcher',
+        id: "researcher-agent",
+        name: "Research Specialist",
+        type: "researcher",
+        capabilities: ["research_topic", "analysis"],
+        systemPrompt: "You are an expert researcher",
         maxConcurrentTasks: 2,
         priority: 1,
       };
 
       const implementerProfile: AgentProfile = {
-        id: 'implementer-agent',
-        name: 'Implementation Specialist',
-        type: 'implementer',
-        capabilities: ['implement_solution', 'terminal', 'coding'],
-        systemPrompt: 'You are an expert implementer',
+        id: "implementer-agent",
+        name: "Implementation Specialist",
+        type: "implementer",
+        capabilities: ["implement_solution", "terminal", "coding"],
+        systemPrompt: "You are an expert implementer",
         maxConcurrentTasks: 2,
         priority: 2,
       };
 
       // Spawn agents
-      const researcherSession = await orchestrator.spawnAgent(researcherProfile);
-      const implementerSession = await orchestrator.spawnAgent(implementerProfile);
+      const researcherSession =
+        await orchestrator.spawnAgent(researcherProfile);
+      const implementerSession =
+        await orchestrator.spawnAgent(implementerProfile);
 
       // Step 1: Research task
       const researchTask: Task = {
-        id: 'research-task',
-        type: 'mcp-tool-call',
-        description: 'Research best practices for Deno applications',
+        id: "research-task",
+        type: "mcp-tool-call",
+        description: "Research best practices for Deno applications",
         priority: 1,
         dependencies: [],
-        status: 'pending' as TaskStatus,
+        status: "pending" as TaskStatus,
         input: {
-          tool: 'research_topic',
+          tool: "research_topic",
           arguments: {
-            topic: 'Deno best practices',
-            depth: 'detailed',
+            topic: "Deno best practices",
+            depth: "detailed",
           },
           agentId: researcherProfile.id,
         },
@@ -248,22 +259,22 @@ function solution() {
       };
 
       const researchResult = await orchestrator.executeTask(researchTask);
-      assertEquals(researchResult.status, 'completed');
+      assertEquals(researchResult.status, "completed");
       assertExists(researchResult.output);
 
       // Step 2: Implementation task (depends on research)
       const implementTask: Task = {
-        id: 'implement-task',
-        type: 'mcp-tool-call',
-        description: 'Implement Deno application based on research',
+        id: "implement-task",
+        type: "mcp-tool-call",
+        description: "Implement Deno application based on research",
         priority: 2,
-        dependencies: ['research-task'],
-        status: 'pending' as TaskStatus,
+        dependencies: ["research-task"],
+        status: "pending" as TaskStatus,
         input: {
-          tool: 'implement_solution',
+          tool: "implement_solution",
           arguments: {
-            solution: 'Deno web server with best practices',
-            language: 'TypeScript',
+            solution: "Deno web server with best practices",
+            language: "TypeScript",
             research_id: researchTask.id,
           },
           agentId: implementerProfile.id,
@@ -272,7 +283,7 @@ function solution() {
       };
 
       const implementResult = await orchestrator.executeTask(implementTask);
-      assertEquals(implementResult.status, 'completed');
+      assertEquals(implementResult.status, "completed");
       assertExists(implementResult.output);
 
       // Verify memory contains both research and implementation
@@ -280,11 +291,11 @@ function solution() {
         limit: 10,
       });
 
-      const researchMemories = allMemories.filter(m => 
-        m.type === 'insight' && m.tags.includes('research')
+      const researchMemories = allMemories.filter(
+        (m) => m.type === "insight" && m.tags.includes("research"),
       );
-      const implementMemories = allMemories.filter(m => 
-        m.type === 'artifact' && m.tags.includes('implementation')
+      const implementMemories = allMemories.filter(
+        (m) => m.type === "artifact" && m.tags.includes("implementation"),
       );
 
       assertEquals(researchMemories.length, 1);
@@ -293,19 +304,19 @@ function solution() {
       assertEquals(implementMemories[0].agentId, implementerProfile.id);
     });
 
-    it('should handle complex multi-agent coordination scenario', async () => {
+    it("should handle complex multi-agent coordination scenario", async () => {
       // Register coordination tools
       const coordinationTool: MCPTool = {
-        name: 'coordinate_task',
-        description: 'Coordinate task assignment between agents',
+        name: "coordinate_task",
+        description: "Coordinate task assignment between agents",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {
-            task_type: { type: 'string' },
-            target_agent: { type: 'string' },
-            priority: { type: 'number' },
+            task_type: { type: "string" },
+            target_agent: { type: "string" },
+            priority: { type: "number" },
           },
-          required: ['task_type', 'target_agent'],
+          required: ["task_type", "target_agent"],
         },
         handler: async (input: any, context?: MCPContext) => {
           // Use coordination manager to send message
@@ -314,47 +325,49 @@ function solution() {
               context.agentId,
               input.target_agent,
               {
-                id: generateId('message'),
-                type: 'task-assignment',
+                id: generateId("message"),
+                type: "task-assignment",
                 payload: {
                   taskType: input.task_type,
                   priority: input.priority || 1,
                 },
                 timestamp: new Date(),
                 priority: input.priority || 1,
-              }
+              },
             );
           }
 
           return {
-            content: [{
-              type: 'text',
-              text: `Coordinated ${input.task_type} task with ${input.target_agent}`,
-            }],
+            content: [
+              {
+                type: "text",
+                text: `Coordinated ${input.task_type} task with ${input.target_agent}`,
+              },
+            ],
           };
         },
       };
 
       const statusTool: MCPTool = {
-        name: 'report_status',
-        description: 'Report agent status and progress',
+        name: "report_status",
+        description: "Report agent status and progress",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {
-            status: { type: 'string' },
-            progress: { type: 'number', minimum: 0, maximum: 100 },
-            details: { type: 'string' },
+            status: { type: "string" },
+            progress: { type: "number", minimum: 0, maximum: 100 },
+            details: { type: "string" },
           },
-          required: ['status', 'progress'],
+          required: ["status", "progress"],
         },
         handler: async (input: any, context?: MCPContext) => {
           // Store status in memory
           if (context?.agentId) {
             await memoryManager.storeEntry({
-              id: generateId('memory'),
+              id: generateId("memory"),
               agentId: context.agentId,
               sessionId: context.sessionId,
-              type: 'observation',
+              type: "observation",
               content: `Status: ${input.status} (${input.progress}%)`,
               context: {
                 status: input.status,
@@ -362,16 +375,18 @@ function solution() {
                 details: input.details,
               },
               timestamp: new Date(),
-              tags: ['status', 'progress'],
+              tags: ["status", "progress"],
               version: 1,
             });
           }
 
           return {
-            content: [{
-              type: 'text',
-              text: `Status reported: ${input.status} - ${input.progress}% complete`,
-            }],
+            content: [
+              {
+                type: "text",
+                text: `Status reported: ${input.status} - ${input.progress}% complete`,
+              },
+            ],
           };
         },
       };
@@ -381,11 +396,11 @@ function solution() {
 
       // Create multiple agent profiles
       const coordinatorProfile: AgentProfile = {
-        id: 'coordinator',
-        name: 'Project Coordinator',
-        type: 'coordinator',
-        capabilities: ['coordinate_task', 'planning'],
-        systemPrompt: 'You coordinate project tasks',
+        id: "coordinator",
+        name: "Project Coordinator",
+        type: "coordinator",
+        capabilities: ["coordinate_task", "planning"],
+        systemPrompt: "You coordinate project tasks",
         maxConcurrentTasks: 5,
         priority: 1,
       };
@@ -393,29 +408,30 @@ function solution() {
       const workerProfiles = Array.from({ length: 3 }, (_, i) => ({
         id: `worker-${i + 1}`,
         name: `Worker Agent ${i + 1}`,
-        type: 'implementer' as const,
-        capabilities: ['report_status', 'execute'],
+        type: "implementer" as const,
+        capabilities: ["report_status", "execute"],
         systemPrompt: `You are worker agent ${i + 1}`,
         maxConcurrentTasks: 2,
         priority: 3,
       }));
 
       // Spawn all agents
-      const coordinatorSession = await orchestrator.spawnAgent(coordinatorProfile);
+      const coordinatorSession =
+        await orchestrator.spawnAgent(coordinatorProfile);
       const workerSessions = await Promise.all(
-        workerProfiles.map(profile => orchestrator.spawnAgent(profile))
+        workerProfiles.map((profile) => orchestrator.spawnAgent(profile)),
       );
 
       // Coordinator assigns tasks to workers
       const coordinationTasks = workerProfiles.map((worker, index) => ({
         id: `coordination-${index}`,
-        type: 'mcp-tool-call',
+        type: "mcp-tool-call",
         description: `Assign task to ${worker.id}`,
         priority: 1,
         dependencies: [],
-        status: 'pending' as TaskStatus,
+        status: "pending" as TaskStatus,
         input: {
-          tool: 'coordinate_task',
+          tool: "coordinate_task",
           arguments: {
             task_type: `subtask-${index + 1}`,
             target_agent: worker.id,
@@ -428,26 +444,26 @@ function solution() {
 
       // Execute coordination tasks
       const coordinationResults = await Promise.all(
-        coordinationTasks.map(task => orchestrator.executeTask(task))
+        coordinationTasks.map((task) => orchestrator.executeTask(task)),
       );
 
       // All coordination tasks should complete
-      coordinationResults.forEach(result => {
-        assertEquals(result.status, 'completed');
+      coordinationResults.forEach((result) => {
+        assertEquals(result.status, "completed");
       });
 
       // Workers report their status
       const statusTasks = workerProfiles.map((worker, index) => ({
         id: `status-${index}`,
-        type: 'mcp-tool-call',
+        type: "mcp-tool-call",
         description: `${worker.id} reports status`,
         priority: 2,
         dependencies: [`coordination-${index}`],
-        status: 'pending' as TaskStatus,
+        status: "pending" as TaskStatus,
         input: {
-          tool: 'report_status',
+          tool: "report_status",
           arguments: {
-            status: 'working',
+            status: "working",
             progress: (index + 1) * 25,
             details: `Working on subtask-${index + 1}`,
           },
@@ -457,12 +473,12 @@ function solution() {
       }));
 
       const statusResults = await Promise.all(
-        statusTasks.map(task => orchestrator.executeTask(task))
+        statusTasks.map((task) => orchestrator.executeTask(task)),
       );
 
       // All status reports should complete
-      statusResults.forEach(result => {
-        assertEquals(result.status, 'completed');
+      statusResults.forEach((result) => {
+        assertEquals(result.status, "completed");
       });
 
       // Verify coordination messages were sent
@@ -470,7 +486,7 @@ function solution() {
 
       // Verify status was stored in memory
       const statusMemories = await memoryManager.queryEntries({
-        tags: ['status'],
+        tags: ["status"],
         limit: 10,
       });
 
@@ -481,21 +497,21 @@ function solution() {
       });
     });
 
-    it('should handle system stress and recovery', async () => {
+    it("should handle system stress and recovery", async () => {
       // Register a resource-intensive tool
       const heavyTool: MCPTool = {
-        name: 'heavy_computation',
-        description: 'Performs heavy computation',
+        name: "heavy_computation",
+        description: "Performs heavy computation",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {
-            iterations: { type: 'number', default: 1000 },
-            delay_ms: { type: 'number', default: 100 },
+            iterations: { type: "number", default: 1000 },
+            delay_ms: { type: "number", default: 100 },
           },
         },
         handler: async (input: any, context?: MCPContext) => {
           const { iterations = 1000, delay_ms = 100 } = input;
-          
+
           // Simulate heavy computation
           for (let i = 0; i < iterations; i++) {
             if (i % 100 === 0) {
@@ -504,10 +520,12 @@ function solution() {
           }
 
           return {
-            content: [{
-              type: 'text',
-              text: `Completed ${iterations} iterations`,
-            }],
+            content: [
+              {
+                type: "text",
+                text: `Completed ${iterations} iterations`,
+              },
+            ],
           };
         },
       };
@@ -518,16 +536,16 @@ function solution() {
       const stressAgents = Array.from({ length: 5 }, (_, i) => ({
         id: `stress-agent-${i}`,
         name: `Stress Test Agent ${i}`,
-        type: 'implementer' as const,
-        capabilities: ['heavy_computation'],
-        systemPrompt: 'You perform heavy computations',
+        type: "implementer" as const,
+        capabilities: ["heavy_computation"],
+        systemPrompt: "You perform heavy computations",
         maxConcurrentTasks: 1,
         priority: 1,
       }));
 
       // Spawn agents
       const stressSessions = await Promise.all(
-        stressAgents.map(agent => orchestrator.spawnAgent(agent))
+        stressAgents.map((agent) => orchestrator.spawnAgent(agent)),
       );
 
       assertEquals(stressSessions.length, 5);
@@ -536,13 +554,13 @@ function solution() {
       const heavyTasks = stressAgents.flatMap((agent, agentIndex) =>
         Array.from({ length: 3 }, (_, taskIndex) => ({
           id: `heavy-${agentIndex}-${taskIndex}`,
-          type: 'mcp-tool-call',
+          type: "mcp-tool-call",
           description: `Heavy task ${agentIndex}-${taskIndex}`,
           priority: 1,
           dependencies: [],
-          status: 'pending' as TaskStatus,
+          status: "pending" as TaskStatus,
           input: {
-            tool: 'heavy_computation',
+            tool: "heavy_computation",
             arguments: {
               iterations: 500, // Smaller iterations for faster testing
               delay_ms: 50,
@@ -550,20 +568,20 @@ function solution() {
             agentId: agent.id,
           },
           createdAt: new Date(),
-        }))
+        })),
       );
 
       // Execute all heavy tasks concurrently
       const startTime = Date.now();
       const results = await Promise.all(
-        heavyTasks.map(task => orchestrator.executeTask(task))
+        heavyTasks.map((task) => orchestrator.executeTask(task)),
       );
       const duration = Date.now() - startTime;
 
       // Verify all tasks completed
       assertEquals(results.length, 15); // 5 agents × 3 tasks
-      results.forEach(result => {
-        assertEquals(result.status, 'completed');
+      results.forEach((result) => {
+        assertEquals(result.status, "completed");
       });
 
       // System should handle the load reasonably well
@@ -582,31 +600,33 @@ function solution() {
     });
   });
 
-  describe('error handling and recovery', () => {
-    it('should recover from component failures', async () => {
+  describe("error handling and recovery", () => {
+    it("should recover from component failures", async () => {
       // Register tools that may fail
       let failureCount = 0;
       const unreliableTool: MCPTool = {
-        name: 'unreliable_service',
-        description: 'Service that sometimes fails',
+        name: "unreliable_service",
+        description: "Service that sometimes fails",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {
-            force_failure: { type: 'boolean', default: false },
+            force_failure: { type: "boolean", default: false },
           },
         },
         handler: async (input: any) => {
           failureCount++;
-          
+
           if (input.force_failure || failureCount % 3 === 0) {
-            throw new Error('Service temporarily unavailable');
+            throw new Error("Service temporarily unavailable");
           }
 
           return {
-            content: [{
-              type: 'text',
-              text: `Service call successful (attempt ${failureCount})`,
-            }],
+            content: [
+              {
+                type: "text",
+                text: `Service call successful (attempt ${failureCount})`,
+              },
+            ],
           };
         },
       };
@@ -614,11 +634,11 @@ function solution() {
       await mcpServer.registerTool(unreliableTool);
 
       const agentProfile: AgentProfile = {
-        id: 'resilient-agent',
-        name: 'Resilient Agent',
-        type: 'implementer',
-        capabilities: ['unreliable_service'],
-        systemPrompt: 'You handle unreliable services',
+        id: "resilient-agent",
+        name: "Resilient Agent",
+        type: "implementer",
+        capabilities: ["unreliable_service"],
+        systemPrompt: "You handle unreliable services",
         maxConcurrentTasks: 1,
         priority: 1,
       };
@@ -628,13 +648,13 @@ function solution() {
       // Create tasks that will encounter failures
       const resilientTasks = Array.from({ length: 10 }, (_, i) => ({
         id: `resilient-${i}`,
-        type: 'mcp-tool-call',
+        type: "mcp-tool-call",
         description: `Resilient task ${i}`,
         priority: 1,
         dependencies: [],
-        status: 'pending' as TaskStatus,
+        status: "pending" as TaskStatus,
         input: {
-          tool: 'unreliable_service',
+          tool: "unreliable_service",
           arguments: {},
           agentId: agentProfile.id,
           maxRetries: 3, // Enable retries
@@ -644,12 +664,12 @@ function solution() {
 
       // Execute tasks with potential failures
       const results = await Promise.all(
-        resilientTasks.map(task => orchestrator.executeTask(task))
+        resilientTasks.map((task) => orchestrator.executeTask(task)),
       );
 
       // Some tasks should succeed despite initial failures
-      const successfulTasks = results.filter(r => r.status === 'completed');
-      const failedTasks = results.filter(r => r.status === 'failed');
+      const successfulTasks = results.filter((r) => r.status === "completed");
+      const failedTasks = results.filter((r) => r.status === "failed");
 
       assertEquals(successfulTasks.length > 0, true);
       assertEquals(results.length, 10);
@@ -659,25 +679,28 @@ function solution() {
       assertEquals(health.healthy, true);
     });
 
-    it('should handle memory conflicts and coordination deadlocks', async () => {
+    it("should handle memory conflicts and coordination deadlocks", async () => {
       // Create conflicting memory operations
       const conflictTool: MCPTool = {
-        name: 'memory_conflict',
-        description: 'Creates memory conflicts',
+        name: "memory_conflict",
+        description: "Creates memory conflicts",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {
-            entry_id: { type: 'string' },
-            value: { type: 'string' },
+            entry_id: { type: "string" },
+            value: { type: "string" },
           },
-          required: ['entry_id', 'value'],
+          required: ["entry_id", "value"],
         },
         handler: async (input: any, context?: MCPContext) => {
           const { entry_id, value } = input;
-          
+
           // Simulate conflict resolution
           const lockId = `conflict-${entry_id}`;
-          await coordinationManager.acquireResource(lockId, context?.agentId || 'unknown');
+          await coordinationManager.acquireResource(
+            lockId,
+            context?.agentId || "unknown",
+          );
 
           try {
             // Check if entry exists
@@ -699,26 +722,30 @@ function solution() {
               // Create new entry
               await memoryManager.storeEntry({
                 id: entry_id,
-                agentId: context?.agentId || 'unknown',
-                sessionId: context?.sessionId || generateId('session'),
-                type: 'observation',
+                agentId: context?.agentId || "unknown",
+                sessionId: context?.sessionId || generateId("session"),
+                type: "observation",
                 content: value,
                 context: { conflictTest: true },
                 timestamp: new Date(),
-                tags: ['conflict'],
+                tags: ["conflict"],
                 version: 1,
               });
             }
 
             return {
-              content: [{
-                type: 'text',
-                text: `Memory operation completed: ${entry_id} = ${value}`,
-              }],
+              content: [
+                {
+                  type: "text",
+                  text: `Memory operation completed: ${entry_id} = ${value}`,
+                },
+              ],
             };
-
           } finally {
-            await coordinationManager.releaseResource(lockId, context?.agentId || 'unknown');
+            await coordinationManager.releaseResource(
+              lockId,
+              context?.agentId || "unknown",
+            );
           }
         },
       };
@@ -729,28 +756,28 @@ function solution() {
       const conflictAgents = Array.from({ length: 3 }, (_, i) => ({
         id: `conflict-agent-${i}`,
         name: `Conflict Agent ${i}`,
-        type: 'implementer' as const,
-        capabilities: ['memory_conflict'],
-        systemPrompt: 'You create memory conflicts',
+        type: "implementer" as const,
+        capabilities: ["memory_conflict"],
+        systemPrompt: "You create memory conflicts",
         maxConcurrentTasks: 1,
         priority: 1,
       }));
 
       const sessions = await Promise.all(
-        conflictAgents.map(agent => orchestrator.spawnAgent(agent))
+        conflictAgents.map((agent) => orchestrator.spawnAgent(agent)),
       );
 
       // Create concurrent tasks that operate on the same memory entries
-      const sharedEntryId = generateId('shared-entry');
+      const sharedEntryId = generateId("shared-entry");
       const conflictTasks = conflictAgents.map((agent, index) => ({
         id: `conflict-task-${index}`,
-        type: 'mcp-tool-call',
+        type: "mcp-tool-call",
         description: `Conflict task from ${agent.id}`,
         priority: 1,
         dependencies: [],
-        status: 'pending' as TaskStatus,
+        status: "pending" as TaskStatus,
         input: {
-          tool: 'memory_conflict',
+          tool: "memory_conflict",
           arguments: {
             entry_id: sharedEntryId,
             value: `Value from ${agent.id}`,
@@ -762,12 +789,12 @@ function solution() {
 
       // Execute conflicting tasks
       const results = await Promise.all(
-        conflictTasks.map(task => orchestrator.executeTask(task))
+        conflictTasks.map((task) => orchestrator.executeTask(task)),
       );
 
       // All tasks should complete (conflicts resolved)
-      results.forEach(result => {
-        assertEquals(result.status, 'completed');
+      results.forEach((result) => {
+        assertEquals(result.status, "completed");
       });
 
       // Final entry should exist with one of the values
@@ -781,26 +808,28 @@ function solution() {
     });
   });
 
-  describe('performance metrics and monitoring', () => {
-    it('should collect and report system metrics', async () => {
+  describe("performance metrics and monitoring", () => {
+    it("should collect and report system metrics", async () => {
       // Track metrics events
       const metricsEvents: any[] = [];
-      eventBus.on('metrics:collected', (metrics) => {
+      eventBus.on("metrics:collected", (metrics) => {
         metricsEvents.push(metrics);
       });
 
       // Register a metrics tool
       const metricsTool: MCPTool = {
-        name: 'generate_metrics',
-        description: 'Generates system metrics',
-        inputSchema: { type: 'object' },
+        name: "generate_metrics",
+        description: "Generates system metrics",
+        inputSchema: { type: "object" },
         handler: async () => {
           const metrics = await orchestrator.getMetrics();
           return {
-            content: [{
-              type: 'text',
-              text: JSON.stringify(metrics, null, 2),
-            }],
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(metrics, null, 2),
+              },
+            ],
           };
         },
       };
@@ -808,11 +837,11 @@ function solution() {
       await mcpServer.registerTool(metricsTool);
 
       const metricsAgent: AgentProfile = {
-        id: 'metrics-agent',
-        name: 'Metrics Agent',
-        type: 'analyst',
-        capabilities: ['generate_metrics'],
-        systemPrompt: 'You generate system metrics',
+        id: "metrics-agent",
+        name: "Metrics Agent",
+        type: "analyst",
+        capabilities: ["generate_metrics"],
+        systemPrompt: "You generate system metrics",
         maxConcurrentTasks: 1,
         priority: 1,
       };
@@ -822,13 +851,13 @@ function solution() {
       // Execute some tasks to generate metrics
       const workloadTasks = Array.from({ length: 5 }, (_, i) => ({
         id: `metrics-task-${i}`,
-        type: 'mcp-tool-call',
+        type: "mcp-tool-call",
         description: `Metrics workload task ${i}`,
         priority: 1,
         dependencies: [],
-        status: 'pending' as TaskStatus,
+        status: "pending" as TaskStatus,
         input: {
-          tool: 'generate_metrics',
+          tool: "generate_metrics",
           arguments: {},
           agentId: metricsAgent.id,
         },
@@ -836,7 +865,7 @@ function solution() {
       }));
 
       await Promise.all(
-        workloadTasks.map(task => orchestrator.executeTask(task))
+        workloadTasks.map((task) => orchestrator.executeTask(task)),
       );
 
       // Get final metrics

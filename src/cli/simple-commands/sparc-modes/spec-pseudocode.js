@@ -1,5 +1,8 @@
 // spec-pseudocode.js - Specification Writer mode orchestration template
-export function getSpecPseudocodeOrchestration(taskDescription, memoryNamespace) {
+export function getSpecPseudocodeOrchestration(
+  taskDescription,
+  memoryNamespace,
+) {
   return `
 ## Task Orchestration Steps
 
